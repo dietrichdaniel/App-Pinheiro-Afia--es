@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pinheiro Afiações - Gestão de Negócios</title>
+  
+  <!-- SEO & PWA Meta Tags -->
+  <meta name="description" content="Plataforma de gestão offline de Serviços, Estoque, Pedidos e Receitas para a Pinheiro Afiações, com sincronização automática com o Google Sheets.">
+  <meta name="theme-color" content="#10b981">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon.svg">
+  
+  <!-- CSS Stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Toast Container para Notificações Flutuantes -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <div class="app-container">
+    
+    <!-- Sidebar Lateral (Visível em Desktop) -->
+    <aside class="sidebar">
+      <div class="logo-section">
+        <!-- SVG Inline para o Logotipo -->
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="36" height="36">
+          <defs>
+            <linearGradient id="logoGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+              <stop offset="0%" style="stop-color:#059669;stop-opacity:1" />
+              <stop offset="100%" style="stop-color:#06b6d4;stop-opacity:1" />
+            </linearGradient>
+          </defs>
+          <path d="M 256 120 L 390 320 L 256 310 L 127 320 Z" fill="url(#logoGrad)" />
+          <path d="M 256 160 L 370 330 L 256 320 L 147 340 Z" fill="url(#logoGrad)" opacity="0.9" />
+          <path d="M 256 80 L 256 380 L 290 320 Z" fill="#ffffff" opacity="0.5" />
+        </svg>
+        <span class="logo-text">Pinheiro Afiações</span>
+      </div>
+      
+      <nav class="nav-menu">
+        <li class="nav-item active" data-tab="dashboard">
+          <button>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+            Dashboard
+          </button>
+        </li>
+        <li class="nav-item" data-tab="servicos">
+          <button>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.54 5.23l-1.39-1.68C18.88 3.21 18.47 3 18 3H6c-.47 0-.88.21-1.16.55L3.46 5.23C3.17 5.57 3 6.02 3 6.5V19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6.5c0-.48-.17-.93-.46-1.27zM6.24 5h11.52l.83 1H5.41l.83-1zM5 19V8h14v11H5zm3-5h2.55v3h2.9v-3H16l-4-4z"/></svg>
+            Serviços
+          </button>
+        </li>
+        <li class="nav-item" data-tab="estoque">
+          <button>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-5 12H4V8h11v8zm5 0h-3V8h3v8z"/></svg>
+            Estoque / Insumos
+          </button>
+        </li>
+        <li class="nav-item" data-tab="pedidos">
+          <button>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>
+            Pedidos (Vendas)
+          </button>
+        </li>
+        <li class="nav-item" data-tab="receitas">
+          <button>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8.12 19.38c1.91 0 3.7-.74 5.05-2.09l7.07-7.07c.78-.78.78-2.05 0-2.83l-3.54-3.54c-.78-.78-2.05-.78-2.83 0l-7.07 7.07c-1.35 1.35-2.09 3.14-2.09 5.05v3.54h3.42zM18.66 6.04l2.12 2.12-1.41 1.41-2.12-2.12 1.41-1.41zM6.92 14.92L14.4 7.45l2.12 2.12-7.48 7.48H6.92v-2.13zM3 20h18v2H3v-2z"/></svg>
+            Receitas
+          </button>
+        </li>
+        <li class="nav-item" data-tab="configuracoes">
+          <button>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+            Configurações
+          </button>
+        </li>
+      </nav>
+      
+      <div class="sidebar-footer">
+        <div class="connection-badge">
+          <span class="status-dot online" id="connectionDot"></span>
+          <span id="connectionText">Conectado (Online)</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Barra de Navegação Inferior (Mobile Only) -->
+    <nav class="mobile-nav">
+      <ul class="mobile-nav-list">
+        <li class="mobile-nav-item active" data-tab="dashboard">
+          <button>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+            Dashboard
+          </button>
+        </li>
+        <li class="mobile-nav-item" data-tab="servicos">
+          <button>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.54 5.23l-1.39-1.68C18.88 3.21 18.47 3 18 3H6c-.47 0-.88.21-1.16.55L3.46 5.23C3.17 5.57 3 6.02 3 6.5V19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6.5c0-.48-.17-.93-.46-1.27zM5 19V8h14v11H5z"/></svg>
+            Serviços
+          </button>
+        </li>
+        <li class="mobile-nav-item" data-tab="estoque">
+          <button>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2z"/></svg>
+            Estoque
+          </button>
+        </li>
+        <li class="mobile-nav-item" data-tab="pedidos">
+          <button>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>
+            Pedidos
+          </button>
+        </li>
+        <li class="mobile-nav-item" data-tab="configuracoes">
+          <button>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+            Ajustes
+          </button>
+        </li>
+      </ul>
+    </nav>
+
+    <!-- Área de Exibição das Abas -->
+    <main class="main-content">
+      
+      <!-- ABA 1: DASHBOARD -->
+      <section id="dashboard" class="tab-panel active">
+        <div class="page-header">
+          <div class="page-title">
+            <h1>Painel de Controle</h1>
+            <p>Resumo das atividades da Pinheiro Afiações</p>
+          </div>
+          <button class="btn btn-primary" id="btnManualSync">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+            Sincronizar Planilhas
+          </button>
+        </div>
+
+        <div class="dashboard-grid">
+          <div class="info-card">
+            <div class="card-data">
+              <h3>Faturamento Serviços</h3>
+              <div class="value" id="dashTotalServicos">R$ 0,00</div>
+            </div>
+            <div class="card-icon cyan">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+            </div>
+          </div>
+          <div class="info-card">
+            <div class="card-data">
+              <h3>Vendas (Pedidos)</h3>
+              <div class="value" id="dashTotalPedidos">R$ 0,00</div>
+            </div>
+            <div class="card-icon emerald">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            </div>
+          </div>
+          <div class="info-card">
+            <div class="card-data">
+              <h3>Itens no Estoque</h3>
+              <div class="value" id="dashTotalEstoque">0 itens</div>
+            </div>
+            <div class="card-icon warning">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+            </div>
+          </div>
+          <div class="info-card">
+            <div class="card-data">
+              <h3>Aguardando Sincronização</h3>
+              <div class="value" id="dashTotalUnsynced">0 registros</div>
+            </div>
+            <div class="card-icon info" style="background: rgba(59, 130, 246, 0.1); color: var(--info);">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v1"/><path d="M18 8h6v8h-6z"/><path d="M22 22v-6"/></svg>
+            </div>
+          </div>
+        </div>
+
+        <div class="table-panel">
+          <h2>Atividades Recentes</h2>
+          <div class="table-responsive">
+            <table class="data-table" id="tableRecentes">
+              <thead>
+                <tr>
+                  <th>Tipo</th>
+                  <th>Descrição / Item</th>
+                  <th>Data</th>
+                  <th>Valor</th>
+                  <th>Status Planilha</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td colspan="5" style="text-align: center; color: var(--text-muted);">Nenhuma atividade registrada ainda.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ABA 2: SERVIÇOS -->
+      <section id="servicos" class="tab-panel">
+        <div class="page-header">
+          <div class="page-title">
+            <h1>Serviços Prestados</h1>
+            <p>Registre e acompanhe as afiações e serviços fornecidos</p>
+          </div>
+        </div>
+        
+        <div class="layout-split">
+          <!-- Formulário de Cadastro -->
+          <div class="form-panel">
+            <h2>Novo Serviço</h2>
+            <form id="formServico">
+              <div class="form-group">
+                <label for="servNome">Nome do Cliente</label>
+                <input type="text" id="servNome" class="form-control" placeholder="Ex: Marcenaria Pinheiro" required>
+              </div>
+              
+              <div class="form-group">
+                <label>Itens Afiados / Modificados</label>
+                <div class="dynamic-items-container" id="servItensContainer">
+                  <div class="dynamic-item-row">
+                    <input type="text" class="form-control item-name" placeholder="Ex: Serras de Fita" required>
+                    <input type="number" class="form-control item-qty" placeholder="Qtd" min="1" value="1" style="width: 70px;" required>
+                    <button type="button" class="btn-icon-only danger btnRemoveRow" style="display:none;">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                    </button>
+                  </div>
+                </div>
+                <button type="button" class="btn btn-secondary" id="btnAddServItem" style="width:100%; padding: 6px; font-size: 0.8rem; margin-top: 8px;">
+                  + Adicionar Item
+                </button>
+              </div>
+
+              <div class="form-group">
+                <label for="servAdicionais">Adicionais (Ex: Embalagem Especial)</label>
+                <input type="text" id="servAdicionais" class="form-control" placeholder="Opcional">
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="servValor">Valor Cobrado (R$)</label>
+                  <input type="number" id="servValor" class="form-control" step="0.01" min="0" placeholder="0.00" required>
+                </div>
+                <div class="form-group">
+                  <label for="servFrete">Frete (R$)</label>
+                  <input type="number" id="servFrete" class="form-control" step="0.01" min="0" value="0.00">
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="servPagamento">Meio de Pagamento</label>
+                <select id="servPagamento" class="form-control" required>
+                  <option value="Pix">Pix</option>
+                  <option value="Dinheiro">Dinheiro</option>
+                  <option value="Cartão de Crédito">Cartão de Crédito</option>
+                  <option value="Cartão de Débito">Cartão de Débito</option>
+                  <option value="Boleto">Boleto / Faturado</option>
+                </select>
+              </div>
+
+              <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">Registrar Serviço</button>
+            </form>
+          </div>
+
+          <!-- Tabela de Listagem -->
+          <div class="table-panel">
+            <h2>Histórico de Serviços</h2>
+            <div class="table-responsive">
+              <table class="data-table" id="tableServicos">
+                <thead>
+                  <tr>
+                    <th>Cliente</th>
+                    <th>Itens</th>
+                    <th>Valor</th>
+                    <th>Pagamento</th>
+                    <th>Planilha</th>
+                    <th>Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- Inserido dinamicamente via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ABA 3: ESTOQUE / INSUMOS -->
+      <section id="estoque" class="tab-panel">
+        <div class="page-header">
+          <div class="page-title">
+            <h1>Estoque de Insumos e Matérias-Primas</h1>
+            <p>Controle de entrada de insumos e cotação de matéria-prima</p>
+          </div>
+        </div>
+
+        <div class="layout-split">
+          <!-- Formulário de Cadastro -->
+          <div class="form-panel">
+            <h2 id="estoqueFormTitle">Nova Entrada</h2>
+            <form id="formEstoque">
+              <input type="hidden" id="estoqueId">
+              <div class="form-group">
+                <label for="estItem">Nome do Item/Insumo</label>
+                <input type="text" id="estItem" class="form-control" placeholder="Ex: Rebolo Diamantado" required>
+              </div>
+              
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="estQtd">Quantidade</label>
+                  <input type="number" id="estQtd" class="form-control" min="0" placeholder="0" required>
+                </div>
+                <div class="form-group">
+                  <label for="estValor">Preço Unitário (R$)</label>
+                  <input type="number" id="estValor" class="form-control" step="0.01" min="0" placeholder="0.00" required>
+                </div>
+              </div>
+
+              <button type="submit" class="btn btn-primary" id="btnEstoqueSubmit" style="width: 100%; margin-top: 10px;">Adicionar ao Estoque</button>
+              <button type="button" class="btn btn-secondary" id="btnEstoqueCancel" style="width: 100%; margin-top: 8px; display: none;">Cancelar Edição</button>
+            </form>
+          </div>
+
+          <!-- Tabela de Estoque -->
+          <div class="table-panel">
+            <h2>Itens Cadastrados</h2>
+            <div class="table-responsive">
+              <table class="data-table" id="tableEstoque">
+                <thead>
+                  <tr>
+                    <th>Item</th>
+                    <th>Qtd Disponível</th>
+                    <th>Valor Unitário</th>
+                    <th>Valor Total</th>
+                    <th>Planilha</th>
+                    <th>Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- Inserido dinamicamente via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ABA 4: PEDIDOS (VENDAS) -->
+      <section id="pedidos" class="tab-panel">
+        <div class="page-header">
+          <div class="page-title">
+            <h1>Pedidos de Vendas</h1>
+            <p>Registre saídas de produtos prontos</p>
+          </div>
+        </div>
+
+        <div class="layout-split">
+          <!-- Formulário de Venda -->
+          <div class="form-panel">
+            <h2>Nova Venda</h2>
+            <form id="formPedido">
+              <div class="form-group">
+                <label for="pedItem">Produto Vendido</label>
+                <select id="pedItem" class="form-control" required>
+                  <option value="">Selecione um produto/receita...</option>
+                  <!-- Alimentado dinamicamente pelas Receitas ou digitado se avulso -->
+                </select>
+                <!-- Input alternativo caso queira vender algo que não está cadastrado nas receitas -->
+                <div style="margin-top: 8px; display: flex; gap: 8px; align-items: center;">
+                  <input type="checkbox" id="pedManualItemCheck"> 
+                  <label for="pedManualItemCheck" style="margin-bottom: 0; font-size: 0.8rem; cursor: pointer;">Item avulso (não cadastrado em Receitas)</label>
+                </div>
+                <input type="text" id="pedItemManual" class="form-control" style="margin-top: 8px; display: none;" placeholder="Nome do produto avulso">
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="pedQtd">Quantidade</label>
+                  <input type="number" id="pedQtd" class="form-control" min="1" value="1" required>
+                </div>
+                <div class="form-group">
+                  <label for="pedValor">Valor Unitário (R$)</label>
+                  <input type="number" id="pedValor" class="form-control" step="0.01" min="0" placeholder="0.00" required>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="pedFrete">Valor do Frete (R$)</label>
+                <input type="number" id="pedFrete" class="form-control" step="0.01" min="0" value="0.00">
+              </div>
+
+              <div class="form-group">
+                <label for="pedPagamento">Meio de Pagamento</label>
+                <select id="pedPagamento" class="form-control" required>
+                  <option value="Pix">Pix</option>
+                  <option value="Dinheiro">Dinheiro</option>
+                  <option value="Cartão de Crédito">Cartão de Crédito</option>
+                  <option value="Cartão de Débito">Cartão de Débito</option>
+                  <option value="Faturado">Faturado / Prazo</option>
+                </select>
+              </div>
+
+              <div style="margin-bottom: 16px; display: flex; gap: 8px; align-items: center;">
+                <input type="checkbox" id="pedConsumeStock" checked> 
+                <label for="pedConsumeStock" style="margin-bottom: 0; font-size: 0.8rem; cursor: pointer; color: var(--primary);">Deduzir matérias-primas do estoque</label>
+              </div>
+
+              <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">Registrar Venda</button>
+            </form>
+          </div>
+
+          <!-- Tabela de Pedidos -->
+          <div class="table-panel">
+            <h2>Pedidos Realizados</h2>
+            <div class="table-responsive">
+              <table class="data-table" id="tablePedidos">
+                <thead>
+                  <tr>
+                    <th>Item</th>
+                    <th>Qtd</th>
+                    <th>Valor Unitário</th>
+                    <th>Frete</th>
+                    <th>Valor Total</th>
+                    <th>Planilha</th>
+                    <th>Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- Inserido dinamicamente via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ABA 5: RECEITAS -->
+      <section id="receitas" class="tab-panel">
+        <div class="page-header">
+          <div class="page-title">
+            <h1>Receitas e Composição de Produtos</h1>
+            <p>Defina matérias-primas e custos de fabricação dos seus produtos</p>
+          </div>
+        </div>
+
+        <div class="layout-split">
+          <!-- Formulário de Receita -->
+          <div class="form-panel">
+            <h2>Nova Receita / Produto</h2>
+            <form id="formReceita">
+              <div class="form-group">
+                <label for="recProdFinal">Nome do Produto Acabado</label>
+                <input type="text" id="recProdFinal" class="form-control" placeholder="Ex: Faca Afiada Premium" required>
+              </div>
+
+              <div class="form-group">
+                <label>Matérias-Primas Utilizadas (do Estoque)</label>
+                <div class="dynamic-items-container" id="recMateriaPrimaContainer">
+                  <div class="dynamic-item-row mp-row">
+                    <select class="form-control mp-select" required>
+                      <option value="">Selecione insumo...</option>
+                      <!-- Alimentado dinamicamente pelo Estoque -->
+                    </select>
+                    <input type="number" class="form-control mp-qty" placeholder="Qtd" min="0.001" step="0.001" style="width: 80px;" required>
+                    <button type="button" class="btn-icon-only danger btnRemoveRow" style="display:none;">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                    </button>
+                  </div>
+                </div>
+                <button type="button" class="btn btn-secondary" id="btnAddMateriaPrima" style="width:100%; padding: 6px; font-size: 0.8rem; margin-top: 8px;">
+                  + Adicionar Matéria-Prima
+                </button>
+              </div>
+
+              <div class="form-group">
+                <label for="recMaoObra">Custo Estimado de Mão de Obra (R$)</label>
+                <input type="number" id="recMaoObra" class="form-control" step="0.01" min="0" placeholder="0.00" required>
+              </div>
+
+              <div class="info-box-custo" id="custoTotalCalculado" style="margin-bottom: 16px; padding: 12px; border-radius: var(--radius-md); background: rgba(255,255,255,0.02); font-size: 0.85rem; border: 1px solid var(--border-glass);">
+                Custo de Fabricação Estimado: <strong>R$ 0,00</strong>
+              </div>
+
+              <button type="submit" class="btn btn-primary" style="width: 100%;">Cadastrar Receita</button>
+            </form>
+          </div>
+
+          <!-- Tabela de Receitas -->
+          <div class="table-panel">
+            <h2>Receitas Cadastradas</h2>
+            <div class="table-responsive">
+              <table class="data-table" id="tableReceitas">
+                <thead>
+                  <tr>
+                    <th>Produto Final</th>
+                    <th>Matérias-Primas</th>
+                    <th>Mão de Obra</th>
+                    <th>Custo Estimado</th>
+                    <th>Planilha</th>
+                    <th>Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- Inserido dinamicamente via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ABA 6: CONFIGURAÇÕES -->
+      <section id="configuracoes" class="tab-panel">
+        <div class="page-header">
+          <div class="page-title">
+            <h1>Configurações do Sistema</h1>
+            <p>Gerencie a integração com o Google Sheets e dados locais</p>
+          </div>
+        </div>
+
+        <div class="settings-box">
+          <div style="border-bottom: 1px solid var(--border-glass); margin-bottom: 24px; padding-bottom: 12px;">
+            <h2 style="font-family: var(--font-heading); font-size: 1.5rem; color: var(--primary); margin-bottom: 8px;">Conexão Google Planilhas</h2>
+            <p style="color: var(--text-muted); font-size: 0.9rem;">Insira a URL obtida ao implantar o Google Apps Script na sua planilha.</p>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 24px;">
+            <label for="googleSheetsUrlInput" style="font-weight: 600;">URL do Google Web App (Apps Script)</label>
+            <input type="url" id="googleSheetsUrlInput" class="form-control" style="font-size: 1rem; padding: 12px;" placeholder="https://script.google.com/macros/s/.../exec">
+            <button class="btn btn-primary" id="btnSaveConfig" style="margin-top: 12px;">Salvar URL</button>
+            <button class="btn btn-secondary" id="btnTestConnection" style="margin-top: 12px; margin-left: 8px;">Testar Conexão</button>
+          </div>
+
+          <h3 style="font-family: var(--font-heading); margin-bottom: 12px;">Como conectar com sua Planilha Google</h3>
+          <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 12px;">Siga os passos abaixo para configurar o Google Sheets:</p>
+          
+          <ol class="instructions-list">
+            <li>Crie uma nova <strong>Planilha Google</strong> na sua conta.</li>
+            <li>No menu superior, vá em <strong>Extensões</strong> &gt; <strong>Apps Script</strong>.</li>
+            <li>Clique no arquivo contendo o script do Google e cole o código fornecido no arquivo <a href="google-script.js" target="_blank" style="color: var(--secondary); text-decoration: underline;">google-script.js</a> de instalação.</li>
+            <li>Salve o projeto e clique em <strong>Implantar</strong> &gt; <strong>Nova implantação</strong> no canto superior direito.</li>
+            <li>Escolha o tipo de implantação <strong>App da Web</strong>. Configure o acesso para <strong>"Qualquer pessoa"</strong>.</li>
+            <li>Copie a <strong>URL do App da Web</strong> gerada e cole no campo acima.</li>
+          </ol>
+
+          <div style="border-top: 1px solid var(--border-glass); margin-top: 32px; padding-top: 24px;">
+            <h3 style="font-family: var(--font-heading); color: #ef4444; margin-bottom: 12px;">Zona de Perigo / Manutenção</h3>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;">Operações para backup de dados locais e reinicialização completa.</p>
+            
+            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+              <button class="btn btn-secondary" id="btnExportData">Exportar Backup JSON</button>
+              <button class="btn btn-secondary" id="btnImportData">Importar Backup JSON</button>
+              <button class="btn btn-secondary" id="btnResetDB" style="background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.2); color: var(--error);">Apagar Tudo</button>
+            </div>
+            
+            <input type="file" id="importFileInput" style="display: none;" accept=".json">
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+  </div>
+
+  <!-- Modal para visualização expandida de Receitas -->
+  <div class="modal-overlay" id="recipeModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="modalRecipeTitle">Composição da Receita</h3>
+        <button class="btn-icon-only" id="btnCloseRecipeModal">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body" id="modalRecipeBody">
+        <!-- Preenchido via JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- JS Scripts -->
+  <script type="module" src="app.js"></script>
+
+  <!-- Script para Registrar o Service Worker do PWA -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js')
+          .then((registration) => {
+            console.log('PWA Service Worker registrado com sucesso: ', registration.scope);
+          })
+          .catch((err) => {
+            console.error('Falha ao registrar o Service Worker: ', err);
+          });
+      });
+    }
+  </script>
+</body>
+</html>

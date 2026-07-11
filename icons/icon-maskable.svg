@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Gradiente principal para o pinheiro/lâmina -->
+    <linearGradient id="grad1" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#059669;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#10b981;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#06b6d4;stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- Gradiente de brilho metálico para o corte/afiação -->
+    <linearGradient id="metalGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.9" />
+      <stop offset="30%" style="stop-color:#cbd5e1;stop-opacity:0.6" />
+      <stop offset="70%" style="stop-color:#475569;stop-opacity:0.3" />
+      <stop offset="100%" style="stop-color:#0f172a;stop-opacity:0" />
+    </linearGradient>
+    
+    <!-- Filtro de sombra suave -->
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="12" stdDeviation="12" flood-color="#000000" flood-opacity="0.5" />
+    </filter>
+  </defs>
+
+  <!-- Fundo escuro premium que cobre 100% da imagem (essencial para maskable) -->
+  <rect width="512" height="512" fill="#0f172a" />
+  
+  <!-- Círculo interno decorativo com borda em degradê -->
+  <circle cx="256" cy="256" r="180" fill="none" stroke="url(#grad1)" stroke-width="4" opacity="0.2" />
+  
+  <!-- Grupo do Pinheiro estilizado e afiado (Reduzido para caber na zona segura de corte PWA) -->
+  <g filter="url(#shadow)" transform="translate(0, 15)">
+    <!-- Base / Tronco -->
+    <rect x="242" y="350" width="28" height="40" rx="6" fill="#475569" />
+    
+    <!-- Camada Inferior do Pinheiro -->
+    <path d="M 256 150 L 350 300 Q 354 306 346 308 L 256 292 L 166 308 Q 158 306 162 300 Z" fill="url(#grad1)" />
+    
+    <!-- Camada Média do Pinheiro -->
+    <path d="M 256 180 L 335 308 Q 339 314 331 316 L 256 301 L 181 316 Q 173 314 177 308 Z" fill="url(#grad1)" opacity="0.9" />
+    
+    <!-- Camada Superior do Pinheiro -->
+    <path d="M 256 210 L 320 316 Q 324 322 316 324 L 256 310 L 196 324 Q 188 322 192 316 Z" fill="url(#grad1)" opacity="0.8" />
+    
+    <!-- Linha de Afiação / Lâmina de Corte Diagonal (Estilizada em Branco/Metal) -->
+    <path d="M 256 120 L 256 350 L 280 300 L 256 120" fill="url(#metalGrad)" />
+    
+    <!-- Faísca de afiação (Brilho no topo) -->
+    <circle cx="256" cy="120" r="9" fill="#ffffff" filter="blur(2px)" />
+    <path d="M 256 95 L 256 145 M 231 120 L 281 120" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" opacity="0.8" />
+  </g>
+</svg>

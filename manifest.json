@@ -1,0 +1,24 @@
+{
+  "short_name": "Pinheiro Afiações",
+  "name": "Pinheiro Afiações - Gestão de Negócios",
+  "icons": [
+    {
+      "src": "icons/icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-maskable.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "maskable"
+    }
+  ],
+  "start_url": "./index.html",
+  "background_color": "#0f172a",
+  "theme_color": "#10b981",
+  "display": "standalone",
+  "orientation": "portrait",
+  "description": "Sistema de registro de serviços, estoque, pedidos e receitas para a Pinheiro Afiações com integração com o Google Sheets e funcionamento offline."
+}

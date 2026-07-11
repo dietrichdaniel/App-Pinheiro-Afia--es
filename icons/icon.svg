@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Gradiente principal para o pinheiro/lâmina -->
+    <linearGradient id="grad1" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#059669;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#10b981;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#06b6d4;stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- Gradiente de brilho metálico para o corte/afiação -->
+    <linearGradient id="metalGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.9" />
+      <stop offset="30%" style="stop-color:#cbd5e1;stop-opacity:0.6" />
+      <stop offset="70%" style="stop-color:#475569;stop-opacity:0.3" />
+      <stop offset="100%" style="stop-color:#0f172a;stop-opacity:0" />
+    </linearGradient>
+    
+    <!-- Filtro de sombra suave -->
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="16" stdDeviation="16" flood-color="#000000" flood-opacity="0.5" />
+    </filter>
+  </defs>
+
+  <!-- Fundo escuro premium arredondado -->
+  <rect width="512" height="512" rx="112" fill="#0f172a" />
+  
+  <!-- Círculo interno decorativo com borda em degradê -->
+  <circle cx="256" cy="256" r="220" fill="none" stroke="url(#grad1)" stroke-width="4" opacity="0.3" />
+  
+  <!-- Grupo do Pinheiro estilizado e afiado -->
+  <g filter="url(#shadow)">
+    <!-- Base / Tronco -->
+    <rect x="236" y="380" width="40" height="50" rx="8" fill="#475569" />
+    
+    <!-- Camada Inferior do Pinheiro -->
+    <path d="M 256 120 L 390 320 Q 395 328 385 330 L 256 310 L 127 330 Q 117 328 122 320 Z" fill="url(#grad1)" />
+    
+    <!-- Camada Média do Pinheiro -->
+    <path d="M 256 160 L 370 330 Q 375 338 365 340 L 256 320 L 147 340 Q 137 338 142 330 Z" fill="url(#grad1)" opacity="0.9" />
+    
+    <!-- Camada Superior do Pinheiro -->
+    <path d="M 256 200 L 350 340 Q 355 348 345 350 L 256 330 L 167 350 Q 157 348 162 340 Z" fill="url(#grad1)" opacity="0.8" />
+    
+    <!-- Linha de Afiação / Lâmina de Corte Diagonal (Estilizada em Branco/Metal) -->
+    <path d="M 256 80 L 256 380 L 290 320 L 256 80" fill="url(#metalGrad)" />
+    
+    <!-- Faísca de afiação (Brilho no topo) -->
+    <circle cx="256" cy="80" r="12" fill="#ffffff" filter="blur(2px)" />
+    <path d="M 256 50 L 256 110 M 226 80 L 286 80" stroke="#ffffff" stroke-width="3" stroke-linecap="round" opacity="0.8" />
+  </g>
+</svg>
