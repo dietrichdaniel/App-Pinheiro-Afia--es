@@ -223,12 +223,19 @@
               <div class="form-group">
                 <label>Itens Afiados / Modificados</label>
                 <div class="dynamic-items-container" id="servItensContainer">
-                  <div class="dynamic-item-row">
-                    <input type="text" class="form-control item-name" placeholder="Ex: Serras de Fita" required>
-                    <input type="number" class="form-control item-qty" placeholder="Qtd" min="1" value="1" style="width: 70px;" required>
-                    <button type="button" class="btn-icon-only danger btnRemoveRow" style="display:none;">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                    </button>
+                  <div class="dynamic-item-row" style="flex-wrap: wrap; margin-bottom: 8px;">
+                    <div style="display: flex; gap: 8px; width: 100%; align-items: center;">
+                      <select class="form-control item-select" style="flex: 1;">
+                        <option value="">Selecione a peça...</option>
+                        <!-- Alimentado dinamicamente -->
+                        <option value="custom">Outro (Digitar)...</option>
+                      </select>
+                      <input type="number" class="form-control item-qty" placeholder="Qtd" min="1" value="1" style="width: 70px;">
+                      <button type="button" class="btn-icon-only danger btnRemoveRow" style="display:none;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                      </button>
+                    </div>
+                    <input type="text" class="form-control item-name-custom" placeholder="Nome da peça personalizada" style="display: none; margin-top: 8px; width: 100%;" />
                   </div>
                 </div>
                 <button type="button" class="btn btn-secondary" id="btnAddServItem" style="width:100%; padding: 6px; font-size: 0.8rem; margin-top: 8px;">
@@ -237,14 +244,20 @@
               </div>
 
               <div class="form-group">
-                <label for="servAdicionais">Adicionais (Ex: Embalagem Especial)</label>
-                <input type="text" id="servAdicionais" class="form-control" placeholder="Opcional">
+                <label>Serviços Adicionais</label>
+                <div class="dynamic-items-container" id="servAdicionaisContainer">
+                  <!-- Alimentado dinamicamente -->
+                </div>
+                <button type="button" class="btn btn-secondary" id="btnAddAdicionalRow" style="width:100%; padding: 6px; font-size: 0.8rem; margin-top: 8px;">
+                  + Adicionar Adicional
+                </button>
               </div>
 
               <div class="form-row">
                 <div class="form-group">
                   <label for="servValor">Valor Cobrado (R$)</label>
                   <input type="number" id="servValor" class="form-control" step="0.01" min="0" placeholder="0.00" required>
+                  <small id="servValorSugerido" style="display:block; margin-top: 4px; font-size: 0.75rem; color: var(--secondary);"></small>
                 </div>
                 <div class="form-group">
                   <label for="servFrete">Frete (R$)</label>
@@ -349,6 +362,59 @@
             </div>
           </div>
         </div>
+
+        <!-- Estoque de Produtos Finalizados (Ref: Receitas) -->
+        <div style="border-top: 1px solid var(--border-glass); margin-top: 40px; padding-top: 32px; margin-bottom: 24px;">
+          <h2 style="font-family: var(--font-heading); font-size: 1.75rem; color: var(--primary); margin-bottom: 8px;">Estoque de Produtos Finalizados</h2>
+          <p style="color: var(--text-muted); font-size: 0.9rem;">Registre a produção de itens prontos para venda (isso consumirá insumos de acordo com as receitas).</p>
+        </div>
+
+        <div class="layout-split">
+          <!-- Formulário de Fabricação -->
+          <div class="form-panel">
+            <h2>Nova Entrada (Fabricação)</h2>
+            <form id="formProducaoProduto">
+              <div class="form-group">
+                <label for="prodRecipeSelect">Produto Final (Receita)</label>
+                <select id="prodRecipeSelect" class="form-control" required>
+                  <option value="">Selecione um produto/receita...</option>
+                  <!-- Populado dinamicamente via JS -->
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="prodQtd">Quantidade Fabricada</label>
+                <input type="number" id="prodQtd" class="form-control" min="1" value="1" required>
+              </div>
+              <div class="form-group">
+                <label for="prodPrecoVenda">Preço de Venda Unitário (R$)</label>
+                <input type="number" id="prodPrecoVenda" class="form-control" step="0.01" min="0" placeholder="0.00" required>
+              </div>
+              <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">Fabricar e Estocar</button>
+            </form>
+          </div>
+
+          <!-- Tabela de Estoque de Produtos -->
+          <div class="table-panel">
+            <h2>Produtos Prontos em Estoque</h2>
+            <div class="table-responsive">
+              <table class="data-table" id="tableEstoqueProdutos">
+                <thead>
+                  <tr>
+                    <th>Produto</th>
+                    <th>Qtd Disponível</th>
+                    <th>Custo Unitário (Ref)</th>
+                    <th>Preço de Venda</th>
+                    <th>Custo Total</th>
+                    <th>Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- Inserido dinamicamente via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
       </section>
 
       <!-- ABA 4: PEDIDOS (VENDAS) -->
@@ -404,11 +470,6 @@
                   <option value="Cartão de Débito">Cartão de Débito</option>
                   <option value="Faturado">Faturado / Prazo</option>
                 </select>
-              </div>
-
-              <div style="margin-bottom: 16px; display: flex; gap: 8px; align-items: center;">
-                <input type="checkbox" id="pedConsumeStock" checked> 
-                <label for="pedConsumeStock" style="margin-bottom: 0; font-size: 0.8rem; cursor: pointer; color: var(--primary);">Deduzir matérias-primas do estoque</label>
               </div>
 
               <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">Registrar Venda</button>
@@ -467,7 +528,7 @@
                       <option value="">Selecione insumo...</option>
                       <!-- Alimentado dinamicamente pelo Estoque -->
                     </select>
-                    <input type="number" class="form-control mp-qty" placeholder="Qtd" min="0.001" step="0.001" style="width: 80px;" required>
+                    <input type="number" class="form-control mp-qty" placeholder="Qtd" min="1" step="1" style="width: 80px;" required>
                     <button type="button" class="btn-icon-only danger btnRemoveRow" style="display:none;">
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                     </button>
@@ -548,6 +609,126 @@
             <li>Escolha o tipo de implantação <strong>App da Web</strong>. Configure o acesso para <strong>"Qualquer pessoa"</strong>.</li>
             <li>Copie a <strong>URL do App da Web</strong> gerada e cole no campo acima.</li>
           </ol>
+
+          <!-- Seção de Cadastro de Peças e Adicionais (Preços Padrões) -->
+          <div style="border-top: 1px solid var(--border-glass); margin-top: 32px; padding-top: 24px; margin-bottom: 32px;">
+            <h2 style="font-family: var(--font-heading); font-size: 1.5rem; color: var(--primary); margin-bottom: 8px;">Cadastro de Peças & Adicionais</h2>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 20px;">Cadastre os tipos de peças para afiação e os adicionais de serviço com seus respectivos preços padrões.</p>
+            
+            <div class="layout-split" style="gap: 24px;">
+              <!-- Coluna das Peças -->
+              <div class="form-panel" style="flex: 1; min-width: 280px; background: rgba(255,255,255,0.01); border: 1px solid var(--border-glass); padding: 16px; border-radius: var(--radius-lg);">
+                <h3 style="font-family: var(--font-heading); color: var(--text-main); margin-bottom: 12px;">Peças de Afiação</h3>
+                <form id="formPecaPreco" style="margin-bottom: 16px;">
+                  <input type="hidden" id="pecaId">
+                  <div class="form-group">
+                    <label for="pecaNome">Nome da Peça</label>
+                    <input type="text" id="pecaNome" class="form-control" placeholder="Ex: Serra de Fita" required>
+                  </div>
+                  <div class="form-group">
+                    <label for="pecaPreco">Preço Padrão (R$)</label>
+                    <input type="number" id="pecaPreco" class="form-control" step="0.01" min="0" placeholder="0.00" required>
+                  </div>
+                  <button type="submit" class="btn btn-primary" id="btnPecaSubmit" style="width: 100%;">Salvar Peça</button>
+                  <button type="button" class="btn btn-secondary" id="btnPecaCancel" style="width: 100%; margin-top: 8px; display: none;">Cancelar</button>
+                </form>
+                
+                <div class="table-responsive" style="max-height: 250px; overflow-y: auto;">
+                  <table class="data-table" id="tablePecasPrecos">
+                    <thead>
+                      <tr>
+                        <th>Nome</th>
+                        <th>Preço Padrão</th>
+                        <th>Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <!-- Inserido via JS -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- Coluna dos Adicionais -->
+              <div class="form-panel" style="flex: 1; min-width: 280px; background: rgba(255,255,255,0.01); border: 1px solid var(--border-glass); padding: 16px; border-radius: var(--radius-lg);">
+                <h3 style="font-family: var(--font-heading); color: var(--text-main); margin-bottom: 12px;">Serviços Adicionais</h3>
+                <form id="formAdicionalPreco" style="margin-bottom: 16px;">
+                  <input type="hidden" id="adicionalId">
+                  <div class="form-group">
+                    <label for="adicionalNome">Nome do Adicional</label>
+                    <input type="text" id="adicionalNome" class="form-control" placeholder="Ex: Embalagem Especial" required>
+                  </div>
+                  <div class="form-group">
+                    <label for="adicionalPreco">Preço Padrão (R$)</label>
+                    <input type="number" id="adicionalPreco" class="form-control" step="0.01" min="0" placeholder="0.00" required>
+                  </div>
+                  <div class="form-group">
+                    <label for="adicionalInsumo">Insumo Consumido (Opcional)</label>
+                    <select id="adicionalInsumo" class="form-control">
+                      <option value="">Nenhum</option>
+                      <!-- Populado dinamicamente com insumos do estoque -->
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label for="adicionalQtdInsumo">Quantidade Consumida</label>
+                    <input type="number" id="adicionalQtdInsumo" class="form-control" step="0.01" min="0" placeholder="0.00">
+                  </div>
+                  <button type="submit" class="btn btn-primary" id="btnAdicionalSubmit" style="width: 100%;">Salvar Adicional</button>
+                  <button type="button" class="btn btn-secondary" id="btnAdicionalCancel" style="width: 100%; margin-top: 8px; display: none;">Cancelar</button>
+                </form>
+
+                <div class="table-responsive" style="max-height: 250px; overflow-y: auto;">
+                  <table class="data-table" id="tableAdicionaisPrecos">
+                    <thead>
+                      <tr>
+                        <th>Nome</th>
+                        <th>Preço Padrão</th>
+                        <th>Insumo Consumido</th>
+                        <th>Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <!-- Inserido via JS -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Seção de Desconto Progressivo -->
+          <div style="border-top: 1px solid var(--border-glass); margin-top: 32px; padding-top: 24px; margin-bottom: 32px;">
+            <h2 style="font-family: var(--font-heading); font-size: 1.5rem; color: var(--primary); margin-bottom: 8px;">Configuração de Desconto Progressivo</h2>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 20px;">Defina as faixas de descontos automáticos com base no total de peças afiadas no serviço.</p>
+            
+            <form id="formConfigDescontos" class="form-panel" style="background: rgba(255,255,255,0.01); border: 1px solid var(--border-glass); padding: 20px; border-radius: var(--radius-lg); margin-bottom: 0;">
+              <div class="form-row" style="gap: 16px; margin-bottom: 16px; flex-wrap: wrap;">
+                <div class="form-group" style="flex: 1; min-width: 250px;">
+                  <h4 style="color: var(--secondary); margin-bottom: 12px; font-family: var(--font-heading);">1ª Faixa de Desconto</h4>
+                  <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                    <span style="font-size: 0.9rem; color: var(--text-muted);">A partir de</span>
+                    <input type="number" id="descQtd1" class="form-control" style="width: 80px;" min="1" value="5" required>
+                    <span style="font-size: 0.9rem; color: var(--text-muted);">peças, aplicar</span>
+                    <input type="number" id="descPct1" class="form-control" style="width: 80px;" min="0" max="100" value="5" required>
+                    <span style="font-size: 0.9rem; color: var(--text-muted);">% de desconto.</span>
+                  </div>
+                </div>
+                
+                <div class="form-group" style="flex: 1; min-width: 250px;">
+                  <h4 style="color: var(--secondary); margin-bottom: 12px; font-family: var(--font-heading);">2ª Faixa de Desconto</h4>
+                  <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                    <span style="font-size: 0.9rem; color: var(--text-muted);">A partir de</span>
+                    <input type="number" id="descQtd2" class="form-control" style="width: 80px;" min="1" value="10" required>
+                    <span style="font-size: 0.9rem; color: var(--text-muted);">peças, aplicar</span>
+                    <input type="number" id="descPct2" class="form-control" style="width: 80px;" min="0" max="100" value="10" required>
+                    <span style="font-size: 0.9rem; color: var(--text-muted);">% de desconto.</span>
+                  </div>
+                </div>
+              </div>
+              
+              <button type="submit" class="btn btn-primary" style="display: inline-block; width: auto; padding: 10px 24px;">Salvar Configurações de Desconto</button>
+            </form>
+          </div>
 
           <div style="border-top: 1px solid var(--border-glass); margin-top: 32px; padding-top: 24px;">
             <h3 style="font-family: var(--font-heading); color: #ef4444; margin-bottom: 12px;">Zona de Perigo / Manutenção</h3>

@@ -117,7 +117,7 @@ function getHeaders(store) {
     case 'servicos':
       return ['ID', 'Data', 'Nome', 'Itens', 'Adicionais', 'Valor', 'Frete', 'Meio de Pagamento'];
     case 'estoque':
-      return ['ID', 'Item', 'Quantidade', 'Valor'];
+      return ['ID', 'Item', 'Quantidade', 'Valor', 'Data'];
     case 'pedidos':
       return ['ID', 'Data', 'Item', 'Quantidade', 'Valor', 'Frete', 'Meio de Pagamento'];
     case 'receitas':

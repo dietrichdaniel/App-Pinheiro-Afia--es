@@ -4,7 +4,7 @@
  */
 
 const DB_NAME = 'PinheiroAfiacoesDB';
-const DB_VERSION = 1;
+const DB_VERSION = 4;
 
 let dbInstance = null;
 
@@ -42,8 +42,20 @@ export function initDB() {
       // Object Store: Estoque (Itens/Matérias-primas)
       if (!db.objectStoreNames.contains('estoque')) {
         const estoqueStore = db.createObjectStore('estoque', { keyPath: 'id', autoIncrement: true });
-        estoqueStore.createIndex('item', 'item', { unique: true });
+        estoqueStore.createIndex('item', 'item', { unique: false });
         estoqueStore.createIndex('synced', 'synced', { unique: false });
+      } else {
+        const transaction = event.target.transaction;
+        if (transaction) {
+          const estoqueStore = transaction.objectStore('estoque');
+          if (estoqueStore.indexNames.contains('item')) {
+            const index = estoqueStore.index('item');
+            if (index.unique) {
+              estoqueStore.deleteIndex('item');
+              estoqueStore.createIndex('item', 'item', { unique: false });
+            }
+          }
+        }
       }
 
       // Object Store: Pedidos (Vendas)
@@ -58,6 +70,25 @@ export function initDB() {
         const receitasStore = db.createObjectStore('receitas', { keyPath: 'id', autoIncrement: true });
         receitasStore.createIndex('produtoFinal', 'produtoFinal', { unique: true });
         receitasStore.createIndex('synced', 'synced', { unique: false });
+      }
+
+      // Object Store: Peças Afiadas (Preços Padrões)
+      if (!db.objectStoreNames.contains('pecas')) {
+        const pecasStore = db.createObjectStore('pecas', { keyPath: 'id', autoIncrement: true });
+        pecasStore.createIndex('nome', 'nome', { unique: true });
+      }
+
+      // Object Store: Adicionais (Cadastro de adicionais e seus preços)
+      if (!db.objectStoreNames.contains('adicionais')) {
+        const adicionaisStore = db.createObjectStore('adicionais', { keyPath: 'id', autoIncrement: true });
+        adicionaisStore.createIndex('nome', 'nome', { unique: true });
+      }
+
+      // Object Store: Estoque de Produtos Finalizados
+      if (!db.objectStoreNames.contains('estoque_produtos')) {
+        const estoqueProdutosStore = db.createObjectStore('estoque_produtos', { keyPath: 'id', autoIncrement: true });
+        estoqueProdutosStore.createIndex('produto', 'produto', { unique: true });
+        estoqueProdutosStore.createIndex('synced', 'synced', { unique: false });
       }
 
       // Object Store: Configurações Gerais
