@@ -133,10 +133,7 @@
             <h1>Painel de Controle</h1>
             <p>Resumo das atividades da Pinheiro Afiações</p>
           </div>
-          <button class="btn btn-primary" id="btnManualSync">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
-            Sincronizar Planilhas
-          </button>
+
         </div>
 
         <div class="dashboard-grid">
@@ -169,11 +166,11 @@
           </div>
           <div class="info-card">
             <div class="card-data">
-              <h3>Aguardando Sincronização</h3>
-              <div class="value" id="dashTotalUnsynced">0 registros</div>
+              <h3>Status de Sincronização</h3>
+              <div class="value" id="dashTotalUnsynced" style="font-size: 1.25rem;">Nuvem Conectada</div>
             </div>
-            <div class="card-icon info" style="background: rgba(59, 130, 246, 0.1); color: var(--info);">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v1"/><path d="M18 8h6v8h-6z"/><path d="M22 22v-6"/></svg>
+            <div class="card-icon info" style="background: rgba(59, 130, 246, 0.1); color: var(--info);" id="dashCloudIcon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
             </div>
           </div>
         </div>
@@ -586,29 +583,6 @@
         </div>
 
         <div class="settings-box">
-          <div style="border-bottom: 1px solid var(--border-glass); margin-bottom: 24px; padding-bottom: 12px;">
-            <h2 style="font-family: var(--font-heading); font-size: 1.5rem; color: var(--primary); margin-bottom: 8px;">Conexão Google Planilhas</h2>
-            <p style="color: var(--text-muted); font-size: 0.9rem;">Insira a URL obtida ao implantar o Google Apps Script na sua planilha.</p>
-          </div>
-
-          <div class="form-group" style="margin-bottom: 24px;">
-            <label for="googleSheetsUrlInput" style="font-weight: 600;">URL do Google Web App (Apps Script)</label>
-            <input type="url" id="googleSheetsUrlInput" class="form-control" style="font-size: 1rem; padding: 12px;" placeholder="https://script.google.com/macros/s/.../exec">
-            <button class="btn btn-primary" id="btnSaveConfig" style="margin-top: 12px;">Salvar URL</button>
-            <button class="btn btn-secondary" id="btnTestConnection" style="margin-top: 12px; margin-left: 8px;">Testar Conexão</button>
-          </div>
-
-          <h3 style="font-family: var(--font-heading); margin-bottom: 12px;">Como conectar com sua Planilha Google</h3>
-          <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 12px;">Siga os passos abaixo para configurar o Google Sheets:</p>
-          
-          <ol class="instructions-list">
-            <li>Crie uma nova <strong>Planilha Google</strong> na sua conta.</li>
-            <li>No menu superior, vá em <strong>Extensões</strong> &gt; <strong>Apps Script</strong>.</li>
-            <li>Clique no arquivo contendo o script do Google e cole o código fornecido no arquivo <a href="google-script.js" target="_blank" style="color: var(--secondary); text-decoration: underline;">google-script.js</a> de instalação.</li>
-            <li>Salve o projeto e clique em <strong>Implantar</strong> &gt; <strong>Nova implantação</strong> no canto superior direito.</li>
-            <li>Escolha o tipo de implantação <strong>App da Web</strong>. Configure o acesso para <strong>"Qualquer pessoa"</strong>.</li>
-            <li>Copie a <strong>URL do App da Web</strong> gerada e cole no campo acima.</li>
-          </ol>
 
           <!-- Seção de Cadastro de Peças e Adicionais (Preços Padrões) -->
           <div style="border-top: 1px solid var(--border-glass); margin-top: 32px; padding-top: 24px; margin-bottom: 32px;">
@@ -763,6 +737,10 @@
       </div>
     </div>
   </div>
+
+  <!-- Firebase Compat SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
   <!-- JS Scripts -->
   <script type="module" src="app.js"></script>

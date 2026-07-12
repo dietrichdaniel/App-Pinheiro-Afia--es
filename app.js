@@ -111,17 +111,18 @@ function setupConnectionMonitoring() {
   const dot = document.getElementById('connectionDot');
   const text = document.getElementById('connectionText');
 
-  function updateStatus() {
+  async function updateStatus() {
     if (navigator.onLine) {
       dot.className = 'status-dot online';
       text.textContent = 'Conectado (Online)';
       // Tenta sincronizar ao voltar a ficar online
-      syncAllStores();
+      await syncAllStores();
     } else {
       dot.className = 'status-dot offline';
       text.textContent = 'Modo Offline';
       showToast('Você está offline. As alterações serão salvas localmente.', 'warning');
     }
+    await reloadAllViews();
   }
 
   window.addEventListener('online', updateStatus);
@@ -927,25 +928,37 @@ async function renderDashboard() {
   // Contadores de Estoque
   const totalItensEstoque = estoque.length;
 
-  // Total Pendente de Sincronização
-  let unsyncedCount = 0;
-  unsyncedCount += (await getUnsyncedRecords('servicos')).length;
-  unsyncedCount += (await getUnsyncedRecords('estoque')).length;
-  unsyncedCount += (await getUnsyncedRecords('pedidos')).length;
-  unsyncedCount += (await getUnsyncedRecords('receitas')).length;
+  // Status de Sincronização ou Total Pendente
+  const unsyncedBadge = document.getElementById('dashTotalUnsynced');
+  const usingFirebase = typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length > 0;
+
+  if (usingFirebase) {
+    if (navigator.onLine) {
+      unsyncedBadge.textContent = 'Nuvem Sincronizada';
+      unsyncedBadge.style.color = 'var(--success)';
+    } else {
+      unsyncedBadge.textContent = 'Offline (Salvo local)';
+      unsyncedBadge.style.color = 'var(--warning)';
+    }
+  } else {
+    let unsyncedCount = 0;
+    unsyncedCount += (await getUnsyncedRecords('servicos')).length;
+    unsyncedCount += (await getUnsyncedRecords('estoque')).length;
+    unsyncedCount += (await getUnsyncedRecords('pedidos')).length;
+    unsyncedCount += (await getUnsyncedRecords('receitas')).length;
+
+    unsyncedBadge.textContent = `${unsyncedCount} registro${unsyncedCount !== 1 ? 's' : ''}`;
+    if (unsyncedCount > 0) {
+      unsyncedBadge.style.color = 'var(--warning)';
+    } else {
+      unsyncedBadge.style.color = 'var(--success)';
+    }
+  }
 
   // Atualiza no DOM do Dashboard
   document.getElementById('dashTotalServicos').textContent = formatMoney(totalServicos);
   document.getElementById('dashTotalPedidos').textContent = formatMoney(totalPedidos);
   document.getElementById('dashTotalEstoque').textContent = `${totalItensEstoque} insumo${totalItensEstoque !== 1 ? 's' : ''}`;
-  
-  const unsyncedBadge = document.getElementById('dashTotalUnsynced');
-  unsyncedBadge.textContent = `${unsyncedCount} registro${unsyncedCount !== 1 ? 's' : ''}`;
-  if (unsyncedCount > 0) {
-    unsyncedBadge.style.color = 'var(--warning)';
-  } else {
-    unsyncedBadge.style.color = 'var(--success)';
-  }
 
   // Atividades Recentes (combina as últimas 5 transações de vendas e serviços ordenadas por data)
   const recentesTable = document.getElementById('tableRecentes').querySelector('tbody');
@@ -1365,6 +1378,12 @@ function setupRecipeDetailsLinks(receitas, estoqueMap) {
 
 // --- MECANISMO DE SINCRONIZAÇÃO GOOGLE SHEETS ---
 async function syncAllStores() {
+  const usingFirebase = typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length > 0;
+  if (usingFirebase) {
+    console.log('Firebase ativo: sincronização em nuvem automática e em tempo real habilitada.');
+    return;
+  }
+
   if (!navigator.onLine) {
     console.log('Sync abortado: Dispositivo offline.');
     return;
