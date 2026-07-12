@@ -6,14 +6,22 @@
 // --- CONFIGURAÇÃO DO FIREBASE ---
 // Insira as credenciais do seu projeto Firebase abaixo para ativar a nuvem automática.
 // Se mantiver "YOUR_API_KEY", o sistema usará o IndexedDB local no navegador.
+
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT_ID.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyBN81SYoPNU40MCM9OyXc0MyZbGtkcLV-Y",
+  authDomain: "controle-pinheiro-afiacoes.firebaseapp.com",
+  projectId: "controle-pinheiro-afiacoes",
+  storageBucket: "controle-pinheiro-afiacoes.firebasestorage.app",
+  messagingSenderId: "605618047271",
+  appId: "1:605618047271:web:51b7005d7743262ea2c102",
+  measurementId: "G-MKLCLERQ5G"
 };
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
 
 const useFirebase = firebaseConfig.apiKey && firebaseConfig.apiKey !== "YOUR_API_KEY" && firebaseConfig.apiKey !== "";
 
@@ -33,7 +41,7 @@ export function initDB() {
           firebase.initializeApp(firebaseConfig);
         }
         const firestore = firebase.firestore();
-        
+
         // Habilita persistência offline
         firestore.enablePersistence({ synchronizeTabs: true })
           .then(() => {
@@ -169,7 +177,7 @@ export function addRecord(storeName, record) {
         }
         // No Firebase Firestore, a sincronização é nativa
         record.synced = 1;
-        
+
         await db.collection(storeName).doc(String(record.id)).set(record);
         resolve(record.id);
       } else {
