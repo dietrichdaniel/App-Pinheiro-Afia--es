@@ -37,7 +37,7 @@ export function initDB() {
         if (!firebase.apps.length) {
           firebase.initializeApp(firebaseConfig);
         }
-        const firestore = firebase.firestore();
+        const firestore = firebase.app().firestore("default");
 
         // Habilita persistência offline
         firestore.enablePersistence({ synchronizeTabs: true })
