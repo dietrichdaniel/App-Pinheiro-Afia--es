@@ -203,14 +203,19 @@ export function getAllRecords(storeName) {
       const db = await initDB();
 
       if (useFirebase) {
-        const snapshot = await db.collection(storeName).get();
-        const records = [];
-        snapshot.forEach((doc) => {
-          records.push(doc.data());
-        });
-        // Ordena por ID para manter a ordem crescente de data/cadastro
-        records.sort((a, b) => (a.id || 0) - (b.id || 0));
-        resolve(records);
+        try {
+          const snapshot = await db.collection(storeName).get();
+          const records = [];
+          snapshot.forEach((doc) => {
+            records.push(doc.data());
+          });
+          // Ordena por ID para manter a ordem crescente de data/cadastro
+          records.sort((a, b) => (a.id || 0) - (b.id || 0));
+          resolve(records);
+        } catch (fbError) {
+          console.warn(`Erro ao ler todos os registros de ${storeName} (modo offline ou permissões):`, fbError);
+          resolve([]);
+        }
       } else {
         const store = await getStore(storeName, 'readonly');
         const request = store.getAll();
@@ -234,10 +239,15 @@ export function getRecordById(storeName, id) {
       const db = await initDB();
 
       if (useFirebase) {
-        const doc = await db.collection(storeName).doc(String(id)).get();
-        if (doc.exists) {
-          resolve(doc.data());
-        } else {
+        try {
+          const doc = await db.collection(storeName).doc(String(id)).get();
+          if (doc.exists) {
+            resolve(doc.data());
+          } else {
+            resolve(null);
+          }
+        } catch (fbError) {
+          console.warn(`Erro ao ler registro ${id} de ${storeName} (modo offline ou permissões):`, fbError);
           resolve(null);
         }
       } else {
@@ -315,10 +325,15 @@ export function getConfig(chave) {
       const db = await initDB();
 
       if (useFirebase) {
-        const doc = await db.collection('configuracoes').doc(chave).get();
-        if (doc.exists) {
-          resolve(doc.data().valor);
-        } else {
+        try {
+          const doc = await db.collection('configuracoes').doc(chave).get();
+          if (doc.exists) {
+            resolve(doc.data().valor);
+          } else {
+            resolve(null);
+          }
+        } catch (fbError) {
+          console.warn(`Erro ao ler config ${chave} (modo offline ou permissões):`, fbError);
           resolve(null);
         }
       } else {
