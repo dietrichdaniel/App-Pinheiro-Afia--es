@@ -3,12 +3,22 @@
  * Projeto: PWA Pinheiro Afiações
  */
 
+// Importa os SDKs do Firebase Modulares diretamente do CDN
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { 
+  getFirestore, 
+  doc, 
+  getDoc, 
+  setDoc, 
+  deleteDoc, 
+  collection, 
+  getDocs, 
+  enableIndexedDbPersistence 
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
 // --- CONFIGURAÇÃO DO FIREBASE ---
 // Insira as credenciais do seu projeto Firebase abaixo para ativar a nuvem automática.
 // Se mantiver "YOUR_API_KEY", o sistema usará o IndexedDB local no navegador.
-
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
   apiKey: "AIzaSyBN81SYoPNU40MCM9OyXc0MyZbGtkcLV-Y",
   authDomain: "controle-pinheiro-afiacoes.firebaseapp.com",
@@ -19,10 +29,9 @@ const firebaseConfig = {
   measurementId: "G-MKLCLERQ5G"
 };
 
-
 const useFirebase = firebaseConfig.apiKey && firebaseConfig.apiKey !== "YOUR_API_KEY" && firebaseConfig.apiKey !== "";
 
-let dbInstance = null; // Instância IndexedDB ou Firestore
+let dbInstance = null; // Instância IndexedDB (IDBDatabase) ou Firestore
 
 // --- INICIALIZAÇÃO ---
 export function initDB() {
@@ -34,21 +43,20 @@ export function initDB() {
 
     if (useFirebase) {
       try {
-        if (!firebase.apps.length) {
-          firebase.initializeApp(firebaseConfig);
-        }
-        const firestore = firebase.app().firestore("default");
-
-        // Habilita persistência offline
-        firestore.enablePersistence({ synchronizeTabs: true })
+        const app = initializeApp(firebaseConfig);
+        // Conecta especificamente ao banco de dados nomeado "default"
+        const firestore = getFirestore(app, "default");
+        
+        // Habilita persistência offline (Modular)
+        enableIndexedDbPersistence(firestore)
           .then(() => {
-            console.log('Firebase Firestore: Persistência offline ativada.');
+            console.log('Firebase Firestore Modular: Persistência offline ativada.');
             dbInstance = firestore;
             resolve(dbInstance);
           })
           .catch((err) => {
-            console.warn('Firebase Firestore: Falha ao ativar persistência offline:', err.message);
-            dbInstance = firestore; // Continua usando online mesmo com erro de cache (ex: abas abertas)
+            console.warn('Firebase Firestore Modular: Falha ao ativar persistência offline:', err.message);
+            dbInstance = firestore; // Continua usando online mesmo com erro de cache
             resolve(dbInstance);
           });
       } catch (error) {
@@ -168,19 +176,17 @@ export function addRecord(storeName, record) {
       const db = await initDB();
 
       if (useFirebase) {
-        // Gera um ID numérico baseado em timestamp + aleatório se não existir
         if (!record.id) {
           record.id = Date.now() + Math.floor(Math.random() * 1000);
         }
-        // No Firebase Firestore, a sincronização é nativa
         record.synced = 1;
-
-        await db.collection(storeName).doc(String(record.id)).set(record);
+        
+        await setDoc(doc(db, storeName, String(record.id)), record);
         resolve(record.id);
       } else {
         const store = await getStore(storeName, 'readwrite');
         if (record.synced === undefined) {
-          record.synced = 0; // 0 = Não sincronizado, 1 = Sincronizado
+          record.synced = 0;
         }
         const request = store.add(record);
         request.onsuccess = (event) => {
@@ -204,12 +210,11 @@ export function getAllRecords(storeName) {
 
       if (useFirebase) {
         try {
-          const snapshot = await db.collection(storeName).get();
+          const querySnapshot = await getDocs(collection(db, storeName));
           const records = [];
-          snapshot.forEach((doc) => {
-            records.push(doc.data());
+          querySnapshot.forEach((docSnap) => {
+            records.push(docSnap.data());
           });
-          // Ordena por ID para manter a ordem crescente de data/cadastro
           records.sort((a, b) => (a.id || 0) - (b.id || 0));
           resolve(records);
         } catch (fbError) {
@@ -240,9 +245,9 @@ export function getRecordById(storeName, id) {
 
       if (useFirebase) {
         try {
-          const doc = await db.collection(storeName).doc(String(id)).get();
-          if (doc.exists) {
-            resolve(doc.data());
+          const docSnap = await getDoc(doc(db, storeName, String(id)));
+          if (docSnap.exists()) {
+            resolve(docSnap.data());
           } else {
             resolve(null);
           }
@@ -274,7 +279,7 @@ export function updateRecord(storeName, record) {
 
       if (useFirebase) {
         record.synced = 1;
-        await db.collection(storeName).doc(String(record.id)).set(record);
+        await setDoc(doc(db, storeName, String(record.id)), record);
         resolve(record.id);
       } else {
         const store = await getStore(storeName, 'readwrite');
@@ -299,7 +304,7 @@ export function deleteRecord(storeName, id) {
       const db = await initDB();
 
       if (useFirebase) {
-        await db.collection(storeName).doc(String(id)).delete();
+        await deleteDoc(doc(db, storeName, String(id)));
         resolve(true);
       } else {
         const store = await getStore(storeName, 'readwrite');
@@ -326,9 +331,9 @@ export function getConfig(chave) {
 
       if (useFirebase) {
         try {
-          const doc = await db.collection('configuracoes').doc(chave).get();
-          if (doc.exists) {
-            resolve(doc.data().valor);
+          const docSnap = await getDoc(doc(db, 'configuracoes', chave));
+          if (docSnap.exists()) {
+            resolve(docSnap.data().valor);
           } else {
             resolve(null);
           }
@@ -359,7 +364,7 @@ export function setConfig(chave, valor) {
       const db = await initDB();
 
       if (useFirebase) {
-        await db.collection('configuracoes').doc(chave).set({ chave, valor });
+        await setDoc(doc(db, 'configuracoes', chave), { chave, valor });
         resolve(true);
       } else {
         const store = await getStore('configuracoes', 'readwrite');
