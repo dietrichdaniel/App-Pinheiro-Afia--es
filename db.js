@@ -13,7 +13,9 @@ import {
   deleteDoc, 
   collection, 
   getDocs, 
-  enableIndexedDbPersistence 
+  enableIndexedDbPersistence,
+  getDocFromCache,
+  getDocsFromCache
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 // --- CONFIGURAÇÃO DO FIREBASE ---
@@ -29,7 +31,7 @@ const firebaseConfig = {
   measurementId: "G-MKLCLERQ5G"
 };
 
-const useFirebase = firebaseConfig.apiKey && firebaseConfig.apiKey !== "YOUR_API_KEY" && firebaseConfig.apiKey !== "";
+export const useFirebase = firebaseConfig.apiKey && firebaseConfig.apiKey !== "YOUR_API_KEY" && firebaseConfig.apiKey !== "";
 
 let dbInstance = null; // Instância IndexedDB (IDBDatabase) ou Firestore
 
@@ -181,7 +183,10 @@ export function addRecord(storeName, record) {
         }
         record.synced = 1;
         
-        await setDoc(doc(db, storeName, String(record.id)), record);
+        // Escreve de forma assíncrona no cache/Firestore para carregamento instantâneo
+        setDoc(doc(db, storeName, String(record.id)), record)
+          .catch(err => console.error(`Erro ao sincronizar escrita de ${storeName} no Firebase:`, err));
+        
         resolve(record.id);
       } else {
         const store = await getStore(storeName, 'readwrite');
@@ -210,7 +215,20 @@ export function getAllRecords(storeName) {
 
       if (useFirebase) {
         try {
-          const querySnapshot = await getDocs(collection(db, storeName));
+          let querySnapshot;
+          try {
+            // Tenta obter do cache local primeiro
+            querySnapshot = await getDocsFromCache(collection(db, storeName));
+            
+            // Dispara atualização em segundo plano para manter o cache sincronizado
+            getDocs(collection(db, storeName)).catch(err => 
+              console.warn(`Erro ao atualizar cache de ${storeName} em segundo plano:`, err.message)
+            );
+          } catch (cacheErr) {
+            // Caso o cache falhe ou esteja vazio, busca do servidor
+            querySnapshot = await getDocs(collection(db, storeName));
+          }
+
           const records = [];
           querySnapshot.forEach((docSnap) => {
             records.push(docSnap.data());
@@ -245,7 +263,15 @@ export function getRecordById(storeName, id) {
 
       if (useFirebase) {
         try {
-          const docSnap = await getDoc(doc(db, storeName, String(id)));
+          let docSnap;
+          try {
+            // Tenta obter do cache local
+            docSnap = await getDocFromCache(doc(db, storeName, String(id)));
+          } catch (cacheErr) {
+            // Fallback para servidor
+            docSnap = await getDoc(doc(db, storeName, String(id)));
+          }
+
           if (docSnap.exists()) {
             resolve(docSnap.data());
           } else {
@@ -279,7 +305,11 @@ export function updateRecord(storeName, record) {
 
       if (useFirebase) {
         record.synced = 1;
-        await setDoc(doc(db, storeName, String(record.id)), record);
+        
+        // Escreve no cache de forma assíncrona
+        setDoc(doc(db, storeName, String(record.id)), record)
+          .catch(err => console.error(`Erro ao sincronizar atualização de ${storeName} no Firebase:`, err));
+        
         resolve(record.id);
       } else {
         const store = await getStore(storeName, 'readwrite');
@@ -304,7 +334,10 @@ export function deleteRecord(storeName, id) {
       const db = await initDB();
 
       if (useFirebase) {
-        await deleteDoc(doc(db, storeName, String(id)));
+        // Deleta no cache de forma assíncrona
+        deleteDoc(doc(db, storeName, String(id)))
+          .catch(err => console.error(`Erro ao sincronizar exclusão de ${storeName} no Firebase:`, err));
+        
         resolve(true);
       } else {
         const store = await getStore(storeName, 'readwrite');
@@ -331,7 +364,15 @@ export function getConfig(chave) {
 
       if (useFirebase) {
         try {
-          const docSnap = await getDoc(doc(db, 'configuracoes', chave));
+          let docSnap;
+          try {
+            // Tenta obter do cache local
+            docSnap = await getDocFromCache(doc(db, 'configuracoes', chave));
+          } catch (cacheErr) {
+            // Fallback para servidor
+            docSnap = await getDoc(doc(db, 'configuracoes', chave));
+          }
+
           if (docSnap.exists()) {
             resolve(docSnap.data().valor);
           } else {
@@ -364,7 +405,10 @@ export function setConfig(chave, valor) {
       const db = await initDB();
 
       if (useFirebase) {
-        await setDoc(doc(db, 'configuracoes', chave), { chave, valor });
+        // Salva no cache de forma assíncrona
+        setDoc(doc(db, 'configuracoes', chave), { chave, valor })
+          .catch(err => console.error(`Erro ao sincronizar config ${chave} no Firebase:`, err));
+        
         resolve(true);
       } else {
         const store = await getStore('configuracoes', 'readwrite');

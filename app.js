@@ -3,6 +3,7 @@
  */
 
 import {
+  useFirebase,
   initDB,
   addRecord,
   getAllRecords,
@@ -930,7 +931,7 @@ async function renderDashboard() {
 
   // Status de Sincronização ou Total Pendente
   const unsyncedBadge = document.getElementById('dashTotalUnsynced');
-  const usingFirebase = typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length > 0;
+  const usingFirebase = useFirebase;
 
   if (usingFirebase) {
     if (navigator.onLine) {
@@ -1378,7 +1379,7 @@ function setupRecipeDetailsLinks(receitas, estoqueMap) {
 
 // --- MECANISMO DE SINCRONIZAÇÃO GOOGLE SHEETS ---
 async function syncAllStores() {
-  const usingFirebase = typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length > 0;
+  const usingFirebase = useFirebase;
   if (usingFirebase) {
     console.log('Firebase ativo: sincronização em nuvem automática e em tempo real habilitada.');
     return;
