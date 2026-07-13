@@ -72,7 +72,7 @@ window.addEventListener('DOMContentLoaded', async () => {
 // --- ROTEAMENTO E NAVEGAÇÃO DE ABAS ---
 function setupNavigation() {
   const navItems = document.querySelectorAll('.nav-item, .mobile-nav-item');
-  
+
   navItems.forEach(item => {
     item.addEventListener('click', () => {
       const tab = item.getAttribute('data-tab');
@@ -128,7 +128,7 @@ function setupConnectionMonitoring() {
 
   window.addEventListener('online', updateStatus);
   window.addEventListener('offline', updateStatus);
-  
+
   // Executa status inicial
   updateStatus();
 }
@@ -138,7 +138,7 @@ function showToast(message, type = 'success') {
   const container = document.getElementById('toastContainer');
   const toast = document.createElement('div');
   toast.className = `toast ${type}`;
-  
+
   // Icone dinâmico
   let icon = '';
   if (type === 'success') icon = '✓';
@@ -172,7 +172,7 @@ function setupDynamicRows() {
   // Itens do Serviço
   const btnAddServItem = document.getElementById('btnAddServItem');
   const containerServItens = document.getElementById('servItensContainer');
-  
+
   if (btnAddServItem && containerServItens) {
     btnAddServItem.addEventListener('click', () => {
       const row = document.createElement('div');
@@ -257,6 +257,34 @@ function setupDynamicRows() {
     });
   }
 
+  // Itens do Pedido/Venda
+  const btnAddPedItem = document.getElementById('btnAddPedItem');
+  const containerPedItens = document.getElementById('pedItensContainer');
+
+  if (btnAddPedItem && containerPedItens) {
+    btnAddPedItem.addEventListener('click', async () => {
+      const optionsHtml = await updateSalesSelectors();
+      const row = document.createElement('div');
+      row.className = 'dynamic-item-row';
+      row.style.flexWrap = 'wrap';
+      row.style.marginBottom = '8px';
+      row.innerHTML = `
+        <div style="display: flex; gap: 8px; width: 100%; align-items: center;">
+          <select class="form-control ped-item-select" style="flex: 1;" required>
+            ${optionsHtml}
+          </select>
+          <input type="number" class="form-control ped-item-qty" placeholder="Qtd" min="1" value="1" style="width: 70px;" required>
+          <input type="number" class="form-control ped-item-price" placeholder="Preço" step="0.01" min="0" style="width: 90px;" required>
+          <button type="button" class="btn-icon-only danger btnRemoveRow">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          </button>
+        </div>
+      `;
+      containerPedItens.appendChild(row);
+      updateRemoveButtons(containerPedItens);
+    });
+  }
+
   // Lógica geral de remoção
   document.addEventListener('click', (e) => {
     if (e.target.closest('.btnRemoveRow')) {
@@ -286,7 +314,7 @@ function setupDynamicRows() {
       }
       recalculaValorServico();
     }
-    
+
     if (e.target.classList.contains('adicional-select')) {
       const row = e.target.closest('.dynamic-item-row');
       const customInput = row.querySelector('.adicional-name-custom');
@@ -298,6 +326,30 @@ function setupDynamicRows() {
         customInput.removeAttribute('required');
       }
       recalculaValorServico();
+    }
+
+    if (e.target.classList.contains('ped-item-select')) {
+      const row = e.target.closest('.dynamic-item-row');
+      const selectedOption = e.target.options[e.target.selectedIndex];
+      const type = selectedOption ? selectedOption.getAttribute('data-type') : '';
+      const priceInput = row.querySelector('.ped-item-price');
+      
+      if (type === 'receita') {
+        const itemName = e.target.value;
+        getAllRecords('estoque_produtos').then(estoqueProdutos => {
+          const prodEstocado = estoqueProdutos.find(p => p.produto.toLowerCase() === itemName.toLowerCase());
+          if (priceInput) {
+            priceInput.value = (prodEstocado && prodEstocado.precoVenda !== undefined) ? prodEstocado.precoVenda.toFixed(2) : '0.00';
+          }
+        });
+      } else if (type === 'avulso') {
+        const precoInsumo = parseFloat(selectedOption.getAttribute('data-preco')) || 0;
+        if (priceInput) {
+          priceInput.value = precoInsumo.toFixed(2);
+        }
+      } else {
+        if (priceInput) priceInput.value = '';
+      }
     }
   });
 
@@ -328,7 +380,7 @@ function setupCustoCalculoEvents() {
     element.addEventListener('change', recalculaCustoReceita);
     element.addEventListener('input', recalculaCustoReceita);
   });
-  
+
   const maoObra = document.getElementById('recMaoObra');
   if (maoObra) {
     maoObra.removeEventListener('input', recalculaCustoReceita);
@@ -340,11 +392,11 @@ function setupCustoCalculoEvents() {
 function recalculaCustoReceita() {
   let custoInsumos = 0;
   const rows = document.querySelectorAll('.mp-row');
-  
+
   rows.forEach(row => {
     const select = row.querySelector('.mp-select');
     const qtyInput = row.querySelector('.mp-qty');
-    
+
     if (select && qtyInput) {
       const selectedOption = select.options[select.selectedIndex];
       const valUnit = selectedOption ? parseFloat(selectedOption.getAttribute('data-valor')) : 0;
@@ -352,10 +404,10 @@ function recalculaCustoReceita() {
       custoInsumos += valUnit * qty;
     }
   });
-  
+
   const maoObraVal = parseFloat(document.getElementById('recMaoObra').value) || 0;
   const custoTotal = custoInsumos + maoObraVal;
-  
+
   const box = document.getElementById('custoTotalCalculado');
   if (box) {
     box.innerHTML = `Custo de Fabricação Estimado: <strong>${formatMoney(custoTotal)}</strong> (Insumos: ${formatMoney(custoInsumos)} + Mão de Obra: ${formatMoney(maoObraVal)})`;
@@ -364,7 +416,7 @@ function recalculaCustoReceita() {
 
 // --- PROCESSAMENTO DE FORMULÁRIOS ---
 function setupFormSubmissions() {
-  
+
   // 1. FORMULÁRIO DE SERVIÇOS
   const formServico = document.getElementById('formServico');
   if (formServico) {
@@ -375,7 +427,7 @@ function setupFormSubmissions() {
         const valor = parseFloat(document.getElementById('servValor').value) || 0;
         const frete = parseFloat(document.getElementById('servFrete').value) || 0;
         const meioPagamento = document.getElementById('servPagamento').value;
-        
+
         // Coleta itens dinâmicos
         const itens = [];
         const rows = document.querySelectorAll('#servItensContainer .dynamic-item-row');
@@ -400,7 +452,7 @@ function setupFormSubmissions() {
         const adicionalRows = document.querySelectorAll('#servAdicionaisContainer .dynamic-item-row');
         const todosAdicionais = await getAllRecords('adicionais');
         const estoqueInsumos = await getAllRecords('estoque');
-        
+
         const deducoesEstoque = [];
         let estoqueInsuficiente = false;
         let insumoFaltante = '';
@@ -415,7 +467,7 @@ function setupFormSubmissions() {
               adicionalText = row.querySelector('.adicional-name-custom').value.trim();
             } else {
               adicionalText = select.value;
-              
+
               // Verifica se este adicional cadastrado consome insumos
               const ad = todosAdicionais.find(x => x.nome.toLowerCase() === adicionalText.toLowerCase());
               if (ad && ad.insumoAtrelado) {
@@ -428,7 +480,7 @@ function setupFormSubmissions() {
                   estoqueInsuficiente = true;
                   insumoFaltante = ad.insumoAtrelado;
                 }
-                
+
                 deducoesEstoque.push({
                   insumoNome: ad.insumoAtrelado,
                   quantidade: totalConsumo
@@ -472,7 +524,7 @@ function setupFormSubmissions() {
         await addRecord('servicos', novoServico);
         showToast('Serviço registrado localmente!');
         formServico.reset();
-        
+
         // Limpa adicionais dinâmicos
         const adicionaisContainer = document.getElementById('servAdicionaisContainer');
         if (adicionaisContainer) {
@@ -484,7 +536,7 @@ function setupFormSubmissions() {
         if (labelSugerido) {
           labelSugerido.textContent = '';
         }
-        
+
         // Mantém apenas uma linha em branco nos itens
         const container = document.getElementById('servItensContainer');
         container.innerHTML = `
@@ -502,7 +554,7 @@ function setupFormSubmissions() {
             <input type="text" class="form-control item-name-custom" placeholder="Nome da peça personalizada" style="display: none; margin-top: 8px; width: 100%;" />
           </div>
         `;
-        
+
         await updateAllSelectors();
         await reloadAllViews();
         syncAllStores();
@@ -524,7 +576,7 @@ function setupFormSubmissions() {
         const valor = parseFloat(document.getElementById('estValor').value) || 0;
 
         const estoqueItens = await getAllRecords('estoque');
-        
+
         // Verifica se é Edição
         if (idVal) {
           const id = Number(idVal);
@@ -570,7 +622,7 @@ function setupFormSubmissions() {
         document.getElementById('estoqueFormTitle').textContent = 'Nova Entrada';
         document.getElementById('btnEstoqueSubmit').textContent = 'Adicionar ao Estoque';
         document.getElementById('btnEstoqueCancel').style.display = 'none';
-        
+
         await reloadAllViews();
         syncAllStores();
       } catch (err) {
@@ -590,155 +642,159 @@ function setupFormSubmissions() {
 
   // 3. FORMULÁRIO DE PEDIDOS (VENDAS)
   const formPedido = document.getElementById('formPedido');
-  const pedManualCheck = document.getElementById('pedManualItemCheck');
-  const pedItemSelect = document.getElementById('pedItem');
-  const pedItemManual = document.getElementById('pedItemManual');
-
-  if (pedManualCheck) {
-    pedManualCheck.addEventListener('change', () => {
-      if (pedManualCheck.checked) {
-        pedItemSelect.style.display = 'none';
-        pedItemSelect.removeAttribute('required');
-        pedItemManual.style.display = 'block';
-        pedItemManual.setAttribute('required', 'required');
-      } else {
-        pedItemSelect.style.display = 'block';
-        pedItemSelect.setAttribute('required', 'required');
-        pedItemManual.style.display = 'none';
-        pedItemManual.removeAttribute('required');
-      }
-    });
-  }
-
-  if (pedItemSelect) {
-    pedItemSelect.addEventListener('change', async () => {
-      const selectedProduct = pedItemSelect.value;
-      if (!selectedProduct) return;
-
-      // Busca no estoque de produtos finalizados para preencher o preço de venda salvo
-      const estoqueProdutos = await getAllRecords('estoque_produtos');
-      const prodEstocado = estoqueProdutos.find(p => p.produto.toLowerCase() === selectedProduct.toLowerCase());
-      if (prodEstocado && prodEstocado.precoVenda !== undefined) {
-        const pedValorInput = document.getElementById('pedValor');
-        if (pedValorInput) {
-          pedValorInput.value = prodEstocado.precoVenda.toFixed(2);
-        }
-      }
-    });
-  }
 
   if (formPedido) {
     formPedido.addEventListener('submit', async (e) => {
       e.preventDefault();
       try {
-        let itemNome = '';
-        if (pedManualCheck.checked) {
-          itemNome = pedItemManual.value.trim();
-        } else {
-          itemNome = pedItemSelect.value;
-        }
-
-        const quantidade = parseFloat(document.getElementById('pedQtd').value) || 0;
-        const valor = parseFloat(document.getElementById('pedValor').value) || 0;
         const frete = parseFloat(document.getElementById('pedFrete').value) || 0;
         const meioPagamento = document.getElementById('pedPagamento').value;
 
-        if (!itemNome) {
-          showToast('Por favor, selecione ou digite o nome do produto vendido.', 'error');
+        const rows = document.querySelectorAll('#pedItensContainer .dynamic-item-row');
+        const itemsToSell = [];
+
+        for (const row of rows) {
+          const select = row.querySelector('.ped-item-select');
+          const selectedOption = select.options[select.selectedIndex];
+          const itemNome = select.value;
+          const type = selectedOption ? selectedOption.getAttribute('data-type') : '';
+          const quantidade = parseFloat(row.querySelector('.ped-item-qty').value) || 0;
+          const valor = parseFloat(row.querySelector('.ped-item-price').value) || 0;
+
+          if (!itemNome) {
+            showToast('Por favor, selecione todos os itens da venda.', 'error');
+            return;
+          }
+
+          itemsToSell.push({ itemNome, type, quantidade, valor });
+        }
+
+        if (itemsToSell.length === 0) {
+          showToast('Adicione pelo menos um item para registrar a venda.', 'error');
           return;
         }
 
-        // --- SISTEMA INTELIGENTE DE BAIXA DE ESTOQUE ---
-        if (!pedManualCheck.checked) {
-          const receitas = await getAllRecords('receitas');
-          const receita = receitas.find(r => r.produtoFinal.toLowerCase() === itemNome.toLowerCase());
-          
-          const estoqueFinalizado = await getAllRecords('estoque_produtos');
-          const prodEstocado = estoqueFinalizado.find(p => p.produto.toLowerCase() === itemNome.toLowerCase());
-          const qtdDisponivelProd = prodEstocado ? prodEstocado.quantidade : 0;
+        // Realiza o processamento e baixa de estoque para cada item
+        for (const item of itemsToSell) {
+          const { itemNome, type, quantidade, valor } = item;
 
-          if (qtdDisponivelProd >= quantidade) {
-            // Caso 1: Estoque de produto finalizado é suficiente
-            prodEstocado.quantidade -= quantidade;
-            prodEstocado.synced = 0;
-            await updateRecord('estoque_produtos', prodEstocado);
-            showToast(`Venda registrada! ${quantidade} un. deduzidas do estoque de produtos finalizados.`);
-          } else {
-            // Caso 2: Estoque insuficiente, precisamos produzir a diferença
-            const diferenca = quantidade - qtdDisponivelProd;
-            
-            if (!receita) {
-              const prosseguir = confirm(`Atenção: Estoque insuficiente de "${itemNome}" em estoque (${qtdDisponivelProd} un. disponíveis) e este produto não possui receita cadastrada. Deseja realizar a venda mesmo assim?`);
-              if (!prosseguir) return;
+          if (type === 'receita') {
+            const receitas = await getAllRecords('receitas');
+            const receita = receitas.find(r => r.produtoFinal.toLowerCase() === itemNome.toLowerCase());
 
-              if (prodEstocado) {
-                prodEstocado.quantidade = 0;
-                prodEstocado.synced = 0;
-                await updateRecord('estoque_produtos', prodEstocado);
-              }
+            const estoqueFinalizado = await getAllRecords('estoque_produtos');
+            const prodEstocado = estoqueFinalizado.find(p => p.produto.toLowerCase() === itemNome.toLowerCase());
+            const qtdDisponivelProd = prodEstocado ? prodEstocado.quantidade : 0;
+
+            if (qtdDisponivelProd >= quantidade) {
+              // Caso 1: Estoque de produto finalizado é suficiente
+              prodEstocado.quantidade -= quantidade;
+              prodEstocado.synced = 0;
+              await updateRecord('estoque_produtos', prodEstocado);
             } else {
-              const estoqueInsumos = await getAllRecords('estoque');
-              let insumosInsuficientes = false;
-              let insumoFaltante = '';
+              // Caso 2: Estoque insuficiente, precisamos produzir a diferença
+              const diferenca = quantidade - qtdDisponivelProd;
 
-              for (const mp of receita.materiaPrima) {
-                const totalDisponivel = estoqueInsumos
-                  .filter(e => e.item.toLowerCase().trim() === mp.item.toLowerCase().trim())
-                  .reduce((sum, e) => sum + e.quantidade, 0);
-                const qtdNecessaria = mp.quantidade * diferenca;
+              if (!receita) {
+                const prosseguir = confirm(`Atenção: Estoque insuficiente de "${itemNome}" em estoque (${qtdDisponivelProd} un. disponíveis) e este produto não possui receita cadastrada. Deseja realizar a venda mesmo assim?`);
+                if (!prosseguir) return;
 
-                if (totalDisponivel < qtdNecessaria) {
-                  insumosInsuficientes = true;
-                  insumoFaltante = mp.item;
-                  break;
+                if (prodEstocado) {
+                  prodEstocado.quantidade = 0;
+                  prodEstocado.synced = 0;
+                  await updateRecord('estoque_produtos', prodEstocado);
+                }
+              } else {
+                const estoqueInsumos = await getAllRecords('estoque');
+                let insumosInsuficientes = false;
+                let insumoFaltante = '';
+
+                for (const mp of receita.materiaPrima) {
+                  const totalDisponivel = estoqueInsumos
+                    .filter(e => e.item.toLowerCase().trim() === mp.item.toLowerCase().trim())
+                    .reduce((sum, e) => sum + e.quantidade, 0);
+                  const qtdNecessaria = mp.quantidade * diferenca;
+
+                  if (totalDisponivel < qtdNecessaria) {
+                    insumosInsuficientes = true;
+                    insumoFaltante = mp.item;
+                    break;
+                  }
+                }
+
+                if (insumosInsuficientes) {
+                  const prosseguir = confirm(`Atenção: Estoque insuficiente de produtos e insumos para completar esta venda!\nNão há insumo "${insumoFaltante}" suficiente no estoque para fabricar as ${diferenca} un. restantes.\nDeseja realizar a venda mesmo assim (deixando o estoque de insumos negativo)?`);
+                  if (!prosseguir) return;
+                }
+
+                // Zera o estoque do produto finalizado
+                if (prodEstocado) {
+                  prodEstocado.quantidade = 0;
+                  prodEstocado.synced = 0;
+                  await updateRecord('estoque_produtos', prodEstocado);
+                }
+
+                // Desconta todos os insumos da receita via FIFO
+                for (const mp of receita.materiaPrima) {
+                  const qtdNecessaria = mp.quantidade * diferenca;
+                  await consumirInsumoFIFO(mp.item, qtdNecessaria);
                 }
               }
-
-              if (insumosInsuficientes) {
-                const prosseguir = confirm(`Atenção: Estoque insuficiente de produtos e insumos para completar esta venda!\nNão há insumo "${insumoFaltante}" suficiente no estoque para fabricar as ${diferenca} un. restantes.\nDeseja realizar a venda mesmo assim (deixando o estoque de insumos negativo)?`);
-                if (!prosseguir) return;
-              }
-
-              // Zera o estoque do produto finalizado
-              if (prodEstocado) {
-                prodEstocado.quantidade = 0;
-                prodEstocado.synced = 0;
-                await updateRecord('estoque_produtos', prodEstocado);
-              }
-
-              // Desconta todos os insumos da receita via FIFO
-              for (const mp of receita.materiaPrima) {
-                const qtdNecessaria = mp.quantidade * diferenca;
-                await consumirInsumoFIFO(mp.item, qtdNecessaria);
-              }
-
-              showToast(`Venda registrada! ${qtdDisponivelProd} un. retiradas do estoque e ${diferenca} un. fabricadas consumindo insumos.`);
             }
+          } else if (type === 'avulso') {
+            // Lógica para item avulso: consome direto do estoque (insumos)
+            const estoqueInsumos = await getAllRecords('estoque');
+            const totalDisponivel = estoqueInsumos
+              .filter(e => e.item.toLowerCase().trim() === itemNome.toLowerCase().trim())
+              .reduce((sum, e) => sum + e.quantidade, 0);
+
+            if (totalDisponivel < quantidade) {
+              const prosseguir = confirm(`Atenção: Estoque de insumo insuficiente para o item avulso "${itemNome}"!\nDisponível: ${totalDisponivel} un. Solicitado: ${quantidade} un.\nDeseja realizar a venda mesmo assim (deixando o estoque negativo)?`);
+              if (!prosseguir) return;
+            }
+
+            // Desconta o insumo diretamente via FIFO
+            await consumirInsumoFIFO(itemNome, quantidade);
           }
         }
 
-        const novoPedido = {
-          item: itemNome,
-          quantidade,
-          valor,
-          frete,
-          meioPagamento,
-          data: new Date().toISOString(),
-          synced: 0
-        };
+        // Salva os pedidos no banco local/remoto
+        let first = true;
+        for (const item of itemsToSell) {
+          const { itemNome, quantidade, valor } = item;
+          const novoPedido = {
+            item: itemNome,
+            quantidade,
+            valor,
+            frete: first ? frete : 0, // Apenas o primeiro item carrega o frete total
+            meioPagamento,
+            data: new Date().toISOString(),
+            synced: 0
+          };
+          await addRecord('pedidos', novoPedido);
+          first = false;
+        }
 
-        await addRecord('pedidos', novoPedido);
         showToast('Venda registrada com sucesso!');
         formPedido.reset();
-        
-        // Restaura campos do formulário
-        if (pedManualCheck.checked) {
-          pedManualCheck.checked = false;
-          pedItemSelect.style.display = 'block';
-          pedItemSelect.setAttribute('required', 'required');
-          pedItemManual.style.display = 'none';
-          pedItemManual.removeAttribute('required');
-        }
+
+        // Limpa as linhas extras de itens vendidos e restaura apenas a primeira em branco
+        const container = document.getElementById('pedItensContainer');
+        const optionsHtml = await updateSalesSelectors();
+        container.innerHTML = `
+          <div class="dynamic-item-row" style="flex-wrap: wrap; margin-bottom: 8px;">
+            <div style="display: flex; gap: 8px; width: 100%; align-items: center;">
+              <select class="form-control ped-item-select" style="flex: 1;" required>
+                ${optionsHtml}
+              </select>
+              <input type="number" class="form-control ped-item-qty" placeholder="Qtd" min="1" value="1" style="width: 70px;" required>
+              <input type="number" class="form-control ped-item-price" placeholder="Preço" step="0.01" min="0" style="width: 90px;" required>
+              <button type="button" class="btn-icon-only danger btnRemoveRow" style="display:none;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+              </button>
+            </div>
+          </div>
+        `;
 
         await reloadAllViews();
         syncAllStores();
@@ -867,7 +923,7 @@ function setupFormSubmissions() {
         await addRecord('receitas', novaReceita);
         showToast('Receita cadastrada com sucesso!');
         formReceita.reset();
-        
+
         // Limpa custos calculados e as linhas
         document.getElementById('custoTotalCalculado').innerHTML = `Custo de Fabricação Estimado: <strong>R$ 0,00</strong>`;
         const container = document.getElementById('recMateriaPrimaContainer');
@@ -925,7 +981,7 @@ async function renderDashboard() {
   // Cálculos de Faturamento
   const totalServicos = servicos.reduce((acc, curr) => acc + (curr.valor || 0), 0);
   const totalPedidos = pedidos.reduce((acc, curr) => acc + ((curr.quantidade * curr.valor) + (curr.frete || 0)), 0);
-  
+
   // Contadores de Estoque
   const totalItensEstoque = estoque.length;
 
@@ -963,7 +1019,7 @@ async function renderDashboard() {
 
   // Atividades Recentes (combina as últimas 5 transações de vendas e serviços ordenadas por data)
   const recentesTable = document.getElementById('tableRecentes').querySelector('tbody');
-  
+
   const atividades = [];
   servicos.forEach(s => {
     atividades.push({
@@ -1119,18 +1175,7 @@ async function renderPedidosView() {
   const pedidos = await getAllRecords('pedidos');
   const tbody = document.getElementById('tablePedidos').querySelector('tbody');
 
-  // Atualiza seletor de produtos baseando nas receitas cadastradas
-  const receitas = await getAllRecords('receitas');
-  const selectPedItem = document.getElementById('pedItem');
-  if (selectPedItem) {
-    const currentValue = selectPedItem.value;
-    let options = '<option value="">Selecione um produto/receita...</option>';
-    receitas.forEach(r => {
-      options += `<option value="${escapeHTML(r.produtoFinal)}">${escapeHTML(r.produtoFinal)}</option>`;
-    });
-    selectPedItem.innerHTML = options;
-    selectPedItem.value = currentValue;
-  }
+  // (O seletor é atualizado via updateAllSelectors nos selects dinâmicos da venda)
 
   if (pedidos.length === 0) {
     tbody.innerHTML = `
@@ -1266,11 +1311,11 @@ async function handleDeleteClick(e) {
   const store = btn.getAttribute('data-store');
   const id = Number(btn.getAttribute('data-id'));
 
-  const confirmar = confirm('Tem certeza que deseja excluir este registro local? Esta ação não afetará os dados já gravados nas planilhas do Google.');
+  const confirmar = confirm('Tem certeza que deseja excluir este registro?');
   if (confirmar) {
     try {
       await deleteRecord(store, id);
-      showToast('Registro excluído do banco de dados local.');
+      showToast('Registro excluído.');
       await reloadAllViews();
     } catch (err) {
       showToast('Erro ao deletar: ' + err.message, 'error');
@@ -1290,7 +1335,7 @@ async function handleEditStockClick(e) {
       document.getElementById('estItem').value = item.item;
       document.getElementById('estQtd').value = item.quantidade;
       document.getElementById('estValor').value = item.valor;
-      
+
       document.getElementById('estoqueFormTitle').textContent = 'Editar Item';
       document.getElementById('btnEstoqueSubmit').textContent = 'Salvar Alterações';
       document.getElementById('btnEstoqueCancel').style.display = 'block';
@@ -1317,7 +1362,7 @@ function setupRecipeDetailsLinks(receitas, estoqueMap) {
         const modalBody = document.getElementById('modalRecipeBody');
 
         modalTitle.textContent = `Receita: ${receita.produtoFinal}`;
-        
+
         let mpList = '';
         let totalInsumos = 0;
 
@@ -1420,7 +1465,7 @@ async function syncAllStores() {
       });
 
       const result = await response.json();
-      
+
       if (result.status === 'success' && Array.isArray(result.syncedIds)) {
         // Marca cada ID como sincronizado no IndexedDB
         for (const id of result.syncedIds) {
@@ -1542,12 +1587,12 @@ function setupMaintenanceEvents() {
         const jsonStr = JSON.stringify(data, null, 2);
         const blob = new Blob([jsonStr], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
-        
+
         const a = document.createElement('a');
         a.href = url;
         a.download = `backup-pinheiro-afiacoes-${new Date().toISOString().split('T')[0]}.json`;
         a.click();
-        
+
         URL.revokeObjectURL(url);
         showToast('Backup exportado com sucesso!');
       } catch (err) {
@@ -1569,7 +1614,7 @@ function setupMaintenanceEvents() {
       reader.onload = async (event) => {
         try {
           const data = JSON.parse(event.target.result);
-          
+
           if (data.servicos && data.estoque && data.pedidos && data.receitas) {
             const confirmar = confirm('Atenção: A importação irá adicionar estes dados ao seu banco de dados atual. Deseja prosseguir?');
             if (!confirmar) return;
@@ -1712,7 +1757,7 @@ function formatDate(dateObj) {
 
 function escapeHTML(str) {
   if (typeof str !== 'string') return str;
-  return str.replace(/[&<>'"]/g, 
+  return str.replace(/[&<>'"]/g,
     tag => ({
       '&': '&amp;',
       '<': '&lt;',
@@ -1729,7 +1774,7 @@ function setupPricingEvents() {
   // FORMULÁRIO DE PEÇAS
   const formPeca = document.getElementById('formPecaPreco');
   const btnPecaCancel = document.getElementById('btnPecaCancel');
-  
+
   if (formPeca) {
     formPeca.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -1755,7 +1800,7 @@ function setupPricingEvents() {
             showToast(`A peça "${nome}" já está cadastrada.`, 'warning');
             return;
           }
-          
+
           await addRecord('pecas', { nome, precoPadrao });
           showToast('Peça cadastrada com sucesso!');
         }
@@ -1816,11 +1861,11 @@ function setupPricingEvents() {
             return;
           }
 
-          await addRecord('adicionais', { 
-            nome, 
-            precoPadrao, 
-            insumoAtrelado, 
-            qtdConsumida: insumoAtrelado ? qtdConsumida : 0 
+          await addRecord('adicionais', {
+            nome,
+            precoPadrao,
+            insumoAtrelado,
+            qtdConsumida: insumoAtrelado ? qtdConsumida : 0
           });
           showToast('Adicional cadastrado com sucesso!');
         }
@@ -2011,7 +2056,39 @@ async function renderAdicionaisView() {
   });
 }
 
+async function updateSalesSelectors() {
+  const receitas = await getAllRecords('receitas');
+  const estoque = await getAllRecords('estoque');
+  const estoqueAgrupado = obterEstoqueAgrupado(estoque);
+
+  let options = '<option value="">Selecione o produto/item...</option>';
+
+  options += '<optgroup label="Produtos Fabricados (Receitas)">';
+  receitas.forEach(r => {
+    options += `<option value="${escapeHTML(r.produtoFinal)}" data-type="receita">${escapeHTML(r.produtoFinal)}</option>`;
+  });
+  options += '</optgroup>';
+
+  options += '<optgroup label="Insumos/Estoque (Avulso)">';
+  estoqueAgrupado.forEach(item => {
+    options += `<option value="${escapeHTML(item.item)}" data-type="avulso" data-preco="${item.valor}">${escapeHTML(item.item)} (Disp: ${item.quantidade})</option>`;
+  });
+  options += '</optgroup>';
+
+  return options;
+}
+
 async function updateAllSelectors() {
+  // Atualiza selects de Pedidos/Vendas
+  const pedSelects = document.querySelectorAll('.ped-item-select');
+  if (pedSelects.length > 0) {
+    const optionsHtml = await updateSalesSelectors();
+    pedSelects.forEach(select => {
+      const currentValue = select.value;
+      select.innerHTML = optionsHtml;
+      select.value = currentValue;
+    });
+  }
   const pecas = await getAllRecords('pecas');
   const adicionais = await getAllRecords('adicionais');
 
@@ -2038,7 +2115,7 @@ async function updateAllSelectors() {
     });
     options += '<option value="custom">Outro (Digitar)...</option>';
     select.innerHTML = options;
-    
+
     // Restaura valor se ainda existir
     if (currentValue) {
       select.value = currentValue;
@@ -2170,7 +2247,7 @@ async function renderEstoqueProdutosView() {
   for (const p of produtos) {
     const receita = receitas.find(r => r.produtoFinal.toLowerCase() === p.produto.toLowerCase());
     let custoUnitario = 0;
-    
+
     if (receita) {
       custoUnitario += receita.maoDeObra || 0;
       if (Array.isArray(receita.materiaPrima)) {
@@ -2229,7 +2306,7 @@ function obterEstoqueAgrupado(estoqueItens) {
   estoqueItens.forEach(e => {
     // Filtra lotes zerados para não afetar o cálculo, a menos que seja o único registro de estoque
     if (e.quantidade === 0) return;
-    
+
     const key = e.item.toLowerCase().trim();
     if (!grouped[key]) {
       grouped[key] = {
@@ -2259,10 +2336,10 @@ function obterEstoqueAgrupado(estoqueItens) {
 async function consumirInsumoFIFO(itemName, qtdAConsumir) {
   if (qtdAConsumir <= 0) return;
   const estoque = await getAllRecords('estoque');
-  
+
   // Filtra registros do mesmo insumo
   const lotes = estoque.filter(e => e.item.toLowerCase().trim() === itemName.toLowerCase().trim());
-  
+
   // Ordena por data (mais antigo primeiro), usando ID como critério de desempate
   lotes.sort((a, b) => {
     const dataA = a.data ? new Date(a.data).getTime() : 0;

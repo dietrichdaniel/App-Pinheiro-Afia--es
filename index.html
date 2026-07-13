@@ -429,28 +429,24 @@
             <h2>Nova Venda</h2>
             <form id="formPedido">
               <div class="form-group">
-                <label for="pedItem">Produto Vendido</label>
-                <select id="pedItem" class="form-control" required>
-                  <option value="">Selecione um produto/receita...</option>
-                  <!-- Alimentado dinamicamente pelas Receitas ou digitado se avulso -->
-                </select>
-                <!-- Input alternativo caso queira vender algo que não está cadastrado nas receitas -->
-                <div style="margin-top: 8px; display: flex; gap: 8px; align-items: center;">
-                  <input type="checkbox" id="pedManualItemCheck"> 
-                  <label for="pedManualItemCheck" style="margin-bottom: 0; font-size: 0.8rem; cursor: pointer;">Item avulso (não cadastrado em Receitas)</label>
+                <label>Itens Vendidos</label>
+                <div class="dynamic-items-container" id="pedItensContainer">
+                  <div class="dynamic-item-row" style="flex-wrap: wrap; margin-bottom: 8px;">
+                    <div style="display: flex; gap: 8px; width: 100%; align-items: center;">
+                      <select class="form-control ped-item-select" style="flex: 1;" required>
+                        <option value="">Selecione o produto/item...</option>
+                      </select>
+                      <input type="number" class="form-control ped-item-qty" placeholder="Qtd" min="1" value="1" style="width: 70px;" required>
+                      <input type="number" class="form-control ped-item-price" placeholder="Preço" step="0.01" min="0" style="width: 90px;" required>
+                      <button type="button" class="btn-icon-only danger btnRemoveRow" style="display:none;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                      </button>
+                    </div>
+                  </div>
                 </div>
-                <input type="text" id="pedItemManual" class="form-control" style="margin-top: 8px; display: none;" placeholder="Nome do produto avulso">
-              </div>
-
-              <div class="form-row">
-                <div class="form-group">
-                  <label for="pedQtd">Quantidade</label>
-                  <input type="number" id="pedQtd" class="form-control" min="1" value="1" required>
-                </div>
-                <div class="form-group">
-                  <label for="pedValor">Valor Unitário (R$)</label>
-                  <input type="number" id="pedValor" class="form-control" step="0.01" min="0" placeholder="0.00" required>
-                </div>
+                <button type="button" class="btn btn-secondary" id="btnAddPedItem" style="width:100%; padding: 6px; font-size: 0.8rem; margin-top: 8px;">
+                  + Adicionar Item
+                </button>
               </div>
 
               <div class="form-group">
