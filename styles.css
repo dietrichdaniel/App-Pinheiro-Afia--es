@@ -688,7 +688,7 @@ table.data-table td .tag.unsynced {
   color: var(--primary);
 }
 
-/* Painel de Configurações do Google Sheets */
+/* Painel de Configurações */
 .settings-box {
   background: var(--bg-card);
   backdrop-filter: blur(16px);

@@ -11,14 +11,11 @@ import {
   updateRecord,
   deleteRecord,
   getConfig,
-  setConfig,
-  getUnsyncedRecords,
-  markAsSynced
+  setConfig
 } from './db.js';
 
 // --- ESTADO GLOBAL DA APLICAÇÃO ---
 let activeTab = 'dashboard';
-let googleSheetsUrl = '';
 let discountConfig = { qtd1: 5, pct1: 5, qtd2: 10, pct2: 10 };
 
 // --- EVENTOS INICIAIS ---
@@ -29,11 +26,6 @@ window.addEventListener('DOMContentLoaded', async () => {
     console.log('Banco de dados inicializado com sucesso no app.js');
 
     // Carrega Configurações
-    googleSheetsUrl = await getConfig('googleSheetsUrl') || '';
-    const urlInput = document.getElementById('googleSheetsUrlInput');
-    if (urlInput && googleSheetsUrl) {
-      urlInput.value = googleSheetsUrl;
-    }
 
     discountConfig.qtd1 = Number(await getConfig('discount_qtd1')) || 5;
     discountConfig.pct1 = Number(await getConfig('discount_pct1')) || 5;
@@ -62,8 +54,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     await reloadAllViews();
     await updateAllSelectors();
 
-    // Inicia Sincronização Automática (se configurado e online)
-    autoSyncEngine();
+    // (Sincronização com Firebase é gerenciada automaticamente pelo SDK)
   } catch (err) {
     showToast('Erro ao iniciar a aplicação: ' + err.message, 'error');
   }
@@ -116,8 +107,7 @@ function setupConnectionMonitoring() {
     if (navigator.onLine) {
       dot.className = 'status-dot online';
       text.textContent = 'Conectado (Online)';
-      // Tenta sincronizar ao voltar a ficar online
-      await syncAllStores();
+      // (O Firebase reconecta automaticamente ao voltar a ficar online)
     } else {
       dot.className = 'status-dot offline';
       text.textContent = 'Modo Offline';
@@ -557,7 +547,6 @@ function setupFormSubmissions() {
 
         await updateAllSelectors();
         await reloadAllViews();
-        syncAllStores();
       } catch (err) {
         showToast('Erro ao salvar serviço: ' + err.message, 'error');
       }
@@ -624,7 +613,6 @@ function setupFormSubmissions() {
         document.getElementById('btnEstoqueCancel').style.display = 'none';
 
         await reloadAllViews();
-        syncAllStores();
       } catch (err) {
         showToast('Erro ao salvar item no estoque: ' + err.message, 'error');
       }
@@ -797,7 +785,6 @@ function setupFormSubmissions() {
         `;
 
         await reloadAllViews();
-        syncAllStores();
       } catch (err) {
         showToast('Erro ao registrar venda: ' + err.message, 'error');
       }
@@ -878,7 +865,6 @@ function setupFormSubmissions() {
         showToast(`Produção registrada! ${quantidade} un. de "${produtoFinal}" adicionadas ao estoque.`);
         formProducao.reset();
         await reloadAllViews();
-        syncAllStores();
       } catch (err) {
         showToast('Erro ao fabricar produto: ' + err.message, 'error');
       }
@@ -951,7 +937,6 @@ function setupFormSubmissions() {
         `;
 
         await reloadAllViews();
-        syncAllStores();
       } catch (err) {
         showToast('Erro ao salvar receita: ' + err.message, 'error');
       }
@@ -1002,25 +987,15 @@ async function renderDashboard() {
 
   if (usingFirebase) {
     if (navigator.onLine) {
-      unsyncedBadge.textContent = 'Nuvem Sincronizada';
+      unsyncedBadge.textContent = 'Nuvem Conectada';
       unsyncedBadge.style.color = 'var(--success)';
     } else {
       unsyncedBadge.textContent = 'Offline (Salvo local)';
       unsyncedBadge.style.color = 'var(--warning)';
     }
   } else {
-    let unsyncedCount = 0;
-    unsyncedCount += (await getUnsyncedRecords('servicos')).length;
-    unsyncedCount += (await getUnsyncedRecords('estoque')).length;
-    unsyncedCount += (await getUnsyncedRecords('pedidos')).length;
-    unsyncedCount += (await getUnsyncedRecords('receitas')).length;
-
-    unsyncedBadge.textContent = `${unsyncedCount} registro${unsyncedCount !== 1 ? 's' : ''}`;
-    if (unsyncedCount > 0) {
-      unsyncedBadge.style.color = 'var(--warning)';
-    } else {
-      unsyncedBadge.style.color = 'var(--success)';
-    }
+    unsyncedBadge.textContent = 'Apenas Local';
+    unsyncedBadge.style.color = 'var(--info)';
   }
 
   // Atualiza no DOM do Dashboard
@@ -1068,11 +1043,6 @@ async function renderDashboard() {
         <td>${escapeHTML(a.desc)}</td>
         <td>${formatDate(a.data)}</td>
         <td>${formatMoney(a.valor)}</td>
-        <td>
-          <span class="tag ${a.synced === 1 ? 'synced' : 'unsynced'}">
-            ${a.synced === 1 ? 'Sincronizado' : 'Aguardando'}
-          </span>
-        </td>
       </tr>
     `).join('');
   }
@@ -1117,11 +1087,7 @@ async function renderServicosView() {
           <br><strong>Total: ${formatMoney(s.valor + (s.frete || 0))}</strong>
         </td>
         <td>${s.meioPagamento}</td>
-        <td>
-          <span class="tag ${s.synced === 1 ? 'synced' : 'unsynced'}">
-            ${s.synced === 1 ? 'Sincronizado' : 'Aguardando'}
-          </span>
-        </td>
+        <!-- Removida coluna Planilha -->
         <td>
           <button class="btn-icon-only danger btnDelete" data-store="servicos" data-id="${s.id}" title="Excluir Registro">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
@@ -1159,11 +1125,7 @@ async function renderEstoqueView() {
         </td>
         <td>${formatMoney(e.valor)}</td>
         <td><strong>${formatMoney(e.quantidade * e.valor)}</strong></td>
-        <td>
-          <span class="tag ${e.synced === 1 ? 'synced' : 'unsynced'}">
-            ${e.synced === 1 ? 'Sincronizado' : 'Aguardando'}
-          </span>
-        </td>
+        <!-- Removida coluna Planilha -->
         <td>
           <button class="btn-icon-only btnEdit" data-id="${e.id}" title="Editar Item">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4z"/></svg>
@@ -1204,11 +1166,7 @@ async function renderPedidosView() {
       <td>${formatMoney(p.valor)}</td>
       <td>${p.frete > 0 ? formatMoney(p.frete) : 'Grátis'}</td>
       <td><strong>${formatMoney((p.quantidade * p.valor) + (p.frete || 0))}</strong></td>
-      <td>
-        <span class="tag ${p.synced === 1 ? 'synced' : 'unsynced'}">
-          ${p.synced === 1 ? 'Sincronizado' : 'Aguardando'}
-        </span>
-      </td>
+      <!-- Removida coluna Planilha -->
       <td>
         <button class="btn-icon-only danger btnDelete" data-store="pedidos" data-id="${p.id}" title="Excluir Venda">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
@@ -1267,11 +1225,7 @@ async function renderReceitasView() {
         </td>
         <td>${formatMoney(r.maoDeObra)}</td>
         <td><strong>${formatMoney(custoTotal)}</strong></td>
-        <td>
-          <span class="tag ${r.synced === 1 ? 'synced' : 'unsynced'}">
-            ${r.synced === 1 ? 'Sincronizado' : 'Aguardando'}
-          </span>
-        </td>
+        <!-- Removida coluna Planilha -->
         <td>
           <button class="btn-icon-only danger btnDelete" data-store="receitas" data-id="${r.id}" title="Excluir Receita">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
@@ -1433,144 +1387,8 @@ function setupRecipeDetailsLinks(receitas, estoqueMap) {
   });
 }
 
-// --- MECANISMO DE SINCRONIZAÇÃO GOOGLE SHEETS ---
-async function syncAllStores() {
-  const usingFirebase = useFirebase;
-  if (usingFirebase) {
-    console.log('Firebase ativo: sincronização em nuvem automática e em tempo real habilitada.');
-    return;
-  }
-
-  if (!navigator.onLine) {
-    console.log('Sync abortado: Dispositivo offline.');
-    return;
-  }
-
-  if (!googleSheetsUrl) {
-    console.log('Sync abortado: URL do Google Sheets não configurada.');
-    return;
-  }
-
-  const stores = ['servicos', 'estoque', 'pedidos', 'receitas'];
-  let totalSynced = 0;
-
-  for (const store of stores) {
-    try {
-      const records = await getUnsyncedRecords(store);
-      if (records.length === 0) continue;
-
-      console.log(`Sincronizando ${records.length} registros da store "${store}"...`);
-
-      // Envia os dados para a API do Apps Script
-      // Usamos POST com o payload JSON apropriado
-      const response = await fetch(googleSheetsUrl, {
-        method: 'POST',
-        mode: 'cors',
-        headers: {
-          'Content-Type': 'text/plain;charset=utf-8', // Evita gatilhos de preflight complexos
-        },
-        body: JSON.stringify({
-          store: store,
-          records: records
-        })
-      });
-
-      const result = await response.json();
-
-      if (result.status === 'success' && Array.isArray(result.syncedIds)) {
-        // Marca cada ID como sincronizado no IndexedDB
-        for (const id of result.syncedIds) {
-          await markAsSynced(store, id);
-        }
-        totalSynced += result.syncedIds.length;
-        console.log(`Store "${store}" sincronizada. ${result.syncedIds.length} itens marcados no IndexedDB.`);
-      } else {
-        console.error(`Erro na sincronização da store "${store}":`, result.message || 'Resposta inesperada');
-      }
-    } catch (err) {
-      console.error(`Erro de conexão ao sincronizar store "${store}":`, err);
-    }
-  }
-
-  if (totalSynced > 0) {
-    showToast(`${totalSynced} registros sincronizados com o Google Sheets!`);
-    await reloadAllViews();
-  }
-}
-
-// Engine de Sincronização Automática periódico (A cada 30 segundos se estiver online)
-function autoSyncEngine() {
-  setInterval(() => {
-    if (navigator.onLine && googleSheetsUrl) {
-      syncAllStores();
-    }
-  }, 30000);
-}
-
 // Configuração da aba Ajustes
 function setupMaintenanceEvents() {
-  // Salvar URL do Sheets
-  const btnSave = document.getElementById('btnSaveConfig');
-  const urlInput = document.getElementById('googleSheetsUrlInput');
-  const btnTest = document.getElementById('btnTestConnection');
-  const btnManual = document.getElementById('btnManualSync');
-
-  if (btnSave && urlInput) {
-    btnSave.addEventListener('click', async () => {
-      const url = urlInput.value.trim();
-      if (url && !url.startsWith('https://script.google.com')) {
-        showToast('URL inválida. Deve começar com https://script.google.com', 'error');
-        return;
-      }
-      try {
-        await setConfig('googleSheetsUrl', url);
-        googleSheetsUrl = url;
-        showToast('URL do Google Sheets configurada com sucesso!');
-        syncAllStores(); // Roda um sync após salvar
-      } catch (err) {
-        showToast('Erro ao salvar configuração: ' + err.message, 'error');
-      }
-    });
-  }
-
-  if (btnTest && urlInput) {
-    btnTest.addEventListener('click', async () => {
-      const url = urlInput.value.trim();
-      if (!url) {
-        showToast('Por favor, insira a URL primeiro.', 'error');
-        return;
-      }
-
-      showToast('Testando conexão...', 'info');
-
-      try {
-        // Envia uma chamada GET simples para testar
-        const res = await fetch(url, { method: 'GET', mode: 'cors' });
-        const text = await res.text();
-        if (text.includes('sincronização') || res.ok) {
-          showToast('Conexão bem sucedida com o Google Apps Script!', 'success');
-        } else {
-          showToast('Resposta inesperada do servidor do script.', 'warning');
-        }
-      } catch (err) {
-        showToast('Falha na conexão: Verifique a URL e as permissões de CORS do Apps Script. Erro: ' + err.message, 'error');
-      }
-    });
-  }
-
-  if (btnManual) {
-    btnManual.addEventListener('click', () => {
-      if (!googleSheetsUrl) {
-        showToast('Configure a URL do Google Sheets na aba Configurações primeiro.', 'error');
-        return;
-      }
-      showToast('Sincronização forçada iniciada...', 'info');
-      syncAllStores();
-    });
-  }
-
-  // Backup e Manutenção
-  const btnExport = document.getElementById('btnExportData');
   const btnImport = document.getElementById('btnImportData');
   const importInput = document.getElementById('importFileInput');
   const btnReset = document.getElementById('btnResetDB');
@@ -1587,7 +1405,6 @@ function setupMaintenanceEvents() {
           adicionais: await getAllRecords('adicionais'),
           estoque_produtos: await getAllRecords('estoque_produtos'),
           configuracoes: [
-            { chave: 'googleSheetsUrl', valor: googleSheetsUrl },
             { chave: 'discount_qtd1', valor: discountConfig.qtd1 },
             { chave: 'discount_pct1', valor: discountConfig.pct1 },
             { chave: 'discount_qtd2', valor: discountConfig.qtd2 },
@@ -1690,10 +1507,7 @@ function setupMaintenanceEvents() {
             if (data.configuracoes) {
               for (const cfg of data.configuracoes) {
                 await setConfig(cfg.chave, cfg.valor);
-                if (cfg.chave === 'googleSheetsUrl') {
-                  googleSheetsUrl = cfg.valor;
-                  document.getElementById('googleSheetsUrlInput').value = googleSheetsUrl;
-                } else if (cfg.chave === 'discount_qtd1') {
+                if (cfg.chave === 'discount_qtd1') {
                   discountConfig.qtd1 = Number(cfg.valor);
                   if (document.getElementById('descQtd1')) document.getElementById('descQtd1').value = cfg.valor;
                 } else if (cfg.chave === 'discount_pct1') {
@@ -1724,7 +1538,7 @@ function setupMaintenanceEvents() {
 
   if (btnReset) {
     btnReset.addEventListener('click', async () => {
-      const confirmar = confirm('ATENÇÃO: Isso excluirá TODOS os dados salvos localmente no navegador! Isso NÃO apagará os dados na planilha Google. Deseja realmente excluir tudo?');
+      const confirmar = confirm('ATENÇÃO: Isso excluirá TODOS os dados salvos localmente no navegador! Deseja realmente excluir tudo?');
       if (confirmar) {
         try {
           const req = indexedDB.deleteDatabase('PinheiroAfiacoesDB');

@@ -20,5 +20,5 @@
   "theme_color": "#10b981",
   "display": "standalone",
   "orientation": "portrait",
-  "description": "Sistema de registro de serviços, estoque, pedidos e receitas para a Pinheiro Afiações com integração com o Google Sheets e funcionamento offline."
+  "description": "Sistema de registro de serviços, estoque, pedidos e receitas para a Pinheiro Afiações integrado com o Firebase e funcionamento offline."
 }

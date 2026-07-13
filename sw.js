@@ -3,7 +3,7 @@
  * Habilita funcionamento 100% offline e cache de recursos estáticos.
  */
 
-const CACHE_NAME = 'pinheiro-afiacoes-cache-v19';
+const CACHE_NAME = 'pinheiro-afiacoes-cache-v20';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -43,9 +43,9 @@ self.addEventListener('activate', (event) => {
 
 // Interceptação de requisições
 self.addEventListener('fetch', (event) => {
-  // Ignora requisições para a API do Google Sheets (não devem ser cacheadas pelo Service Worker)
-  if (event.request.url.includes('script.google.com') || event.request.url.includes('googleusercontent.com')) {
-    return; // Deixa ir diretamente para a rede
+  // Deixa requisições do Firebase/FireStore irem direto para a rede
+  if (event.request.url.includes('firestore.googleapis.com') || event.request.url.includes('firebase')) {
+    return;
   }
 
   event.respondWith(

@@ -6,7 +6,7 @@
   <title>Pinheiro Afiações - Gestão de Negócios</title>
   
   <!-- SEO & PWA Meta Tags -->
-  <meta name="description" content="Plataforma de gestão offline de Serviços, Estoque, Pedidos e Receitas para a Pinheiro Afiações, com sincronização automática com o Google Sheets.">
+  <meta name="description" content="Plataforma de gestão offline de Serviços, Estoque, Pedidos e Receitas para a Pinheiro Afiações, integrada com o Firebase.">
   <meta name="theme-color" content="#10b981">
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
@@ -185,12 +185,11 @@
                   <th>Descrição / Item</th>
                   <th>Data</th>
                   <th>Valor</th>
-                  <th>Status Planilha</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
-                  <td colspan="5" style="text-align: center; color: var(--text-muted);">Nenhuma atividade registrada ainda.</td>
+                  <td colspan="4" style="text-align: center; color: var(--text-muted);">Nenhuma atividade registrada ainda.</td>
                 </tr>
               </tbody>
             </table>
@@ -288,7 +287,6 @@
                     <th>Itens</th>
                     <th>Valor</th>
                     <th>Pagamento</th>
-                    <th>Planilha</th>
                     <th>Ações</th>
                   </tr>
                 </thead>
@@ -348,7 +346,6 @@
                     <th>Qtd Disponível</th>
                     <th>Valor Unitário</th>
                     <th>Valor Total</th>
-                    <th>Planilha</th>
                     <th>Ações</th>
                   </tr>
                 </thead>
@@ -477,7 +474,6 @@
                     <th>Valor Unitário</th>
                     <th>Frete</th>
                     <th>Valor Total</th>
-                    <th>Planilha</th>
                     <th>Ações</th>
                   </tr>
                 </thead>
@@ -558,7 +554,6 @@
                     <th>Matérias-Primas</th>
                     <th>Mão de Obra</th>
                     <th>Custo Estimado</th>
-                    <th>Planilha</th>
                     <th>Ações</th>
                   </tr>
                 </thead>
@@ -576,7 +571,7 @@
         <div class="page-header">
           <div class="page-title">
             <h1>Configurações do Sistema</h1>
-            <p>Gerencie a integração com o Google Sheets e dados locais</p>
+            <p>Gerencie as configurações e dados locais</p>
           </div>
         </div>
 
