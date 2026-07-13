@@ -425,4 +425,3 @@ export function setConfig(chave, valor) {
     }
   });
 }
-}
