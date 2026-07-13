@@ -382,10 +382,6 @@
                 <label for="prodQtd">Quantidade Fabricada</label>
                 <input type="number" id="prodQtd" class="form-control" min="1" value="1" required>
               </div>
-              <div class="form-group">
-                <label for="prodPrecoVenda">Preço de Venda Unitário (R$)</label>
-                <input type="number" id="prodPrecoVenda" class="form-control" step="0.01" min="0" placeholder="0.00" required>
-              </div>
               <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">Fabricar e Estocar</button>
             </form>
           </div>
@@ -532,9 +528,15 @@
                 </button>
               </div>
 
-              <div class="form-group">
-                <label for="recMaoObra">Custo Estimado de Mão de Obra (R$)</label>
-                <input type="number" id="recMaoObra" class="form-control" step="0.01" min="0" placeholder="0.00" required>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="recMaoObra">Mão de Obra (R$)</label>
+                  <input type="number" id="recMaoObra" class="form-control" step="0.01" min="0" placeholder="0.00" required>
+                </div>
+                <div class="form-group">
+                  <label for="recPrecoVenda">Preço de Venda (R$)</label>
+                  <input type="number" id="recPrecoVenda" class="form-control" step="0.01" min="0" placeholder="0.00" required>
+                </div>
               </div>
 
               <div class="info-box-custo" id="custoTotalCalculado" style="margin-bottom: 16px; padding: 12px; border-radius: var(--radius-md); background: rgba(255,255,255,0.02); font-size: 0.85rem; border: 1px solid var(--border-glass);">

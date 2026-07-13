@@ -336,10 +336,10 @@ function setupDynamicRows() {
       
       if (type === 'receita') {
         const itemName = e.target.value;
-        getAllRecords('estoque_produtos').then(estoqueProdutos => {
-          const prodEstocado = estoqueProdutos.find(p => p.produto.toLowerCase() === itemName.toLowerCase());
+        getAllRecords('receitas').then(receitas => {
+          const r = receitas.find(x => x.produtoFinal.toLowerCase() === itemName.toLowerCase());
           if (priceInput) {
-            priceInput.value = (prodEstocado && prodEstocado.precoVenda !== undefined) ? prodEstocado.precoVenda.toFixed(2) : '0.00';
+            priceInput.value = (r && r.precoVenda !== undefined) ? r.precoVenda.toFixed(2) : '0.00';
           }
         });
       } else if (type === 'avulso') {
@@ -854,7 +854,7 @@ function setupFormSubmissions() {
           await consumirInsumoFIFO(mp.item, qtdNecessaria);
         }
 
-        const precoVenda = parseFloat(document.getElementById('prodPrecoVenda').value) || 0;
+        const precoVenda = receita.precoVenda || 0;
 
         // Adiciona ao estoque de produtos finalizados
         const estoqueProdutos = await getAllRecords('estoque_produtos');
@@ -893,6 +893,7 @@ function setupFormSubmissions() {
       try {
         const produtoFinal = document.getElementById('recProdFinal').value.trim();
         const maoDeObra = parseFloat(document.getElementById('recMaoObra').value) || 0;
+        const precoVenda = parseFloat(document.getElementById('recPrecoVenda').value) || 0;
 
         // Coleta matérias-primas dinâmicas
         const materiaPrima = [];
@@ -917,10 +918,20 @@ function setupFormSubmissions() {
           produtoFinal,
           materiaPrima,
           maoDeObra,
+          precoVenda,
           synced: 0
         };
 
         await addRecord('receitas', novaReceita);
+
+        // Sincroniza o preço de venda no estoque de produtos finalizados se já existir
+        const estoqueProdutos = await getAllRecords('estoque_produtos');
+        const prodEstocado = estoqueProdutos.find(p => p.produto.toLowerCase() === produtoFinal.toLowerCase());
+        if (prodEstocado) {
+          prodEstocado.precoVenda = precoVenda;
+          prodEstocado.synced = 0;
+          await updateRecord('estoque_produtos', prodEstocado);
+        }
         showToast('Receita cadastrada com sucesso!');
         formReceita.reset();
 

@@ -121,7 +121,7 @@ function getHeaders(store) {
     case 'pedidos':
       return ['ID', 'Data', 'Item', 'Quantidade', 'Valor', 'Frete', 'Meio de Pagamento'];
     case 'receitas':
-      return ['ID', 'Produto Final', 'Matéria Prima', 'Mão de Obra'];
+      return ['ID', 'Produto Final', 'Matéria Prima', 'Mão de Obra', 'Preço de Venda'];
     default:
       return ['ID'];
   }
@@ -170,7 +170,8 @@ function camelize(str) {
     'Quantidade': 'quantidade',
     'Produto Final': 'produtoFinal',
     'Matéria Prima': 'materiaPrima',
-    'Mão de Obra': 'maoDeObra'
+    'Mão de Obra': 'maoDeObra',
+    'Preço de Venda': 'precoVenda'
   };
   return map[str] || str.toLowerCase().replace(/[^a-zA-Z0-9]/g, '');
 }
