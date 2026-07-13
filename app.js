@@ -1389,6 +1389,7 @@ function setupRecipeDetailsLinks(receitas, estoqueMap) {
 
 // Configuração da aba Ajustes
 function setupMaintenanceEvents() {
+  const btnExport = document.getElementById('btnExportData');
   const btnImport = document.getElementById('btnImportData');
   const importInput = document.getElementById('importFileInput');
   const btnReset = document.getElementById('btnResetDB');
