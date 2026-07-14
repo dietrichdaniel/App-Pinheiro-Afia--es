@@ -616,30 +616,16 @@ function setupFormSubmissions() {
             showToast('Item atualizado com sucesso!');
           }
         } else {
-          // Verifica se já existe um lote com o mesmo nome e mesmo preço unitário
-          const loteMesmoPreco = estoqueItens.find(x => x.item.toLowerCase().trim() === item.toLowerCase().trim() && x.valor === valor);
-          if (loteMesmoPreco) {
-            const confirmar = confirm(`O item "${item}" já possui um lote cadastrado com este mesmo valor unitário (${formatMoney(valor)}). Deseja somar a quantidade (${quantidade}) a este lote?`);
-            if (confirmar) {
-              loteMesmoPreco.quantidade += quantidade;
-              loteMesmoPreco.synced = 0;
-              await updateRecord('estoque', loteMesmoPreco);
-              showToast('Quantidade somada ao lote existente!');
-            } else {
-              return;
-            }
-          } else {
-            // Novo lote
-            const novoItem = {
-              item,
-              quantidade,
-              valor,
-              data: new Date().toISOString(),
-              synced: 0
-            };
-            await addRecord('estoque', novoItem);
-            showToast('Lote adicionado ao estoque local!');
-          }
+          // Novo lote (sempre cria um lote separado, conforme solicitação do usuário)
+          const novoItem = {
+            item,
+            quantidade,
+            valor,
+            data: new Date().toISOString(),
+            synced: 0
+          };
+          await addRecord('estoque', novoItem);
+          showToast('Lote adicionado ao estoque local!');
         }
 
         // Restaura formulário
