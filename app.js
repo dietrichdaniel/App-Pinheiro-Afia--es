@@ -49,6 +49,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     setupConnectionMonitoring();
     setupMaintenanceEvents();
     setupPricingEvents();
+    setupModalConcluir();
 
     // Renderiza dados iniciais
     await reloadAllViews();
@@ -1188,22 +1189,67 @@ async function renderServicosView() {
   // --- CONFIGURA OS EVENTOS ---
   setupTableActions();
 
-  // Evento para o botão de Concluir na Fila
+  // Evento para o botão de Concluir na Fila (Abre o modal de edição/ajuste antes de fechar)
   const btnConcluirList = document.querySelectorAll('.btnConcluirServico');
   btnConcluirList.forEach(btn => {
     btn.addEventListener('click', async () => {
       const id = btn.getAttribute('data-id');
       const service = servicos.find(s => String(s.id) === String(id));
       if (service) {
-        if (confirm(`Deseja realmente marcar o serviço do cliente "${service.nome}" como Concluído?`)) {
-          try {
-            service.status = 'Finalizado';
-            await updateRecord('servicos', service);
-            showToast('Serviço concluído com sucesso!');
-            await reloadAllViews();
-          } catch (err) {
-            showToast('Erro ao concluir serviço: ' + err.message, 'error');
+        // Abre o modal de conclusão com os dados pré-carregados
+        const modalIdInput = document.getElementById('modalServId');
+        const modalNomeInput = document.getElementById('modalServNome');
+        const modalFreteInput = document.getElementById('modalServFrete');
+        const modalPagamentoSelect = document.getElementById('modalServPagamento');
+        const modalValorInput = document.getElementById('modalServValor');
+        const modalItensContainer = document.getElementById('modalServItensContainer');
+        const modalAdicionaisContainer = document.getElementById('modalServAdicionaisContainer');
+
+        if (modalIdInput) modalIdInput.value = service.id;
+        if (modalNomeInput) modalNomeInput.value = service.nome;
+        if (modalFreteInput) modalFreteInput.value = service.frete || 0;
+        if (modalPagamentoSelect) modalPagamentoSelect.value = service.meioPagamento || 'Pix';
+        if (modalValorInput) modalValorInput.value = service.valor.toFixed(2);
+
+        // Limpa os containers
+        if (modalItensContainer) modalItensContainer.innerHTML = '';
+        if (modalAdicionaisContainer) modalAdicionaisContainer.innerHTML = '';
+
+        // Popula os itens
+        const regex = /^(.*?)\s*\(x(\d+)(?:\s*-\s*R\$\s*([\d.]+))?\)$/i;
+        if (Array.isArray(service.itens)) {
+          service.itens.forEach(itemStr => {
+            const match = itemStr.match(regex);
+            if (match) {
+              addModalItemRow(match[1], parseInt(match[2], 10), match[3] || '');
+            } else {
+              addModalItemRow(itemStr, 1, '');
+            }
+          });
+        }
+
+        // Popula os adicionais
+        const adList = service.adicionais ? service.adicionais.split(', ') : [];
+        adList.forEach(adStr => {
+          if (!adStr.trim()) return;
+          const match = adStr.match(regex);
+          if (match) {
+            addModalAdicionalRow(match[1], parseInt(match[2], 10), match[3] || '');
+          } else {
+            addModalAdicionalRow(adStr, 1, '');
           }
+        });
+
+        // Adiciona pelo menos uma linha de item vazia se estiver zerado
+        if (modalItensContainer && modalItensContainer.children.length === 0) {
+          addModalItemRow('', 1, '');
+        }
+
+        // Exibe o modal
+        const modal = document.getElementById('modalConcluirServico');
+        if (modal) {
+          modal.style.display = 'flex';
+          recalculaValorModal();
         }
       }
     });
@@ -2321,6 +2367,240 @@ async function consumirInsumoFIFO(itemName, qtdAConsumir) {
         synced: 0
       };
       await addRecord('estoque', novoInsumo);
+    }
+  }
+}
+
+// --- FUNÇÕES DO MODAL DE CONCLUSÃO DE SERVIÇOS AGENDADOS ---
+function setupModalConcluir() {
+  const btnFecharModalConcluir = document.getElementById('btnFecharModalConcluir');
+  const btnModalCancelar = document.getElementById('btnModalCancelar');
+  const btnModalAddServItem = document.getElementById('btnModalAddServItem');
+  const btnModalAddAdicionalRow = document.getElementById('btnModalAddAdicionalRow');
+  const formModalConcluir = document.getElementById('formModalConcluir');
+
+  const fecharModal = () => {
+    const modal = document.getElementById('modalConcluirServico');
+    if (modal) modal.style.display = 'none';
+  };
+
+  if (btnFecharModalConcluir) btnFecharModalConcluir.addEventListener('click', fecharModal);
+  if (btnModalCancelar) btnModalCancelar.addEventListener('click', fecharModal);
+
+  if (btnModalAddServItem) {
+    btnModalAddServItem.addEventListener('click', () => {
+      addModalItemRow('', 1, '');
+    });
+  }
+
+  if (btnModalAddAdicionalRow) {
+    btnModalAddAdicionalRow.addEventListener('click', () => {
+      addModalAdicionalRow('', 1, '');
+    });
+  }
+
+  if (formModalConcluir) {
+    formModalConcluir.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      try {
+        const id = document.getElementById('modalServId').value;
+        const nome = document.getElementById('modalServNome').value.trim();
+        const valor = parseFloat(document.getElementById('modalServValor').value) || 0;
+        const frete = parseFloat(document.getElementById('modalServFrete').value) || 0;
+        const meioPagamento = document.getElementById('modalServPagamento').value;
+
+        // Coleta itens do modal
+        const itens = [];
+        const itemRows = document.querySelectorAll('.modal-item-row');
+        itemRows.forEach(row => {
+          const nameInput = row.querySelector('.modal-item-name');
+          const qtyInput = row.querySelector('.modal-item-qty');
+          const priceInput = row.querySelector('.modal-item-price');
+
+          if (nameInput && nameInput.value.trim()) {
+            const name = nameInput.value.trim();
+            const qty = qtyInput ? qtyInput.value : 1;
+            const price = priceInput ? parseFloat(priceInput.value) || 0 : 0;
+            itens.push(`${name} (x${qty} - R$ ${price.toFixed(2)})`);
+          }
+        });
+
+        // Coleta adicionais do modal
+        const adicionaisArr = [];
+        const adicionalRows = document.querySelectorAll('.modal-adicional-row');
+        adicionalRows.forEach(row => {
+          const nameInput = row.querySelector('.modal-adicional-name');
+          const qtyInput = row.querySelector('.modal-adicional-qty');
+          const priceInput = row.querySelector('.modal-adicional-price');
+
+          if (nameInput && nameInput.value.trim()) {
+            const name = nameInput.value.trim();
+            const qty = qtyInput ? qtyInput.value : 1;
+            const price = priceInput ? parseFloat(priceInput.value) || 0 : 0;
+            adicionaisArr.push(`${name} (x${qty} - R$ ${price.toFixed(2)})`);
+          }
+        });
+
+        if (itens.length === 0 && adicionaisArr.length === 0) {
+          showToast('Adicione pelo menos uma peça ou um serviço adicional.', 'error');
+          return;
+        }
+
+        const adicionais = adicionaisArr.join(', ');
+
+        const service = await getRecordById('servicos', Number(id));
+        if (service) {
+          service.nome = nome;
+          service.itens = itens;
+          service.adicionais = adicionais;
+          service.valor = valor;
+          service.frete = frete;
+          service.meioPagamento = meioPagamento;
+          service.status = 'Finalizado';
+          service.synced = 0;
+
+          await updateRecord('servicos', service);
+          showToast('Serviço concluído com sucesso!');
+          fecharModal();
+          await reloadAllViews();
+        }
+      } catch (err) {
+        showToast('Erro ao concluir serviço: ' + err.message, 'error');
+      }
+    });
+  }
+
+  // Delegação para remover linhas dentro do modal
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('.btnRemoveModalRow')) {
+      const row = e.target.closest('.dynamic-item-row');
+      if (row) {
+        row.remove();
+        recalculaValorModal();
+      }
+    }
+  });
+
+  // Delegação para recalcular ao alterar quantidade/preço no modal
+  document.addEventListener('input', (e) => {
+    if (
+      e.target.classList.contains('modal-item-qty') ||
+      e.target.classList.contains('modal-item-price') ||
+      e.target.classList.contains('modal-adicional-qty') ||
+      e.target.classList.contains('modal-adicional-price')
+    ) {
+      recalculaValorModal();
+    }
+  });
+}
+
+function addModalItemRow(name = '', qty = 1, price = '') {
+  const container = document.getElementById('modalServItensContainer');
+  if (!container) return;
+  const row = document.createElement('div');
+  row.className = 'dynamic-item-row modal-item-row';
+  row.style.display = 'flex';
+  row.style.gap = '8px';
+  row.style.width = '100%';
+  row.style.alignItems = 'center';
+  row.style.marginBottom = '8px';
+  row.innerHTML = `
+    <input type="text" class="form-control modal-item-name" placeholder="Peça" value="${escapeHTML(name)}" required style="flex: 1;">
+    <input type="number" class="form-control modal-item-qty" placeholder="Qtd" min="1" value="${qty}" style="width: 65px;" required>
+    <input type="number" class="form-control modal-item-price" placeholder="Preço" step="0.01" min="0" value="${price}" style="width: 85px;" required>
+    <button type="button" class="btn-icon-only danger btnRemoveModalRow">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+    </button>
+  `;
+  container.appendChild(row);
+  recalculaValorModal();
+}
+
+function addModalAdicionalRow(name = '', qty = 1, price = '') {
+  const container = document.getElementById('modalServAdicionaisContainer');
+  if (!container) return;
+  const row = document.createElement('div');
+  row.className = 'dynamic-item-row modal-adicional-row';
+  row.style.display = 'flex';
+  row.style.gap = '8px';
+  row.style.width = '100%';
+  row.style.alignItems = 'center';
+  row.style.marginBottom = '8px';
+  row.innerHTML = `
+    <input type="text" class="form-control modal-adicional-name" placeholder="Adicional" value="${escapeHTML(name)}" required style="flex: 1;">
+    <input type="number" class="form-control modal-adicional-qty" placeholder="Qtd" min="1" value="${qty}" style="width: 65px;" required>
+    <input type="number" class="form-control modal-adicional-price" placeholder="Preço" step="0.01" min="0" value="${price}" style="width: 85px;" required>
+    <button type="button" class="btn-icon-only danger btnRemoveModalRow">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2 2v2"/></svg>
+    </button>
+  `;
+  container.appendChild(row);
+  recalculaValorModal();
+}
+
+function recalculaValorModal() {
+  let totalPecas = 0;
+  let subtotalPecas = 0;
+
+  // Calcula itens
+  const itemRows = document.querySelectorAll('.modal-item-row');
+  itemRows.forEach(row => {
+    const qtyInput = row.querySelector('.modal-item-qty');
+    const priceInput = row.querySelector('.modal-item-price');
+    if (qtyInput && priceInput) {
+      const qty = parseFloat(qtyInput.value) || 0;
+      const price = parseFloat(priceInput.value) || 0;
+      totalPecas += qty;
+      subtotalPecas += price * qty;
+    }
+  });
+
+  // Calcula desconto progressivo nas peças
+  let descontoPercentual = 0;
+  if (totalPecas >= discountConfig.qtd2) {
+    descontoPercentual = discountConfig.pct2;
+  } else if (totalPecas >= discountConfig.qtd1) {
+    descontoPercentual = discountConfig.pct1;
+  }
+  const valorDesconto = subtotalPecas * (descontoPercentual / 100);
+  const subtotalPecasComDesconto = subtotalPecas - valorDesconto;
+
+  // Calcula adicionais
+  let subtotalAdicionais = 0;
+  const adicionalRows = document.querySelectorAll('.modal-adicional-row');
+  adicionalRows.forEach(row => {
+    const qtyInput = row.querySelector('.modal-adicional-qty');
+    const priceInput = row.querySelector('.modal-adicional-price');
+    if (qtyInput && priceInput) {
+      const qty = parseFloat(qtyInput.value) || 0;
+      const price = parseFloat(priceInput.value) || 0;
+      subtotalAdicionais += price * qty;
+    }
+  });
+
+  const valorTotalSugerido = subtotalPecasComDesconto + subtotalAdicionais;
+
+  // Preenche o campo
+  const inputValor = document.getElementById('modalServValor');
+  if (inputValor) {
+    inputValor.value = valorTotalSugerido.toFixed(2);
+  }
+
+  // Atualiza label sugerida com o detalhamento
+  const labelSugerido = document.getElementById('modalServValorSugerido');
+  if (labelSugerido) {
+    if (subtotalPecas > 0 || subtotalAdicionais > 0) {
+      let breakdown = `Subtotal Peças: ${formatMoney(subtotalPecas)}`;
+      if (valorDesconto > 0) {
+        breakdown += ` | Desconto Progressivo (${descontoPercentual}%): -${formatMoney(valorDesconto)}`;
+      }
+      if (subtotalAdicionais > 0) {
+        breakdown += ` | Adicionais: ${formatMoney(subtotalAdicionais)}`;
+      }
+      breakdown += ` | <strong>Preço Sugerido: ${formatMoney(valorTotalSugerido)}</strong>`;
+      labelSugerido.innerHTML = breakdown;
+    } else {
+      labelSugerido.innerHTML = '';
     }
   }
 }

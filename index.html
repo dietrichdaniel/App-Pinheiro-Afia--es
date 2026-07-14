@@ -753,7 +753,76 @@
     </div>
   </div>
 
+  <!-- Modal para Concluir/Editar Serviço da Fila -->
+  <div class="modal" id="modalConcluirServico" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 15, 25, 0.85); backdrop-filter: blur(8px); z-index: 1000; align-items: center; justify-content: center; padding: 20px;">
+    <div class="form-panel" style="width: 100%; max-width: 500px; box-shadow: var(--shadow-lg); border: 1px solid var(--border-glass); animation: fadeIn 0.3s ease-out; max-height: 90vh; overflow-y: auto;">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-glass); padding-bottom: 12px; margin-bottom: 20px;">
+        <h2 style="margin: 0; border: none; padding: 0; font-size: 1.3rem;">Concluir e Ajustar Serviço</h2>
+        <button type="button" class="btn-icon-only" id="btnFecharModalConcluir" style="padding: 4px;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      
+      <form id="formModalConcluir">
+        <input type="hidden" id="modalServId">
+        
+        <div class="form-group">
+          <label>Cliente</label>
+          <input type="text" id="modalServNome" class="form-control" required>
+        </div>
 
+        <div class="form-group">
+          <label>Itens Realizados</label>
+          <div id="modalServItensContainer" class="dynamic-items-container" style="margin-bottom: 8px;">
+            <!-- Linhas de itens geradas dinamicamente -->
+          </div>
+          <button type="button" class="btn btn-secondary" id="btnModalAddServItem" style="width:100%; padding: 4px; font-size: 0.75rem; margin-top: 4px;">
+            + Adicionar Peça
+          </button>
+        </div>
+
+        <div class="form-group">
+          <label>Serviços Adicionais</label>
+          <div id="modalServAdicionaisContainer" class="dynamic-items-container" style="margin-bottom: 8px;">
+            <!-- Linhas de adicionais geradas dinamicamente -->
+          </div>
+          <button type="button" class="btn btn-secondary" id="btnModalAddAdicionalRow" style="width:100%; padding: 4px; font-size: 0.75rem; margin-top: 4px;">
+            + Adicionar Adicional
+          </button>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Valor Cobrado (R$)</label>
+            <input type="number" id="modalServValor" class="form-control" step="0.01" min="0" required>
+            <small id="modalServValorSugerido" style="display:block; margin-top: 4px; font-size: 0.75rem; color: var(--secondary);"></small>
+          </div>
+          <div class="form-group">
+            <label>Frete (R$)</label>
+            <input type="number" id="modalServFrete" class="form-control" step="0.01" min="0">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group" style="grid-column: span 2;">
+            <label>Meio de Pagamento</label>
+            <select id="modalServPagamento" class="form-control" required>
+              <option value="Pix">Pix</option>
+              <option value="Dinheiro">Dinheiro</option>
+              <option value="Cartão de Crédito">Cartão de Crédito</option>
+              <option value="Cartão de Débito">Cartão de Débito</option>
+              <option value="Boleto">Boleto / Faturado</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 12px; margin-top: 20px;">
+          <button type="button" class="btn btn-secondary" id="btnModalCancelar" style="flex: 1; justify-content: center;">Cancelar</button>
+          <button type="submit" class="btn btn-primary" style="flex: 1; justify-content: center;">Concluir Serviço</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
   <!-- JS Scripts -->
   <script type="module" src="app.js"></script>
