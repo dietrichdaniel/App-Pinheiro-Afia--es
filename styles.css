@@ -389,6 +389,10 @@ main.main-content {
   align-items: start;
 }
 
+.layout-split > * {
+  min-width: 0;
+}
+
 @media (max-width: 1024px) {
   .layout-split {
     grid-template-columns: 1fr;
@@ -765,6 +769,9 @@ code.code-block {
 
   .form-panel, .info-card, .settings-box, .table-panel {
     padding: 16px;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
   }
 
   .mobile-nav-item button {
@@ -793,6 +800,7 @@ code.code-block {
   /* Faz o seletor (select) ou campo de texto ocupar a linha inteira */
   .dynamic-item-row select.item-select,
   .dynamic-item-row select.adicional-select,
+  .dynamic-item-row select.ped-item-select,
   .dynamic-item-row select.modal-item-select,
   .dynamic-item-row select.modal-adicional-select,
   .dynamic-item-row input.modal-item-name,
@@ -802,11 +810,11 @@ code.code-block {
   }
 
   /* Garante que os inputs de Qtd e Preço ocupem 100% das suas colunas na segunda linha do grid */
-  .item-qty, .adicional-qty, .modal-item-qty, .modal-adicional-qty {
+  .item-qty, .adicional-qty, .ped-item-qty, .modal-item-qty, .modal-adicional-qty {
     width: 100% !important;
   }
 
-  .item-price, .adicional-price, .modal-item-price, .modal-adicional-price {
+  .item-price, .adicional-price, .ped-item-price, .modal-item-price, .modal-adicional-price {
     width: 100% !important;
   }
 }
