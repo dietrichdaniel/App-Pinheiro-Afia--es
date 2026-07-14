@@ -732,7 +732,11 @@ code.code-block {
   
   main.main-content {
     margin-left: 0;
-    padding: 20px;
+    padding: 16px;
+    max-width: 100%;
+    width: 100%;
+    overflow-x: hidden;
+    box-sizing: border-box;
   }
   
   .mobile-nav {
@@ -759,7 +763,7 @@ code.code-block {
     gap: 10px;
   }
 
-  .form-panel, .info-card, .settings-box {
+  .form-panel, .info-card, .settings-box, .table-panel {
     padding: 16px;
   }
 
@@ -778,11 +782,31 @@ code.code-block {
     font-size: 0.8rem;
   }
 
+  /* Estilização responsiva para as linhas dinâmicas de itens (Peças e Adicionais) em formulários e modais */
+  .dynamic-item-row > div[style*="display: flex"] {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr auto !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+
+  /* Faz o seletor (select) ou campo de texto ocupar a linha inteira */
+  .dynamic-item-row select.item-select,
+  .dynamic-item-row select.adicional-select,
+  .dynamic-item-row select.modal-item-select,
+  .dynamic-item-row select.modal-adicional-select,
+  .dynamic-item-row input.modal-item-name,
+  .dynamic-item-row input.modal-adicional-name {
+    grid-column: span 3 !important;
+    width: 100% !important;
+  }
+
+  /* Garante que os inputs de Qtd e Preço ocupem 100% das suas colunas na segunda linha do grid */
   .item-qty, .adicional-qty, .modal-item-qty, .modal-adicional-qty {
-    width: 60px !important;
+    width: 100% !important;
   }
 
   .item-price, .adicional-price, .modal-item-price, .modal-adicional-price {
-    width: 75px !important;
+    width: 100% !important;
   }
 }
