@@ -176,6 +176,7 @@ function setupDynamicRows() {
             <option value="custom">Outro (Digitar)...</option>
           </select>
           <input type="number" class="form-control item-qty" placeholder="Qtd" min="1" value="1" style="width: 70px;" required>
+          <input type="number" class="form-control item-price" placeholder="Preço" step="0.01" min="0" style="width: 90px;" required>
           <button type="button" class="btn-icon-only danger btnRemoveRow">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
           </button>
@@ -205,6 +206,7 @@ function setupDynamicRows() {
             <option value="custom">Outro (Digitar)...</option>
           </select>
           <input type="number" class="form-control adicional-qty" placeholder="Qtd" min="1" value="1" style="width: 70px;" required>
+          <input type="number" class="form-control adicional-price" placeholder="Preço" step="0.01" min="0" style="width: 90px;" required>
           <button type="button" class="btn-icon-only danger btnRemoveRow">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
           </button>
@@ -290,17 +292,24 @@ function setupDynamicRows() {
     }
   });
 
-  // Delegação para controlar visibilidade de inputs personalizados de peças/adicionais nos serviços
+  // Delegação para controlar visibilidade de inputs personalizados de peças/adicionais nos serviços e preencher preços
   document.addEventListener('change', (e) => {
     if (e.target.classList.contains('item-select')) {
       const row = e.target.closest('.dynamic-item-row');
       const customInput = row.querySelector('.item-name-custom');
+      const priceInput = row.querySelector('.item-price');
       if (e.target.value === 'custom') {
         customInput.style.display = 'block';
         customInput.setAttribute('required', 'required');
+        if (priceInput) priceInput.value = '';
       } else {
         customInput.style.display = 'none';
         customInput.removeAttribute('required');
+        const selectedOption = e.target.options[e.target.selectedIndex];
+        const preco = selectedOption ? parseFloat(selectedOption.getAttribute('data-preco')) || 0 : 0;
+        if (priceInput) {
+          priceInput.value = selectedOption && e.target.value ? preco.toFixed(2) : '';
+        }
       }
       recalculaValorServico();
     }
@@ -308,12 +317,19 @@ function setupDynamicRows() {
     if (e.target.classList.contains('adicional-select')) {
       const row = e.target.closest('.dynamic-item-row');
       const customInput = row.querySelector('.adicional-name-custom');
+      const priceInput = row.querySelector('.adicional-price');
       if (e.target.value === 'custom') {
         customInput.style.display = 'block';
         customInput.setAttribute('required', 'required');
+        if (priceInput) priceInput.value = '';
       } else {
         customInput.style.display = 'none';
         customInput.removeAttribute('required');
+        const selectedOption = e.target.options[e.target.selectedIndex];
+        const preco = selectedOption ? parseFloat(selectedOption.getAttribute('data-preco')) || 0 : 0;
+        if (priceInput) {
+          priceInput.value = selectedOption && e.target.value ? preco.toFixed(2) : '';
+        }
       }
       recalculaValorServico();
     }
@@ -343,9 +359,14 @@ function setupDynamicRows() {
     }
   });
 
-  // Delegação para recalcular valores em tempo real se mudarem quantidades
+  // Delegação para recalcular valores em tempo real se mudarem quantidades ou preços
   document.addEventListener('input', (e) => {
-    if (e.target.classList.contains('item-qty') || e.target.classList.contains('adicional-qty')) {
+    if (
+      e.target.classList.contains('item-qty') ||
+      e.target.classList.contains('adicional-qty') ||
+      e.target.classList.contains('item-price') ||
+      e.target.classList.contains('adicional-price')
+    ) {
       recalculaValorServico();
     }
   });
@@ -424,6 +445,8 @@ function setupFormSubmissions() {
         rows.forEach(row => {
           const select = row.querySelector('.item-select');
           const qtyText = row.querySelector('.item-qty').value;
+          const priceInput = row.querySelector('.item-price');
+          const priceVal = priceInput ? parseFloat(priceInput.value) || 0 : 0;
           let itemText = '';
           if (select) {
             if (select.value === 'custom') {
@@ -433,7 +456,7 @@ function setupFormSubmissions() {
             }
           }
           if (itemText) {
-            itens.push(`${itemText} (x${qtyText})`);
+            itens.push(`${itemText} (x${qtyText} - R$ ${priceVal.toFixed(2)})`);
           }
         });
 
@@ -451,6 +474,8 @@ function setupFormSubmissions() {
           const select = row.querySelector('.adicional-select');
           const qtyText = row.querySelector('.adicional-qty').value;
           const qtyVal = parseFloat(qtyText) || 0;
+          const priceInput = row.querySelector('.adicional-price');
+          const priceVal = priceInput ? parseFloat(priceInput.value) || 0 : 0;
           let adicionalText = '';
           if (select) {
             if (select.value === 'custom') {
@@ -479,7 +504,7 @@ function setupFormSubmissions() {
             }
           }
           if (adicionalText) {
-            adicionaisArr.push(`${adicionalText} (x${qtyText})`);
+            adicionaisArr.push(`${adicionalText} (x${qtyText} - R$ ${priceVal.toFixed(2)})`);
           }
         }
 
@@ -532,11 +557,12 @@ function setupFormSubmissions() {
         container.innerHTML = `
           <div class="dynamic-item-row" style="flex-wrap: wrap; margin-bottom: 8px;">
             <div style="display: flex; gap: 8px; width: 100%; align-items: center;">
-              <select class="form-control item-select" style="flex: 1;">
+              <select class="form-control item-select" style="flex: 1;" required>
                 <option value="">Selecione a peça...</option>
                 <option value="custom">Outro (Digitar)...</option>
               </select>
-              <input type="number" class="form-control item-qty" placeholder="Qtd" min="1" value="1" style="width: 70px;">
+              <input type="number" class="form-control item-qty" placeholder="Qtd" min="1" value="1" style="width: 70px;" required>
+              <input type="number" class="form-control item-price" placeholder="Preço" step="0.01" min="0" style="width: 90px;" required>
               <button type="button" class="btn-icon-only danger btnRemoveRow" style="display:none;">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
               </button>
@@ -1989,9 +2015,9 @@ function recalculaValorServico() {
   itemRows.forEach(row => {
     const select = row.querySelector('.item-select');
     const qtyInput = row.querySelector('.item-qty');
-    if (select && qtyInput) {
-      const selectedOption = select.options[select.selectedIndex];
-      const precoUnitario = selectedOption && select.value !== 'custom' ? (parseFloat(selectedOption.getAttribute('data-preco')) || 0) : 0;
+    const priceInput = row.querySelector('.item-price');
+    if (select && qtyInput && priceInput) {
+      const precoUnitario = parseFloat(priceInput.value) || 0;
       const qty = parseFloat(qtyInput.value) || 0;
       totalPecas += qty;
       subtotalPecas += precoUnitario * qty;
@@ -2014,9 +2040,9 @@ function recalculaValorServico() {
   adicionalRows.forEach(row => {
     const select = row.querySelector('.adicional-select');
     const qtyInput = row.querySelector('.adicional-qty');
-    if (select && qtyInput) {
-      const selectedOption = select.options[select.selectedIndex];
-      const precoUnitario = selectedOption && select.value !== 'custom' ? (parseFloat(selectedOption.getAttribute('data-preco')) || 0) : 0;
+    const priceInput = row.querySelector('.adicional-price');
+    if (select && qtyInput && priceInput) {
+      const precoUnitario = parseFloat(priceInput.value) || 0;
       const qty = parseFloat(qtyInput.value) || 0;
       subtotalAdicionais += precoUnitario * qty;
     }

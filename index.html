@@ -221,12 +221,13 @@
                 <div class="dynamic-items-container" id="servItensContainer">
                   <div class="dynamic-item-row" style="flex-wrap: wrap; margin-bottom: 8px;">
                     <div style="display: flex; gap: 8px; width: 100%; align-items: center;">
-                      <select class="form-control item-select" style="flex: 1;">
+                      <select class="form-control item-select" style="flex: 1;" required>
                         <option value="">Selecione a peça...</option>
                         <!-- Alimentado dinamicamente -->
                         <option value="custom">Outro (Digitar)...</option>
                       </select>
-                      <input type="number" class="form-control item-qty" placeholder="Qtd" min="1" value="1" style="width: 70px;">
+                      <input type="number" class="form-control item-qty" placeholder="Qtd" min="1" value="1" style="width: 70px;" required>
+                      <input type="number" class="form-control item-price" placeholder="Preço" step="0.01" min="0" style="width: 90px;" required>
                       <button type="button" class="btn-icon-only danger btnRemoveRow" style="display:none;">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                       </button>
