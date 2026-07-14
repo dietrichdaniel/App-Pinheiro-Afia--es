@@ -438,6 +438,7 @@ function setupFormSubmissions() {
         const valor = parseFloat(document.getElementById('servValor').value) || 0;
         const frete = parseFloat(document.getElementById('servFrete').value) || 0;
         const meioPagamento = document.getElementById('servPagamento').value;
+        const status = document.getElementById('servStatus').value || 'Finalizado';
 
         // Coleta itens dinâmicos
         const itens = [];
@@ -532,6 +533,7 @@ function setupFormSubmissions() {
           valor,
           frete,
           meioPagamento,
+          status,
           data: new Date().toISOString(),
           synced: 0
         };
@@ -1001,7 +1003,8 @@ async function renderDashboard() {
   const receitas = await getAllRecords('receitas');
 
   // Cálculos de Faturamento
-  const totalServicos = servicos.reduce((acc, curr) => acc + (curr.valor || 0), 0);
+  const servicosFinalizados = servicos.filter(s => s.status !== 'Agendado');
+  const totalServicos = servicosFinalizados.reduce((acc, curr) => acc + (curr.valor || 0), 0);
   const totalPedidos = pedidos.reduce((acc, curr) => acc + ((curr.quantidade * curr.valor) + (curr.frete || 0)), 0);
 
   // Contadores de Estoque
@@ -1033,7 +1036,7 @@ async function renderDashboard() {
   const recentesTable = document.getElementById('tableRecentes').querySelector('tbody');
 
   const atividades = [];
-  servicos.forEach(s => {
+  servicosFinalizados.forEach(s => {
     atividades.push({
       tipo: 'Serviço',
       desc: `Serviço prestado a: ${s.nome}`,
@@ -1079,51 +1082,132 @@ async function renderServicosView() {
   const servicos = await getAllRecords('servicos');
   const tbody = document.getElementById('tableServicos').querySelector('tbody');
 
-  if (servicos.length === 0) {
+  // Filtra os serviços agendados (fila) e os já finalizados (histórico)
+  const servicosFila = servicos.filter(s => s.status === 'Agendado');
+  const servicosHistorico = servicos.filter(s => s.status !== 'Agendado');
+
+  // --- RENDERIZA O MURAL DA FILA DE ESPERA ---
+  const muralPanel = document.getElementById('muralFilaPanel');
+  const muralGrid = document.getElementById('muralFilaGrid');
+
+  if (muralPanel && muralGrid) {
+    if (servicosFila.length > 0) {
+      muralPanel.style.display = 'block';
+      muralGrid.innerHTML = servicosFila.map(s => {
+        const itensStr = Array.isArray(s.itens) ? s.itens.join(', ') : s.itens;
+        const adicionaisStr = s.adicionais ? s.adicionais : '';
+
+        let contentHtml = '';
+        if (itensStr) {
+          contentHtml += `<div><strong>Peças:</strong> ${escapeHTML(itensStr)}</div>`;
+        }
+        if (adicionaisStr) {
+          contentHtml += `<div style="margin-top: 4px; font-size: 0.82rem; color: var(--primary); font-weight: 500;"><strong>Adicionais:</strong> ${escapeHTML(adicionaisStr)}</div>`;
+        }
+        if (!itensStr && !adicionaisStr) {
+          contentHtml = '<span style="color: var(--text-muted); font-style: italic;">Sem itens/adicionais</span>';
+        }
+
+        return `
+          <div class="mural-card" style="background: var(--bg-card); border: 1px solid var(--border-glass); border-radius: var(--radius-md); padding: 16px; display: flex; flex-direction: column; gap: 12px; transition: var(--transition-smooth); box-shadow: var(--shadow-lg);">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+              <div>
+                <h3 style="font-family: var(--font-heading); font-size: 1.05rem; color: var(--text-main); margin-bottom: 2px;">${escapeHTML(s.nome)}</h3>
+                <span style="font-size: 0.75rem; color: var(--text-muted);">${formatDate(new Date(s.data))}</span>
+              </div>
+              <span style="background: rgba(245, 158, 11, 0.1); color: var(--warning); padding: 4px 8px; border-radius: var(--radius-sm); font-size: 0.75rem; font-weight: bold; border: 1px solid rgba(245, 158, 11, 0.2);">Fila</span>
+            </div>
+            
+            <div style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.4; flex-grow: 1;">
+              ${contentHtml}
+            </div>
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-glass); padding-top: 12px; margin-top: 4px;">
+              <div style="font-size: 0.9rem; font-weight: bold; color: var(--text-main);">Total: <span style="color: var(--success);">${formatMoney(s.valor + (s.frete || 0))}</span></div>
+              <div style="display: flex; gap: 6px;">
+                <button class="btn btn-primary btnConcluirServico" data-id="${s.id}" style="padding: 6px 12px; font-size: 0.75rem; border-radius: var(--radius-sm);">
+                  Concluir
+                </button>
+                <button class="btn-icon-only danger btnDelete" data-store="servicos" data-id="${s.id}" title="Excluir Registro" style="padding: 6px; border-radius: var(--radius-sm);">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    } else {
+      muralPanel.style.display = 'none';
+      muralGrid.innerHTML = '';
+    }
+  }
+
+  // --- RENDERIZA O HISTÓRICO DE SERVIÇOS ---
+  if (servicosHistorico.length === 0) {
     tbody.innerHTML = `
       <tr>
         <td colspan="6" style="text-align: center; color: var(--text-muted);">Nenhum serviço registrado localmente.</td>
       </tr>
     `;
-    return;
+  } else {
+    tbody.innerHTML = servicosHistorico.map(s => {
+      const itensStr = Array.isArray(s.itens) ? s.itens.join(', ') : s.itens;
+      const adicionaisStr = s.adicionais ? s.adicionais : '';
+
+      let contentHtml = '';
+      if (itensStr) {
+        contentHtml += `<div><strong>Peças:</strong> ${escapeHTML(itensStr)}</div>`;
+      }
+      if (adicionaisStr) {
+        contentHtml += `<div style="margin-top: 4px; font-size: 0.82rem; color: var(--primary); font-weight: 500;"><strong>Adicionais:</strong> ${escapeHTML(adicionaisStr)}</div>`;
+      }
+      if (!itensStr && !adicionaisStr) {
+        contentHtml = '<span style="color: var(--text-muted); font-style: italic;">Sem itens/adicionais</span>';
+      }
+
+      return `
+        <tr>
+          <td><strong>${escapeHTML(s.nome)}</strong><br><small style="color:var(--text-muted);">${formatDate(new Date(s.data))}</small></td>
+          <td>${contentHtml}</td>
+          <td>
+            Subtotal: ${formatMoney(s.valor)}
+            ${s.frete > 0 ? `<br><small style="color:var(--text-muted);">Frete: ${formatMoney(s.frete)}</small>` : ''}
+            <br><strong>Total: ${formatMoney(s.valor + (s.frete || 0))}</strong>
+          </td>
+          <td>${s.meioPagamento}</td>
+          <td>
+            <button class="btn-icon-only danger btnDelete" data-store="servicos" data-id="${s.id}" title="Excluir Registro">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            </button>
+          </td>
+        </tr>
+      `;
+    }).join('');
   }
 
-  tbody.innerHTML = servicos.map(s => {
-    const itensStr = Array.isArray(s.itens) ? s.itens.join(', ') : s.itens;
-    const adicionaisStr = s.adicionais ? s.adicionais : '';
-
-    let contentHtml = '';
-    if (itensStr) {
-      contentHtml += `<div><strong>Peças:</strong> ${escapeHTML(itensStr)}</div>`;
-    }
-    if (adicionaisStr) {
-      contentHtml += `<div style="margin-top: 4px; font-size: 0.82rem; color: var(--primary); font-weight: 500;"><strong>Adicionais:</strong> ${escapeHTML(adicionaisStr)}</div>`;
-    }
-    if (!itensStr && !adicionaisStr) {
-      contentHtml = '<span style="color: var(--text-muted); font-style: italic;">Sem itens/adicionais</span>';
-    }
-
-    return `
-      <tr>
-        <td><strong>${escapeHTML(s.nome)}</strong><br><small style="color:var(--text-muted);">${formatDate(new Date(s.data))}</small></td>
-        <td>${contentHtml}</td>
-        <td>
-          Subtotal: ${formatMoney(s.valor)}
-          ${s.frete > 0 ? `<br><small style="color:var(--text-muted);">Frete: ${formatMoney(s.frete)}</small>` : ''}
-          <br><strong>Total: ${formatMoney(s.valor + (s.frete || 0))}</strong>
-        </td>
-        <td>${s.meioPagamento}</td>
-        <!-- Removida coluna Planilha -->
-        <td>
-          <button class="btn-icon-only danger btnDelete" data-store="servicos" data-id="${s.id}" title="Excluir Registro">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-          </button>
-        </td>
-      </tr>
-    `;
-  }).join('');
-
+  // --- CONFIGURA OS EVENTOS ---
   setupTableActions();
+
+  // Evento para o botão de Concluir na Fila
+  const btnConcluirList = document.querySelectorAll('.btnConcluirServico');
+  btnConcluirList.forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.getAttribute('data-id');
+      const service = servicos.find(s => String(s.id) === String(id));
+      if (service) {
+        if (confirm(`Deseja realmente marcar o serviço do cliente "${service.nome}" como Concluído?`)) {
+          try {
+            service.status = 'Finalizado';
+            await updateRecord('servicos', service);
+            showToast('Serviço concluído com sucesso!');
+            await reloadAllViews();
+          } catch (err) {
+            showToast('Erro ao concluir serviço: ' + err.message, 'error');
+          }
+        }
+      }
+    });
+  });
 }
 
 // 2. ABA DE ESTOQUE

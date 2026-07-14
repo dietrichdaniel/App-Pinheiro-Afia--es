@@ -262,39 +262,60 @@
                 </div>
               </div>
 
-              <div class="form-group">
-                <label for="servPagamento">Meio de Pagamento</label>
-                <select id="servPagamento" class="form-control" required>
-                  <option value="Pix">Pix</option>
-                  <option value="Dinheiro">Dinheiro</option>
-                  <option value="Cartão de Crédito">Cartão de Crédito</option>
-                  <option value="Cartão de Débito">Cartão de Débito</option>
-                  <option value="Boleto">Boleto / Faturado</option>
-                </select>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="servPagamento">Meio de Pagamento</label>
+                  <select id="servPagamento" class="form-control" required>
+                    <option value="Pix">Pix</option>
+                    <option value="Dinheiro">Dinheiro</option>
+                    <option value="Cartão de Crédito">Cartão de Crédito</option>
+                    <option value="Cartão de Débito">Cartão de Débito</option>
+                    <option value="Boleto">Boleto / Faturado</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="servStatus">Status do Serviço</label>
+                  <select id="servStatus" class="form-control" required>
+                    <option value="Finalizado">Finalizado</option>
+                    <option value="Agendado">Agendado (Em Fila)</option>
+                  </select>
+                </div>
               </div>
 
               <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">Registrar Serviço</button>
             </form>
           </div>
 
-          <!-- Tabela de Listagem -->
-          <div class="table-panel">
-            <h2>Histórico de Serviços</h2>
-            <div class="table-responsive">
-              <table class="data-table" id="tableServicos">
-                <thead>
-                  <tr>
-                    <th>Cliente</th>
-                    <th>Itens</th>
-                    <th>Valor</th>
-                    <th>Pagamento</th>
-                    <th>Ações</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <!-- Inserido dinamicamente via JS -->
-                </tbody>
-              </table>
+          <!-- Tabela de Listagem e Mural da Fila -->
+          <div style="display: flex; flex-direction: column; gap: 24px; width: 100%;">
+            <!-- Mural de Serviços em Fila (Agendados) -->
+            <div class="table-panel" id="muralFilaPanel" style="display: none;">
+              <h2 style="margin-bottom: 8px;">Fila de Espera (Serviços Agendados)</h2>
+              <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 16px;">Serviços pendentes de realização. Clique em "Concluir" para finalizá-los.</p>
+              <div id="muralFilaGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;">
+                <!-- Preenchido dinamicamente via JS -->
+              </div>
+            </div>
+
+            <!-- Histórico de Serviços -->
+            <div class="table-panel">
+              <h2>Histórico de Serviços</h2>
+              <div class="table-responsive">
+                <table class="data-table" id="tableServicos">
+                  <thead>
+                    <tr>
+                      <th>Cliente</th>
+                      <th>Itens</th>
+                      <th>Valor</th>
+                      <th>Pagamento</th>
+                      <th>Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <!-- Inserido dinamicamente via JS -->
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         </div>
