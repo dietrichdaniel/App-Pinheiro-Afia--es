@@ -17,6 +17,8 @@ import {
 // --- ESTADO GLOBAL DA APLICAÇÃO ---
 let activeTab = 'dashboard';
 let discountConfig = { qtd1: 5, pct1: 5, qtd2: 10, pct2: 10 };
+let currentPecas = [];
+let currentAdicionais = [];
 
 // --- EVENTOS INICIAIS ---
 window.addEventListener('DOMContentLoaded', async () => {
@@ -1196,6 +1198,10 @@ async function renderServicosView() {
       const id = btn.getAttribute('data-id');
       const service = servicos.find(s => String(s.id) === String(id));
       if (service) {
+        // Busca os cadastros de peças e adicionais para o modal
+        currentPecas = await getAllRecords('pecas');
+        currentAdicionais = await getAllRecords('adicionais');
+
         // Abre o modal de conclusão com os dados pré-carregados
         const modalIdInput = document.getElementById('modalServId');
         const modalNomeInput = document.getElementById('modalServNome');
@@ -2413,12 +2419,21 @@ function setupModalConcluir() {
         const itens = [];
         const itemRows = document.querySelectorAll('.modal-item-row');
         itemRows.forEach(row => {
-          const nameInput = row.querySelector('.modal-item-name');
+          const select = row.querySelector('.modal-item-select');
           const qtyInput = row.querySelector('.modal-item-qty');
           const priceInput = row.querySelector('.modal-item-price');
 
-          if (nameInput && nameInput.value.trim()) {
-            const name = nameInput.value.trim();
+          let name = '';
+          if (select) {
+            if (select.value === 'custom') {
+              const customInput = row.querySelector('.modal-item-name-custom');
+              name = customInput ? customInput.value.trim() : '';
+            } else {
+              name = select.value;
+            }
+          }
+
+          if (name) {
             const qty = qtyInput ? qtyInput.value : 1;
             const price = priceInput ? parseFloat(priceInput.value) || 0 : 0;
             itens.push(`${name} (x${qty} - R$ ${price.toFixed(2)})`);
@@ -2429,12 +2444,21 @@ function setupModalConcluir() {
         const adicionaisArr = [];
         const adicionalRows = document.querySelectorAll('.modal-adicional-row');
         adicionalRows.forEach(row => {
-          const nameInput = row.querySelector('.modal-adicional-name');
+          const select = row.querySelector('.modal-adicional-select');
           const qtyInput = row.querySelector('.modal-adicional-qty');
           const priceInput = row.querySelector('.modal-adicional-price');
 
-          if (nameInput && nameInput.value.trim()) {
-            const name = nameInput.value.trim();
+          let name = '';
+          if (select) {
+            if (select.value === 'custom') {
+              const customInput = row.querySelector('.modal-adicional-name-custom');
+              name = customInput ? customInput.value.trim() : '';
+            } else {
+              name = select.value;
+            }
+          }
+
+          if (name) {
             const qty = qtyInput ? qtyInput.value : 1;
             const price = priceInput ? parseFloat(priceInput.value) || 0 : 0;
             adicionaisArr.push(`${name} (x${qty} - R$ ${price.toFixed(2)})`);
@@ -2470,6 +2494,49 @@ function setupModalConcluir() {
     });
   }
 
+  // Delegação para controlar visibilidade de inputs personalizados e preencher preços no modal
+  document.addEventListener('change', (e) => {
+    if (e.target.classList.contains('modal-item-select')) {
+      const row = e.target.closest('.dynamic-item-row');
+      const customInput = row.querySelector('.modal-item-name-custom');
+      const priceInput = row.querySelector('.modal-item-price');
+      if (e.target.value === 'custom') {
+        customInput.style.display = 'block';
+        customInput.setAttribute('required', 'required');
+        if (priceInput) priceInput.value = '';
+      } else {
+        customInput.style.display = 'none';
+        customInput.removeAttribute('required');
+        const selectedOption = e.target.options[e.target.selectedIndex];
+        const preco = selectedOption ? parseFloat(selectedOption.getAttribute('data-preco')) || 0 : 0;
+        if (priceInput) {
+          priceInput.value = selectedOption && e.target.value ? preco.toFixed(2) : '';
+        }
+      }
+      recalculaValorModal();
+    }
+
+    if (e.target.classList.contains('modal-adicional-select')) {
+      const row = e.target.closest('.dynamic-item-row');
+      const customInput = row.querySelector('.modal-adicional-name-custom');
+      const priceInput = row.querySelector('.modal-adicional-price');
+      if (e.target.value === 'custom') {
+        customInput.style.display = 'block';
+        customInput.setAttribute('required', 'required');
+        if (priceInput) priceInput.value = '';
+      } else {
+        customInput.style.display = 'none';
+        customInput.removeAttribute('required');
+        const selectedOption = e.target.options[e.target.selectedIndex];
+        const preco = selectedOption ? parseFloat(selectedOption.getAttribute('data-preco')) || 0 : 0;
+        if (priceInput) {
+          priceInput.value = selectedOption && e.target.value ? preco.toFixed(2) : '';
+        }
+      }
+      recalculaValorModal();
+    }
+  });
+
   // Delegação para remover linhas dentro do modal
   document.addEventListener('click', (e) => {
     if (e.target.closest('.btnRemoveModalRow')) {
@@ -2497,20 +2564,36 @@ function setupModalConcluir() {
 function addModalItemRow(name = '', qty = 1, price = '') {
   const container = document.getElementById('modalServItensContainer');
   if (!container) return;
+
+  // Build options
+  let options = '<option value="">Selecione a peça...</option>';
+  let isCustom = name !== '' && !currentPecas.some(p => p.nome.toLowerCase() === name.toLowerCase());
+
+  currentPecas.forEach(p => {
+    const selected = (!isCustom && p.nome.toLowerCase() === name.toLowerCase()) ? 'selected' : '';
+    options += `<option value="${escapeHTML(p.nome)}" data-preco="${p.precoPadrao}" ${selected}>${escapeHTML(p.nome)} (${formatMoney(p.precoPadrao)})</option>`;
+  });
+
+  const customSelected = isCustom || name === 'custom' ? 'selected' : '';
+  options += `<option value="custom" ${customSelected}>Outro (Digitar)...</option>`;
+
   const row = document.createElement('div');
   row.className = 'dynamic-item-row modal-item-row';
-  row.style.display = 'flex';
-  row.style.gap = '8px';
-  row.style.width = '100%';
-  row.style.alignItems = 'center';
+  row.style.flexWrap = 'wrap';
   row.style.marginBottom = '8px';
+
   row.innerHTML = `
-    <input type="text" class="form-control modal-item-name" placeholder="Peça" value="${escapeHTML(name)}" required style="flex: 1;">
-    <input type="number" class="form-control modal-item-qty" placeholder="Qtd" min="1" value="${qty}" style="width: 65px;" required>
-    <input type="number" class="form-control modal-item-price" placeholder="Preço" step="0.01" min="0" value="${price}" style="width: 85px;" required>
-    <button type="button" class="btn-icon-only danger btnRemoveModalRow">
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-    </button>
+    <div style="display: flex; gap: 8px; width: 100%; align-items: center;">
+      <select class="form-control modal-item-select" style="flex: 1;" required>
+        ${options}
+      </select>
+      <input type="number" class="form-control modal-item-qty" placeholder="Qtd" min="1" value="${qty}" style="width: 65px;" required>
+      <input type="number" class="form-control modal-item-price" placeholder="Preço" step="0.01" min="0" value="${price}" style="width: 85px;" required>
+      <button type="button" class="btn-icon-only danger btnRemoveModalRow">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+      </button>
+    </div>
+    <input type="text" class="form-control modal-item-name-custom" placeholder="Nome da peça personalizada" value="${isCustom ? escapeHTML(name) : ''}" style="${isCustom ? 'display: block;' : 'display: none;'} margin-top: 8px; width: 100%;" ${isCustom ? 'required' : ''} />
   `;
   container.appendChild(row);
   recalculaValorModal();
@@ -2519,20 +2602,36 @@ function addModalItemRow(name = '', qty = 1, price = '') {
 function addModalAdicionalRow(name = '', qty = 1, price = '') {
   const container = document.getElementById('modalServAdicionaisContainer');
   if (!container) return;
+
+  // Build options
+  let options = '<option value="">Selecione o adicional...</option>';
+  let isCustom = name !== '' && !currentAdicionais.some(a => a.nome.toLowerCase() === name.toLowerCase());
+
+  currentAdicionais.forEach(a => {
+    const selected = (!isCustom && a.nome.toLowerCase() === name.toLowerCase()) ? 'selected' : '';
+    options += `<option value="${escapeHTML(a.nome)}" data-preco="${a.precoPadrao}" ${selected}>${escapeHTML(a.nome)} (${formatMoney(a.precoPadrao)})</option>`;
+  });
+
+  const customSelected = isCustom || name === 'custom' ? 'selected' : '';
+  options += `<option value="custom" ${customSelected}>Outro (Digitar)...</option>`;
+
   const row = document.createElement('div');
   row.className = 'dynamic-item-row modal-adicional-row';
-  row.style.display = 'flex';
-  row.style.gap = '8px';
-  row.style.width = '100%';
-  row.style.alignItems = 'center';
+  row.style.flexWrap = 'wrap';
   row.style.marginBottom = '8px';
+
   row.innerHTML = `
-    <input type="text" class="form-control modal-adicional-name" placeholder="Adicional" value="${escapeHTML(name)}" required style="flex: 1;">
-    <input type="number" class="form-control modal-adicional-qty" placeholder="Qtd" min="1" value="${qty}" style="width: 65px;" required>
-    <input type="number" class="form-control modal-adicional-price" placeholder="Preço" step="0.01" min="0" value="${price}" style="width: 85px;" required>
-    <button type="button" class="btn-icon-only danger btnRemoveModalRow">
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2 2v2"/></svg>
-    </button>
+    <div style="display: flex; gap: 8px; width: 100%; align-items: center;">
+      <select class="form-control modal-adicional-select" style="flex: 1;" required>
+        ${options}
+      </select>
+      <input type="number" class="form-control modal-adicional-qty" placeholder="Qtd" min="1" value="${qty}" style="width: 65px;" required>
+      <input type="number" class="form-control modal-adicional-price" placeholder="Preço" step="0.01" min="0" value="${price}" style="width: 85px;" required>
+      <button type="button" class="btn-icon-only danger btnRemoveModalRow">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2 2v2"/></svg>
+      </button>
+    </div>
+    <input type="text" class="form-control modal-adicional-name-custom" placeholder="Nome do adicional personalizado" value="${isCustom ? escapeHTML(name) : ''}" style="${isCustom ? 'display: block;' : 'display: none;'} margin-top: 8px; width: 100%;" ${isCustom ? 'required' : ''} />
   `;
   container.appendChild(row);
   recalculaValorModal();
