@@ -190,6 +190,7 @@ function setupDynamicRows() {
       `;
       containerServItens.appendChild(row);
       updateRemoveButtons(containerServItens);
+      if (containerServAdicionais) updateRemoveButtons(containerServAdicionais);
       updateAllSelectors();
     });
   }
@@ -220,9 +221,14 @@ function setupDynamicRows() {
       `;
       containerServAdicionais.appendChild(row);
       updateRemoveButtons(containerServAdicionais);
+      if (containerServItens) updateRemoveButtons(containerServItens);
       updateAllSelectors();
     });
   }
+
+  // Inicializa os botões no estado inicial do formulário
+  if (containerServItens) updateRemoveButtons(containerServItens);
+  if (containerServAdicionais) updateRemoveButtons(containerServAdicionais);
 
   // Matérias-Primas da Receita
   const btnAddMateriaPrima = document.getElementById('btnAddMateriaPrima');
@@ -290,7 +296,16 @@ function setupDynamicRows() {
       if (row) {
         const container = row.parentNode;
         row.remove();
-        updateRemoveButtons(container);
+
+        const servItensContainer = document.getElementById('servItensContainer');
+        const servAdicionaisContainer = document.getElementById('servAdicionaisContainer');
+        if (servItensContainer) updateRemoveButtons(servItensContainer);
+        if (servAdicionaisContainer) updateRemoveButtons(servAdicionaisContainer);
+
+        if (container && container.id !== 'servItensContainer' && container.id !== 'servAdicionaisContainer') {
+          updateRemoveButtons(container);
+        }
+
         recalculaCustoReceita();
         recalculaValorServico();
       }
@@ -379,13 +394,38 @@ function setupDynamicRows() {
 
 function updateRemoveButtons(container) {
   const rows = container.querySelectorAll('.dynamic-item-row');
-  const isAdicionais = container.id === 'servAdicionaisContainer';
-  rows.forEach((row, index) => {
-    const btn = row.querySelector('.btnRemoveRow');
-    if (btn) {
-      btn.style.display = (rows.length === 1 && !isAdicionais) ? 'none' : 'inline-flex';
-    }
-  });
+  
+  if (container.id === 'servItensContainer') {
+    const adContainer = document.getElementById('servAdicionaisContainer');
+    const adRowsCount = adContainer ? adContainer.querySelectorAll('.dynamic-item-row').length : 0;
+    
+    rows.forEach((row) => {
+      const btn = row.querySelector('.btnRemoveRow');
+      if (btn) {
+        // Permite remover se houver mais de uma peça OU se houver pelo menos um adicional cadastrado
+        btn.style.display = (rows.length > 1 || adRowsCount > 0) ? 'inline-flex' : 'none';
+      }
+    });
+  } else if (container.id === 'servAdicionaisContainer') {
+    const itemContainer = document.getElementById('servItensContainer');
+    const itemRowsCount = itemContainer ? itemContainer.querySelectorAll('.dynamic-item-row').length : 0;
+    
+    rows.forEach((row) => {
+      const btn = row.querySelector('.btnRemoveRow');
+      if (btn) {
+        // Permite remover se houver mais de um adicional OU se houver pelo menos uma peça cadastrada
+        btn.style.display = (rows.length > 1 || itemRowsCount > 0) ? 'inline-flex' : 'none';
+      }
+    });
+  } else {
+    // Outros containers (como pedidos ou matérias-primas da receita)
+    rows.forEach((row) => {
+      const btn = row.querySelector('.btnRemoveRow');
+      if (btn) {
+        btn.style.display = rows.length === 1 ? 'none' : 'inline-flex';
+      }
+    });
+  }
 }
 
 // Vincula eventos de cálculo de custo na composição da receita
