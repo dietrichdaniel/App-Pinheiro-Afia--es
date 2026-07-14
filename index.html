@@ -887,6 +887,38 @@
 
       <div style="margin-top: 24px; display: flex; justify-content: flex-end;">
         <button type="button" class="btn btn-secondary" id="btnFecharModalDetalhesAcoes" style="padding: 10px 24px;">Fechar</button>
+    </div>
+  </div>
+
+  <!-- Modal para Detalhes dos Lotes de Estoque -->
+  <div class="modal" id="modalLotesEstoque" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 15, 25, 0.85); backdrop-filter: blur(8px); z-index: 1000; align-items: center; justify-content: center; padding: 20px;">
+    <div class="form-panel" style="width: 100%; max-width: 600px; box-shadow: var(--shadow-lg); border: 1px solid var(--border-glass); animation: fadeIn 0.3s ease-out; max-height: 90vh; overflow-y: auto; padding: 24px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-glass); padding-bottom: 12px; margin-bottom: 20px;">
+        <h2 style="margin: 0; border: none; padding: 0; font-size: 1.3rem;">Detalhamento de Lotes - <span id="modalLotesItemNome" style="color: var(--primary);"></span></h2>
+        <button type="button" class="btn-icon-only" id="btnFecharModalLotes" style="padding: 4px;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <div style="overflow-x: auto; margin-bottom: 20px;">
+        <table class="table" style="width: 100%; text-align: left; border-collapse: collapse;">
+          <thead>
+            <tr>
+              <th style="padding: 10px; border-bottom: 1px solid var(--border-glass);">Lote/Data</th>
+              <th style="padding: 10px; border-bottom: 1px solid var(--border-glass);">Quantidade</th>
+              <th style="padding: 10px; border-bottom: 1px solid var(--border-glass);">Valor Unitário</th>
+              <th style="padding: 10px; border-bottom: 1px solid var(--border-glass);">Subtotal</th>
+              <th style="padding: 10px; border-bottom: 1px solid var(--border-glass); width: 80px;">Ações</th>
+            </tr>
+          </thead>
+          <tbody id="modalLotesTableBody">
+            <!-- Linhas preenchidas via JS -->
+          </tbody>
+        </table>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end;">
+        <button type="button" class="btn btn-secondary" id="btnFecharModalLotesAcoes" style="padding: 10px 24px;">Fechar</button>
       </div>
     </div>
   </div>

@@ -53,6 +53,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     setupPricingEvents();
     setupModalConcluir();
     setupModalDetalhes();
+    setupModalLotes();
 
     // Renderiza dados iniciais
     await reloadAllViews();
@@ -1282,33 +1283,57 @@ async function renderEstoqueView() {
   if (estoque.length === 0) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="6" style="text-align: center; color: var(--text-muted);">Nenhum insumo cadastrado com estoque disponível.</td>
+        <td colspan="5" style="text-align: center; color: var(--text-muted);">Nenhum insumo cadastrado com estoque disponível.</td>
       </tr>
     `;
   } else {
-    tbody.innerHTML = estoque.map(e => `
-      <tr>
-        <td>
-          <strong>${escapeHTML(e.item)}</strong><br>
-          <small style="color: var(--text-muted); font-size: 0.75rem;">${e.data ? formatDate(new Date(e.data)) : 'Lote Inicial'}</small>
-        </td>
-        <td style="color:${e.quantidade <= 2 ? 'var(--error)' : 'var(--text-main)'}; font-weight:${e.quantidade <= 2 ? 'bold' : 'normal'};">
-          ${e.quantidade}
-          ${e.quantidade <= 2 ? '<br><small style="color:var(--error); font-weight:normal;">Estoque Baixo!</small>' : ''}
-        </td>
-        <td>${formatMoney(e.valor)}</td>
-        <td><strong>${formatMoney(e.quantidade * e.valor)}</strong></td>
-        <!-- Removida coluna Planilha -->
-        <td>
-          <button class="btn-icon-only btnEdit" data-id="${e.id}" title="Editar Item">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4z"/></svg>
-          </button>
-          <button class="btn-icon-only danger btnDelete" data-store="estoque" data-id="${e.id}" title="Excluir Item">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-          </button>
-        </td>
-      </tr>
-    `).join('');
+    // Agrupa por nome de insumo (case-insensitive)
+    const grouped = {};
+    estoque.forEach(e => {
+      const key = e.item.toLowerCase().trim();
+      if (!grouped[key]) {
+        grouped[key] = {
+          item: e.item.trim(),
+          quantidadeTotal: 0,
+          valorTotal: 0,
+          lotes: []
+        };
+      }
+      grouped[key].quantidadeTotal += e.quantidade;
+      grouped[key].valorTotal += e.quantidade * e.valor;
+      grouped[key].lotes.push(e);
+    });
+
+    tbody.innerHTML = Object.values(grouped).map(g => {
+      const precoMedio = g.quantidadeTotal > 0 ? (g.valorTotal / g.quantidadeTotal) : 0;
+      
+      // Ordena os lotes: mais antigos primeiro (FIFO) para conferência
+      g.lotes.sort((a, b) => {
+        const dataA = a.data ? new Date(a.data).getTime() : 0;
+        const dataB = b.data ? new Date(b.data).getTime() : 0;
+        return dataA - dataB || a.id - b.id;
+      });
+
+      return `
+        <tr class="estoque-row" data-item="${escapeHTML(g.item.toLowerCase().trim())}" style="cursor: pointer;">
+          <td>
+            <strong>${escapeHTML(g.item)}</strong><br>
+            <small style="color: var(--primary); font-size: 0.75rem;">Ver ${g.lotes.length} lote(s)</small>
+          </td>
+          <td style="color:${g.quantidadeTotal <= 2 ? 'var(--error)' : 'var(--text-main)'}; font-weight:${g.quantidadeTotal <= 2 ? 'bold' : 'normal'};">
+            ${g.quantidadeTotal}
+            ${g.quantidadeTotal <= 2 ? '<br><small style="color:var(--error); font-weight:normal;">Estoque Baixo!</small>' : ''}
+          </td>
+          <td>${formatMoney(precoMedio)} <span style="font-size:0.75rem; color:var(--text-muted);">(médio)</span></td>
+          <td><strong>${formatMoney(g.valorTotal)}</strong></td>
+          <td>
+            <button class="btn btn-secondary btnVerLotes" data-item="${escapeHTML(g.item.toLowerCase().trim())}" style="padding: 4px 8px; font-size: 0.75rem;">
+              Ver Lotes
+            </button>
+          </td>
+        </tr>
+      `;
+    }).join('');
   }
 
   setupTableActions();
@@ -2900,6 +2925,133 @@ async function exibirDetalhesServico(id) {
     document.getElementById('modalDetalhesServico').style.display = 'flex';
   } catch (err) {
     showToast('Erro ao abrir detalhes: ' + err.message, 'error');
+  }
+}
+
+// --- FUNÇÕES DO MODAL DE DETALHES DE LOTES DE ESTOQUE ---
+function setupModalLotes() {
+  const fecharModal = () => {
+    const modal = document.getElementById('modalLotesEstoque');
+    if (modal) modal.style.display = 'none';
+  };
+
+  const btnFecharModalLotes = document.getElementById('btnFecharModalLotes');
+  if (btnFecharModalLotes) btnFecharModalLotes.addEventListener('click', fecharModal);
+
+  const btnFecharModalLotesAcoes = document.getElementById('btnFecharModalLotesAcoes');
+  if (btnFecharModalLotesAcoes) btnFecharModalLotesAcoes.addEventListener('click', fecharModal);
+
+  // Delegação global para abrir os lotes de um insumo do estoque ao clicar na linha da tabela consolidada
+  const tbody = document.getElementById('tableEstoque').querySelector('tbody');
+  if (tbody) {
+    tbody.addEventListener('click', (e) => {
+      const row = e.target.closest('.estoque-row');
+      if (row && !e.target.closest('button')) {
+        const itemKey = row.getAttribute('data-item');
+        exibirLotesInsumo(itemKey);
+      }
+    });
+
+    // Listener para botões específicos "Ver Lotes"
+    tbody.addEventListener('click', (e) => {
+      const btn = e.target.closest('.btnVerLotes');
+      if (btn) {
+        const itemKey = btn.getAttribute('data-item');
+        exibirLotesInsumo(itemKey);
+      }
+    });
+  }
+
+  // Gerenciamento de eventos de ação dentro do modal de lotes (editar/excluir lote individual)
+  const modalLotesBody = document.getElementById('modalLotesTableBody');
+  if (modalLotesBody) {
+    modalLotesBody.addEventListener('click', async (e) => {
+      const editBtn = e.target.closest('.btnEditLote');
+      if (editBtn) {
+        const id = Number(editBtn.getAttribute('data-id'));
+        fecharModal();
+        const mockEvent = { currentTarget: editBtn };
+        await handleEditStockClick(mockEvent);
+        return;
+      }
+
+      const deleteBtn = e.target.closest('.btnDeleteLote');
+      if (deleteBtn) {
+        const id = Number(deleteBtn.getAttribute('data-id'));
+        const confirmar = confirm('Tem certeza que deseja excluir este lote de estoque?');
+        if (confirmar) {
+          try {
+            await deleteRecord('estoque', id);
+            showToast('Lote de estoque excluído.');
+            
+            await reloadAllViews();
+
+            const itemKey = document.getElementById('modalLotesItemNome').textContent.toLowerCase().trim();
+            const estoque = await getAllRecords('estoque');
+            const lotesRestantes = estoque.filter(el => el.item.toLowerCase().trim() === itemKey && el.quantidade !== 0);
+
+            if (lotesRestantes.length > 0) {
+              exibirLotesInsumo(itemKey);
+            } else {
+              fecharModal();
+            }
+          } catch (err) {
+            showToast('Erro ao deletar lote: ' + err.message, 'error');
+          }
+        }
+      }
+    });
+  }
+}
+
+async function exibirLotesInsumo(itemKey) {
+  try {
+    const estoqueOriginal = await getAllRecords('estoque');
+    const lotes = estoqueOriginal.filter(e => e.item.toLowerCase().trim() === itemKey.toLowerCase().trim() && e.quantidade !== 0);
+
+    if (lotes.length === 0) {
+      showToast('Nenhum lote ativo encontrado para este insumo.', 'warning');
+      return;
+    }
+
+    // Ordena os lotes: mais antigos primeiro (FIFO)
+    lotes.sort((a, b) => {
+      const dataA = a.data ? new Date(a.data).getTime() : 0;
+      const dataB = b.data ? new Date(b.data).getTime() : 0;
+      return dataA - dataB || a.id - b.id;
+    });
+
+    document.getElementById('modalLotesItemNome').textContent = lotes[0].item;
+
+    const tbody = document.getElementById('modalLotesTableBody');
+    tbody.innerHTML = lotes.map((l, index) => {
+      const dataStr = l.data ? formatDate(new Date(l.data)) : 'Lote Inicial';
+      return `
+        <tr>
+          <td style="padding: 10px; border-bottom: 1px solid var(--border-glass);">
+            <strong>Lote ${index + 1}</strong> <span style="font-size: 0.72rem; color: var(--primary); font-weight: normal;">(FIFO)</span><br>
+            <small style="color: var(--text-muted);">${dataStr}</small>
+          </td>
+          <td style="padding: 10px; border-bottom: 1px solid var(--border-glass);">${l.quantidade}</td>
+          <td style="padding: 10px; border-bottom: 1px solid var(--border-glass);">${formatMoney(l.valor)}</td>
+          <td style="padding: 10px; border-bottom: 1px solid var(--border-glass);"><strong>${formatMoney(l.quantidade * l.valor)}</strong></td>
+          <td style="padding: 10px; border-bottom: 1px solid var(--border-glass);">
+            <div style="display: flex; gap: 8px;">
+              <button class="btn-icon-only btnEditLote" data-id="${l.id}" title="Editar Lote">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4z"/></svg>
+              </button>
+              <button class="btn-icon-only danger btnDeleteLote" data-id="${l.id}" title="Excluir Lote">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+              </button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+    document.getElementById('modalLotesEstoque').style.display = 'flex';
+  } catch (err) {
+    showToast('Erro ao abrir detalhamento de lotes: ' + err.message, 'error');
   }
 }
 
