@@ -52,6 +52,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     setupMaintenanceEvents();
     setupPricingEvents();
     setupModalConcluir();
+    setupModalDetalhes();
 
     // Renderiza dados iniciais
     await reloadAllViews();
@@ -1158,8 +1159,14 @@ async function renderServicosView() {
     `;
   } else {
     tbody.innerHTML = servicosHistorico.map(s => {
-      const itensStr = Array.isArray(s.itens) ? s.itens.join(', ') : s.itens;
-      const adicionaisStr = s.adicionais ? s.adicionais : '';
+      // Remove o valor (ex: " - R$ 15.00") de cada item para exibição limpa na tabela principal do histórico
+      const itensStr = Array.isArray(s.itens) 
+        ? s.itens.map(item => item.replace(/\s*-\s*R\$\s*[\d.]+/i, '')).join(', ') 
+        : s.itens;
+        
+      const adicionaisStr = s.adicionais 
+        ? s.adicionais.split(', ').map(ad => ad.replace(/\s*-\s*R\$\s*[\d.]+/i, '')).join(', ') 
+        : '';
 
       let contentHtml = '';
       if (itensStr) {
@@ -1173,7 +1180,7 @@ async function renderServicosView() {
       }
 
       return `
-        <tr>
+        <tr class="servico-row" data-id="${s.id}" style="cursor: pointer;">
           <td><strong>${escapeHTML(s.nome)}</strong><br><small style="color:var(--text-muted);">${formatDate(new Date(s.data))}</small></td>
           <td>${contentHtml}</td>
           <td>
@@ -2760,6 +2767,139 @@ function recalculaValorModal() {
     } else {
       labelSugerido.innerHTML = '';
     }
+  }
+}
+
+// --- FUNÇÕES DO MODAL DE DETALHES DO SERVIÇO ---
+function setupModalDetalhes() {
+  const fecharModal = () => {
+    const modal = document.getElementById('modalDetalhesServico');
+    if (modal) modal.style.display = 'none';
+  };
+
+  const btnFecharModalDetalhes = document.getElementById('btnFecharModalDetalhes');
+  if (btnFecharModalDetalhes) btnFecharModalDetalhes.addEventListener('click', fecharModal);
+
+  const btnFecharModalDetalhesAcoes = document.getElementById('btnFecharModalDetalhesAcoes');
+  if (btnFecharModalDetalhesAcoes) btnFecharModalDetalhesAcoes.addEventListener('click', fecharModal);
+
+  // Delegação global para abrir os detalhes de um serviço ao clicar na linha
+  document.addEventListener('click', (e) => {
+    const row = e.target.closest('.servico-row');
+    if (row && !e.target.closest('.btnDelete')) {
+      const id = row.getAttribute('data-id');
+      exibirDetalhesServico(id);
+    }
+  });
+}
+
+async function exibirDetalhesServico(id) {
+  try {
+    const s = await getRecordById('servicos', Number(id));
+    if (!s) return;
+
+    // Preenche cabeçalho
+    document.getElementById('detalheCliente').textContent = s.nome;
+    document.getElementById('detalheData').textContent = formatDate(new Date(s.data));
+    document.getElementById('detalhePagamento').textContent = s.meioPagamento;
+
+    // Limpa listas
+    const itensList = document.getElementById('detalheItensList');
+    const adListContainer = document.getElementById('detalheAdicionaisList');
+    const adSection = document.getElementById('detalheAdicionaisSection');
+
+    itensList.innerHTML = '';
+    adListContainer.innerHTML = '';
+    adSection.style.display = 'none';
+
+    let subtotalPecas = 0;
+    let subtotalAdicionais = 0;
+    const regex = /^(.*?)\s*\(x(\d+)(?:\s*-\s*R\$\s*([\d.]+))?\)$/i;
+
+    // Processa itens
+    if (Array.isArray(s.itens)) {
+      s.itens.forEach(itemStr => {
+        const match = itemStr.match(regex);
+        if (match) {
+          const nome = match[1];
+          const qty = parseInt(match[2], 10) || 1;
+          const precoUnitario = match[3] ? parseFloat(match[3]) || 0 : 0;
+          const totalItem = qty * precoUnitario;
+          subtotalPecas += totalItem;
+
+          itensList.innerHTML += `
+            <div style="display: flex; justify-content: space-between; font-size: 0.9rem;">
+              <span><strong>${escapeHTML(nome)}</strong> (x${qty}) <span style="color: var(--text-muted); font-size: 0.8rem; margin-left: 4px;">a ${formatMoney(precoUnitario)} cada</span></span>
+              <span style="color: var(--text-main); font-weight: 500;">${formatMoney(totalItem)}</span>
+            </div>
+          `;
+        } else {
+          itensList.innerHTML += `
+            <div style="display: flex; justify-content: space-between; font-size: 0.9rem;">
+              <span><strong>${escapeHTML(itemStr)}</strong></span>
+              <span style="color: var(--text-muted); font-style: italic;">R$ 0,00</span>
+            </div>
+          `;
+        }
+      });
+    }
+
+    // Processa adicionais
+    const adList = s.adicionais ? s.adicionais.split(', ') : [];
+    if (adList.length > 0 && adList[0].trim() !== '') {
+      adSection.style.display = 'block';
+      adList.forEach(adStr => {
+        const match = adStr.match(regex);
+        if (match) {
+          const nome = match[1];
+          const qty = parseInt(match[2], 10) || 1;
+          const precoUnitario = match[3] ? parseFloat(match[3]) || 0 : 0;
+          const totalAd = qty * precoUnitario;
+          subtotalAdicionais += totalAd;
+
+          adListContainer.innerHTML += `
+            <div style="display: flex; justify-content: space-between; font-size: 0.9rem;">
+              <span><strong>${escapeHTML(nome)}</strong> (x${qty}) <span style="color: var(--text-muted); font-size: 0.8rem; margin-left: 4px;">a ${formatMoney(precoUnitario)} cada</span></span>
+              <span style="color: var(--text-main); font-weight: 500;">${formatMoney(totalAd)}</span>
+            </div>
+          `;
+        } else {
+          adListContainer.innerHTML += `
+            <div style="display: flex; justify-content: space-between; font-size: 0.9rem;">
+              <span><strong>${escapeHTML(adStr)}</strong></span>
+              <span style="color: var(--text-muted); font-style: italic;">R$ 0,00</span>
+            </div>
+          `;
+        }
+      });
+    }
+
+    // Processa totais
+    const subtotalGeral = subtotalPecas + subtotalAdicionais;
+    const desconto = subtotalGeral - s.valor;
+
+    document.getElementById('detalheSubtotal').textContent = formatMoney(subtotalGeral);
+
+    if (desconto > 0.01) {
+      document.getElementById('detalheDescontoRow').style.display = 'flex';
+      document.getElementById('detalheDesconto').textContent = '-' + formatMoney(desconto);
+    } else {
+      document.getElementById('detalheDescontoRow').style.display = 'none';
+    }
+
+    if (s.frete > 0) {
+      document.getElementById('detalheFreteRow').style.display = 'flex';
+      document.getElementById('detalheFrete').textContent = formatMoney(s.frete);
+    } else {
+      document.getElementById('detalheFreteRow').style.display = 'none';
+    }
+
+    document.getElementById('detalheTotal').textContent = formatMoney(s.valor + (s.frete || 0));
+
+    // Exibe o modal
+    document.getElementById('modalDetalhesServico').style.display = 'flex';
+  } catch (err) {
+    showToast('Erro ao abrir detalhes: ' + err.message, 'error');
   }
 }
 
