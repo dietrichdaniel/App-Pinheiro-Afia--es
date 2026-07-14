@@ -517,14 +517,18 @@ function setupFormSubmissions() {
           return;
         }
 
-        if (estoqueInsuficiente) {
-          const prosseguir = confirm(`Atenção: Não há estoque suficiente do insumo "${insumoFaltante}" atrelado aos adicionais selecionados.\nDeseja registrar o serviço mesmo assim (deixando o estoque do insumo negativo)?`);
-          if (!prosseguir) return;
-        }
+        // Executa a dedução dos insumos apenas se o serviço for finalizado agora.
+        // Se for agendado, a dedução ocorrerá quando for concluído pelo mural.
+        if (status !== 'Agendado') {
+          if (estoqueInsuficiente) {
+            const prosseguir = confirm(`Atenção: Não há estoque suficiente do insumo "${insumoFaltante}" atrelado aos adicionais selecionados.\nDeseja registrar o serviço mesmo assim (deixando o estoque do insumo negativo)?`);
+            if (!prosseguir) return;
+          }
 
-        // Executa dedução dos insumos
-        for (const ded of deducoesEstoque) {
-          await consumirInsumoFIFO(ded.insumoNome, ded.quantidade);
+          // Executa dedução dos insumos
+          for (const ded of deducoesEstoque) {
+            await consumirInsumoFIFO(ded.insumoNome, ded.quantidade);
+          }
         }
 
         const adicionais = adicionaisArr.join(', ');
@@ -2474,6 +2478,61 @@ function setupModalConcluir() {
 
         const service = await getRecordById('servicos', Number(id));
         if (service) {
+          // Processa dedução de estoque dos adicionais na conclusão do serviço
+          const todosAdicionais = await getAllRecords('adicionais');
+          const estoqueInsumos = await getAllRecords('estoque');
+
+          const deducoesEstoque = [];
+          let estoqueInsuficiente = false;
+          let insumoFaltante = '';
+
+          const adicionalRows = document.querySelectorAll('.modal-adicional-row');
+          adicionalRows.forEach(row => {
+            const select = row.querySelector('.modal-adicional-select');
+            const qtyInput = row.querySelector('.modal-adicional-qty');
+            const qtyVal = qtyInput ? parseFloat(qtyInput.value) || 0 : 0;
+
+            let name = '';
+            if (select) {
+              if (select.value === 'custom') {
+                const customInput = row.querySelector('.modal-adicional-name-custom');
+                name = customInput ? customInput.value.trim() : '';
+              } else {
+                name = select.value;
+              }
+            }
+
+            if (name) {
+              const ad = todosAdicionais.find(x => x.nome.toLowerCase() === name.toLowerCase());
+              if (ad && ad.insumoAtrelado) {
+                const totalDisponivel = estoqueInsumos
+                  .filter(e => e.item.toLowerCase().trim() === ad.insumoAtrelado.toLowerCase().trim())
+                  .reduce((sum, e) => sum + e.quantidade, 0);
+                const totalConsumo = ad.qtdConsumida * qtyVal;
+
+                if (totalDisponivel < totalConsumo) {
+                  estoqueInsuficiente = true;
+                  insumoFaltante = ad.insumoAtrelado;
+                }
+
+                deducoesEstoque.push({
+                  insumoNome: ad.insumoAtrelado,
+                  quantidade: totalConsumo
+                });
+              }
+            }
+          });
+
+          if (estoqueInsuficiente) {
+            const prosseguir = confirm(`Atenção: Não há estoque suficiente do insumo "${insumoFaltante}" atrelado aos adicionais selecionados.\nDeseja concluir o serviço mesmo assim (deixando o estoque do insumo negativo)?`);
+            if (!prosseguir) return;
+          }
+
+          // Executa a dedução de insumos de fato
+          for (const ded of deducoesEstoque) {
+            await consumirInsumoFIFO(ded.insumoNome, ded.quantidade);
+          }
+
           service.nome = nome;
           service.itens = itens;
           service.adicionais = adicionais;
