@@ -455,6 +455,17 @@
           <div class="form-panel">
             <h2>Nova Venda</h2>
             <form id="formPedido">
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="pedNome">Nome do Cliente</label>
+                  <input type="text" id="pedNome" class="form-control" placeholder="Ex: Marcenaria Pinheiro (Opcional)">
+                </div>
+                <div class="form-group">
+                  <label for="pedTelefone">Telefone do Cliente</label>
+                  <input type="text" id="pedTelefone" class="form-control" placeholder="Ex: (41) 99999-9999 (Opcional)">
+                </div>
+              </div>
+
               <div class="form-group">
                 <label>Itens Vendidos</label>
                 <div class="dynamic-items-container" id="pedItensContainer">
@@ -476,19 +487,28 @@
                 </button>
               </div>
 
-              <div class="form-group">
-                <label for="pedFrete">Valor do Frete (R$)</label>
-                <input type="number" id="pedFrete" class="form-control" step="0.01" min="0" value="0.00">
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="pedFrete">Valor do Frete (R$)</label>
+                  <input type="number" id="pedFrete" class="form-control" step="0.01" min="0" value="0.00">
+                </div>
+                <div class="form-group">
+                  <label for="pedPagamento">Meio de Pagamento</label>
+                  <select id="pedPagamento" class="form-control" required>
+                    <option value="Pix">Pix</option>
+                    <option value="Dinheiro">Dinheiro</option>
+                    <option value="Cartão de Crédito">Cartão de Crédito</option>
+                    <option value="Cartão de Débito">Cartão de Débito</option>
+                    <option value="Faturado">Faturado / Prazo</option>
+                  </select>
+                </div>
               </div>
 
               <div class="form-group">
-                <label for="pedPagamento">Meio de Pagamento</label>
-                <select id="pedPagamento" class="form-control" required>
-                  <option value="Pix">Pix</option>
-                  <option value="Dinheiro">Dinheiro</option>
-                  <option value="Cartão de Crédito">Cartão de Crédito</option>
-                  <option value="Cartão de Débito">Cartão de Débito</option>
-                  <option value="Faturado">Faturado / Prazo</option>
+                <label for="pedStatus">Status da Venda</label>
+                <select id="pedStatus" class="form-control" required>
+                  <option value="Finalizado">Finalizado</option>
+                  <option value="Agendado">Agendado (Em Fila)</option>
                 </select>
               </div>
 
@@ -496,25 +516,36 @@
             </form>
           </div>
 
-          <!-- Tabela de Pedidos -->
-          <div class="table-panel">
-            <h2>Pedidos Realizados</h2>
-            <div class="table-responsive">
-              <table class="data-table" id="tablePedidos">
-                <thead>
-                  <tr>
-                    <th>Item</th>
-                    <th>Qtd</th>
-                    <th>Valor Unitário</th>
-                    <th>Frete</th>
-                    <th>Valor Total</th>
-                    <th>Ações</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <!-- Inserido dinamicamente via JS -->
-                </tbody>
-              </table>
+          <!-- Tabela de Listagem e Mural da Fila de Pedidos -->
+          <div style="display: flex; flex-direction: column; gap: 24px; width: 100%;">
+            <!-- Mural de Pedidos em Fila (Agendados) -->
+            <div class="table-panel" id="muralPedidosPanel" style="display: none;">
+              <h2 style="margin-bottom: 8px;">Fila de Espera (Pedidos Agendados)</h2>
+              <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 16px;">Pedidos pendentes de finalização/entrega. Clique em "Concluir" para finalizá-los.</p>
+              <div id="muralPedidosGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;">
+                <!-- Preenchido dinamicamente via JS -->
+              </div>
+            </div>
+
+            <!-- Pedidos Realizados -->
+            <div class="table-panel">
+              <h2>Pedidos Realizados</h2>
+              <div class="table-responsive">
+                <table class="data-table" id="tablePedidos">
+                  <thead>
+                    <tr>
+                      <th>Cliente</th>
+                      <th>Itens</th>
+                      <th>Valor Total</th>
+                      <th>Pagamento</th>
+                      <th>Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <!-- Inserido dinamicamente via JS -->
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         </div>
@@ -947,6 +978,124 @@
       </div>
     </div>
   </div>
+
+  <!-- Modal: Concluir e Ajustar Pedido/Venda -->
+  <div class="modal-backdrop" id="modalConcluirPedido" style="display: none;">
+    <div class="modal-content" style="max-width: 500px;">
+      <div class="modal-header">
+        <h2 style="margin: 0; border: none; padding: 0; font-size: 1.3rem;">Concluir e Ajustar Pedido</h2>
+        <button type="button" class="btn-icon-only" id="btnFecharModalConcluirPedido" style="padding: 4px;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      
+      <form id="formModalConcluirPedido">
+        <input type="hidden" id="modalPedId">
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label>Cliente</label>
+            <input type="text" id="modalPedNome" class="form-control">
+          </div>
+          <div class="form-group">
+            <label>Telefone</label>
+            <input type="text" id="modalPedTelefone" class="form-control">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Itens Vendidos</label>
+          <div id="modalPedItensContainer" class="dynamic-items-container" style="margin-bottom: 8px;">
+            <!-- Linhas de itens geradas dinamicamente -->
+          </div>
+          <button type="button" class="btn btn-secondary" id="btnModalAddPedItem" style="width:100%; padding: 4px; font-size: 0.75rem; margin-top: 4px;">
+            + Adicionar Item
+          </button>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="modalPedFrete">Frete (R$)</label>
+            <input type="number" id="modalPedFrete" class="form-control" step="0.01" min="0">
+          </div>
+          <div class="form-group">
+            <label for="modalPedPagamento">Pagamento</label>
+            <select id="modalPedPagamento" class="form-control" required>
+              <option value="Pix">Pix</option>
+              <option value="Dinheiro">Dinheiro</option>
+              <option value="Cartão de Crédito">Cartão de Crédito</option>
+              <option value="Cartão de Débito">Cartão de Débito</option>
+              <option value="Faturado">Faturado / Prazo</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="margin: 16px 0; padding: 12px; background: rgba(16, 185, 129, 0.1); border-radius: var(--radius-md); text-align: right;">
+          <span style="font-size: 0.85rem; color: var(--text-muted);">Total da Venda:</span>
+          <strong id="modalPedTotalText" style="font-size: 1.2rem; color: var(--primary); margin-left: 8px;">R$ 0,00</strong>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%;">Concluir Venda</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Detalhes do Pedido/Venda -->
+  <div class="modal-backdrop" id="modalDetalhesPedido" style="display: none;">
+    <div class="modal-content" style="max-width: 550px;">
+      <div class="modal-header">
+        <h2 style="margin: 0; border: none; padding: 0; font-size: 1.3rem;">Detalhes da Venda</h2>
+        <button type="button" class="btn-icon-only" id="btnFecharModalDetalhesPedido" style="padding: 4px;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 16px;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+          <div>
+            <div style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; font-weight: bold; margin-bottom: 4px;">Cliente</div>
+            <div id="detalhePedCliente" style="font-size: 1.1rem; font-weight: 600; color: var(--text-main);"></div>
+          </div>
+          <div>
+            <div style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; font-weight: bold; margin-bottom: 4px;">Telefone</div>
+            <div id="detalhePedTelefone" style="font-size: 1.1rem; color: var(--text-main);"></div>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+          <div>
+            <div style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; font-weight: bold; margin-bottom: 4px;">Data</div>
+            <div id="detalhePedData" style="font-size: 0.95rem; color: var(--text-main);"></div>
+          </div>
+          <div>
+            <div style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; font-weight: bold; margin-bottom: 4px;">Forma de Pagamento</div>
+            <div id="detalhePedPagamento" style="font-size: 0.95rem; color: var(--text-main);"></div>
+          </div>
+        </div>
+
+        <div style="border-top: 1px solid var(--border-glass); padding-top: 16px;">
+          <div style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; font-weight: bold; margin-bottom: 8px;">Itens Vendidos</div>
+          <div id="detalhePedItensList" style="display: flex; flex-direction: column; gap: 8px;">
+            <!-- Itens com valores -->
+          </div>
+        </div>
+
+        <div style="border-top: 1px solid var(--border-glass); padding-top: 16px; display: flex; flex-direction: column; gap: 6px; align-items: flex-end;">
+          <div style="display: flex; justify-content: space-between; width: 220px; font-size: 0.9rem; color: var(--text-muted);">
+            <span>Subtotal:</span>
+            <span id="detalhePedSubtotal">R$ 0,00</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; width: 220px; font-size: 0.9rem; color: var(--text-muted);">
+            <span>Frete:</span>
+            <span id="detalhePedFrete">R$ 0,00</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; width: 220px; font-size: 1.1rem; color: var(--text-main); font-weight: bold; margin-top: 4px; border-top: 1px dashed var(--border-glass); padding-top: 6px;">
+            <span>Total Geral:</span>
+            <span id="detalhePedTotal" style="color: var(--primary);">R$ 0,00</span>
+          </div>
+        </div>
+      </div>
+    </div>
 
   <!-- JS Scripts -->
   <script type="module" src="app.js"></script>

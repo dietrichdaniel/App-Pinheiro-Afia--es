@@ -52,7 +52,9 @@ window.addEventListener('DOMContentLoaded', async () => {
     setupMaintenanceEvents();
     setupPricingEvents();
     setupModalConcluir();
+    setupModalConcluirPedido();
     setupModalDetalhes();
+    setupModalDetalhesPedido();
     setupModalLotes();
 
     // Renderiza dados iniciais
@@ -287,6 +289,9 @@ function setupDynamicRows() {
       updateRemoveButtons(containerPedItens);
     });
   }
+
+  // Inicializa os botões no estado inicial do formulário de pedidos
+  if (containerPedItens) updateRemoveButtons(containerPedItens);
 
   // Lógica geral de remoção
   document.addEventListener('click', (e) => {
@@ -1042,7 +1047,8 @@ async function renderDashboard() {
   // Cálculos de Faturamento
   const servicosFinalizados = servicos.filter(s => s.status !== 'Agendado');
   const totalServicos = servicosFinalizados.reduce((acc, curr) => acc + (curr.valor || 0), 0);
-  const totalPedidos = pedidos.reduce((acc, curr) => acc + ((curr.quantidade * curr.valor) + (curr.frete || 0)), 0);
+  const pedidosFinalizados = pedidos.filter(p => p.status !== 'Agendado');
+  const totalPedidos = pedidosFinalizados.reduce((acc, curr) => acc + ((curr.itens ? curr.valor : (curr.quantidade * curr.valor)) + (curr.frete || 0)), 0);
 
   // Contadores de Estoque
   const totalItensEstoque = estoque.length;
@@ -1082,12 +1088,13 @@ async function renderDashboard() {
       synced: s.synced
     });
   });
-  pedidos.forEach(p => {
+  pedidosFinalizados.forEach(p => {
+    const itensDesc = p.itens ? (Array.isArray(p.itens) ? p.itens.map(i => i.replace(/\s*-\s*R\$\s*[\d.]+/i, '')).join(', ') : p.itens) : `${p.item}`;
     atividades.push({
       tipo: 'Pedido (Venda)',
-      desc: `Venda de ${p.quantidade}x ${p.item}`,
+      desc: `Venda para ${p.nome || 'Cliente Avulso'} - ${itensDesc}`,
       data: new Date(p.data),
-      valor: (p.quantidade * p.valor) + (p.frete || 0),
+      valor: p.itens ? p.valor + (p.frete || 0) : (p.quantidade * p.valor) + (p.frete || 0),
       synced: p.synced
     });
   });
@@ -1381,34 +1388,139 @@ async function renderPedidosView() {
   const pedidos = await getAllRecords('pedidos');
   const tbody = document.getElementById('tablePedidos').querySelector('tbody');
 
-  // (O seletor é atualizado via updateAllSelectors nos selects dinâmicos da venda)
+  // Filtra pedidos em fila (Agendados) e histórico (Finalizados)
+  const pedidosFila = pedidos.filter(p => p.status === 'Agendado');
+  const pedidosHistorico = pedidos.filter(p => p.status !== 'Agendado');
 
-  if (pedidos.length === 0) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="7" style="text-align: center; color: var(--text-muted);">Nenhum pedido de venda registrado.</td>
-      </tr>
-    `;
-    return;
+  // --- RENDERIZA O MURAL DA FILA DE ESPERA ---
+  const muralPanel = document.getElementById('muralPedidosPanel');
+  const muralGrid = document.getElementById('muralPedidosGrid');
+
+  if (muralPanel && muralGrid) {
+    if (pedidosFila.length > 0) {
+      muralPanel.style.display = 'block';
+      muralGrid.innerHTML = pedidosFila.map(p => {
+        const itensStr = p.itens ? (Array.isArray(p.itens) ? p.itens.join(', ') : p.itens) : `${p.quantidade}x ${p.item}`;
+        return `
+          <div class="mural-card" style="background: var(--bg-card); border: 1px solid var(--border-glass); border-radius: var(--radius-md); padding: 16px; display: flex; flex-direction: column; gap: 12px; transition: var(--transition-smooth); box-shadow: var(--shadow-lg);">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+              <div>
+                <h3 style="font-family: var(--font-heading); font-size: 1.05rem; color: var(--text-main); margin-bottom: 2px;">${escapeHTML(p.nome || 'Cliente Avulso')}</h3>
+                ${p.telefone ? `<div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 4px;">📞 ${escapeHTML(p.telefone)}</div>` : ''}
+                <span style="font-size: 0.75rem; color: var(--text-muted);">${formatDate(new Date(p.data))}</span>
+              </div>
+              <span style="background: rgba(245, 158, 11, 0.1); color: var(--warning); padding: 4px 8px; border-radius: var(--radius-sm); font-size: 0.75rem; font-weight: bold; border: 1px solid rgba(245, 158, 11, 0.2);">Fila</span>
+            </div>
+            
+            <div style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.4; flex-grow: 1;">
+              <div><strong>Itens:</strong> ${escapeHTML(itensStr)}</div>
+            </div>
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-glass); padding-top: 12px; margin-top: 4px;">
+              <span style="font-size: 1rem; font-weight: bold; color: var(--primary);">${formatMoney((p.itens ? p.valor : (p.quantidade * p.valor)) + (p.frete || 0))}</span>
+              <button class="btn btn-secondary btnConcluirPedido" data-id="${p.id}" style="padding: 6px 12px; font-size: 0.75rem;">Concluir</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    } else {
+      muralPanel.style.display = 'none';
+      muralGrid.innerHTML = '';
+    }
   }
 
-  tbody.innerHTML = pedidos.map(p => `
-    <tr>
-      <td><strong>${escapeHTML(p.item)}</strong><br><small style="color:var(--text-muted);">${formatDate(new Date(p.data))}</small></td>
-      <td>${p.quantidade}x</td>
-      <td>${formatMoney(p.valor)}</td>
-      <td>${p.frete > 0 ? formatMoney(p.frete) : 'Grátis'}</td>
-      <td><strong>${formatMoney((p.quantidade * p.valor) + (p.frete || 0))}</strong></td>
-      <!-- Removida coluna Planilha -->
-      <td>
-        <button class="btn-icon-only danger btnDelete" data-store="pedidos" data-id="${p.id}" title="Excluir Venda">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-        </button>
-      </td>
-    </tr>
-  `).join('');
+  // --- RENDERIZA O HISTÓRICO DE PEDIDOS ---
+  if (pedidosHistorico.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="5" style="text-align: center; color: var(--text-muted);">Nenhum pedido de venda finalizado registrado.</td>
+      </tr>
+    `;
+  } else {
+    tbody.innerHTML = pedidosHistorico.map(p => {
+      // Remove o valor (ex: " - R$ 15.00") de cada item para exibição limpa na tabela
+      const itensStr = p.itens
+        ? (Array.isArray(p.itens)
+            ? p.itens.map(item => item.replace(/\s*-\s*R\$\s*[\d.]+/i, '')).join(', ')
+            : p.itens)
+        : p.item;
 
+      return `
+        <tr class="pedido-row" data-id="${p.id}" style="cursor: pointer;">
+          <td>
+            <strong>${escapeHTML(p.nome || 'Cliente Avulso')}</strong>
+            ${p.telefone ? `<br><small style="color:var(--text-muted); font-size: 0.75rem;">📞 ${escapeHTML(p.telefone)}</small>` : ''}
+            <br><small style="color:var(--text-muted);">${formatDate(new Date(p.data))}</small>
+          </td>
+          <td>${escapeHTML(itensStr)}</td>
+          <td>
+            Subtotal: ${formatMoney(p.itens ? p.valor : (p.quantidade * p.valor))}
+            ${p.frete > 0 ? `<br><small style="color:var(--text-muted);">Frete: ${formatMoney(p.frete)}</small>` : ''}
+            <br><strong>Total: ${formatMoney((p.itens ? p.valor : (p.quantidade * p.valor)) + (p.frete || 0))}</strong>
+          </td>
+          <td>${p.meioPagamento || 'Pix'}</td>
+          <td>
+            <button class="btn-icon-only danger btnDelete" data-store="pedidos" data-id="${p.id}" title="Excluir Venda">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            </button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  // --- CONFIGURA OS EVENTOS ---
   setupTableActions();
+
+  // Evento para o botão de Concluir na Fila (Abre o modal de edição/ajuste antes de fechar)
+  const btnConcluirList = document.querySelectorAll('.btnConcluirPedido');
+  btnConcluirList.forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = Number(btn.getAttribute('data-id'));
+      try {
+        const order = await getRecordById('pedidos', id);
+        if (!order) return;
+
+        // Abre o modal de conclusão com os dados pré-carregados
+        const modalIdInput = document.getElementById('modalPedId');
+        const modalNomeInput = document.getElementById('modalPedNome');
+        const modalTelefoneInput = document.getElementById('modalPedTelefone');
+        const modalFreteInput = document.getElementById('modalPedFrete');
+        const modalPagamentoSelect = document.getElementById('modalPedPagamento');
+        const modalItensContainer = document.getElementById('modalPedItensContainer');
+
+        if (modalIdInput) modalIdInput.value = order.id;
+        if (modalNomeInput) modalNomeInput.value = order.nome || '';
+        if (modalTelefoneInput) modalTelefoneInput.value = order.telefone || '';
+        if (modalFreteInput) modalFreteInput.value = order.frete || 0;
+        if (modalPagamentoSelect) modalPagamentoSelect.value = order.meioPagamento || 'Pix';
+
+        // Limpa o container
+        if (modalItensContainer) modalItensContainer.innerHTML = '';
+
+        // Popula os itens
+        const regex = /^(.*?)\s*\(x(\d+)(?:\s*-\s*R\$\s*([\d.]+))?\)$/i;
+        const itemsList = order.itens ? (Array.isArray(order.itens) ? order.itens : [order.itens]) : [`${order.item} (x${order.quantidade} - R$ ${order.valor.toFixed(2)})`];
+
+        for (const itemStr of itemsList) {
+          const match = itemStr.match(regex);
+          if (match) {
+            const nome = match[1];
+            const qty = parseInt(match[2], 10) || 1;
+            const price = match[3] ? parseFloat(match[3]) || 0 : 0;
+            await addModalPedItemRow(nome, qty, price.toFixed(2));
+          } else {
+            await addModalPedItemRow(itemStr, 1, '0.00');
+          }
+        }
+
+        document.getElementById('modalConcluirPedido').style.display = 'flex';
+        recalculaValorModalPedido();
+      } catch (err) {
+        showToast('Erro ao carregar dados do pedido: ' + err.message, 'error');
+      }
+    });
+  });
 }
 
 // 4. ABA DE RECEITAS
@@ -2672,6 +2784,7 @@ function setupModalConcluir() {
       if (row) {
         row.remove();
         recalculaValorModal();
+        recalculaValorModalPedido();
       }
     }
   });
@@ -3093,6 +3206,318 @@ async function exibirLotesInsumo(itemKey) {
     document.getElementById('modalLotesEstoque').style.display = 'flex';
   } catch (err) {
     showToast('Erro ao abrir detalhamento de lotes: ' + err.message, 'error');
+  }
+}
+
+// --- FUNÇÕES DO MODAL DE CONCLUSÃO DE PEDIDOS AGENDADOS ---
+function setupModalConcluirPedido() {
+  const btnFecharModalConcluirPedido = document.getElementById('btnFecharModalConcluirPedido');
+  const btnModalAddPedItem = document.getElementById('btnModalAddPedItem');
+  const formModalConcluirPedido = document.getElementById('formModalConcluirPedido');
+
+  const fecharModal = () => {
+    const modal = document.getElementById('modalConcluirPedido');
+    if (modal) modal.style.display = 'none';
+  };
+
+  if (btnFecharModalConcluirPedido) btnFecharModalConcluirPedido.addEventListener('click', fecharModal);
+
+  if (btnModalAddPedItem) {
+    btnModalAddPedItem.addEventListener('click', () => {
+      addModalPedItemRow('', 1, '');
+    });
+  }
+
+  if (formModalConcluirPedido) {
+    formModalConcluirPedido.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      try {
+        const id = document.getElementById('modalPedId').value;
+        const nome = document.getElementById('modalPedNome').value.trim() || 'Cliente Avulso';
+        const telefone = document.getElementById('modalPedTelefone') ? document.getElementById('modalPedTelefone').value.trim() : '';
+        const frete = parseFloat(document.getElementById('modalPedFrete').value) || 0;
+        const meioPagamento = document.getElementById('modalPedPagamento').value;
+
+        const itemsToSell = [];
+        const itens = [];
+        let valor = 0;
+
+        const itemRows = document.querySelectorAll('.modal-ped-row');
+        for (const row of itemRows) {
+          const select = row.querySelector('.modal-ped-select');
+          if (!select || !select.value) {
+            showToast('Por favor, selecione todos os itens da venda.', 'error');
+            return;
+          }
+          const selectedOption = select.options[select.selectedIndex];
+          const itemNome = select.value;
+          const type = selectedOption ? selectedOption.getAttribute('data-type') : '';
+          const qtyInput = row.querySelector('.modal-ped-qty');
+          const priceInput = row.querySelector('.modal-ped-price');
+          const quantidade = parseFloat(qtyInput.value) || 0;
+          const preco = parseFloat(priceInput.value) || 0;
+
+          itemsToSell.push({ itemNome, type, quantidade, valor: preco });
+          itens.push(`${itemNome} (x${quantidade} - R$ ${preco.toFixed(2)})`);
+          valor += quantidade * preco;
+        }
+
+        if (itemsToSell.length === 0) {
+          showToast('Adicione pelo menos um item para registrar a venda.', 'error');
+          return;
+        }
+
+        // Realiza o processamento e baixa de estoque para cada item
+        for (const item of itemsToSell) {
+          const { itemNome, type, quantidade } = item;
+
+          if (type === 'receita') {
+            const receitas = await getAllRecords('receitas');
+            const receita = receitas.find(r => r.produtoFinal.toLowerCase() === itemNome.toLowerCase());
+
+            const estoqueFinalizado = await getAllRecords('estoque_produtos');
+            const prodEstocado = estoqueFinalizado.find(p => p.produto.toLowerCase() === itemNome.toLowerCase());
+            const qtdDisponivelProd = prodEstocado ? prodEstocado.quantidade : 0;
+
+            if (qtdDisponivelProd >= quantidade) {
+              prodEstocado.quantidade -= quantidade;
+              prodEstocado.synced = 0;
+              await updateRecord('estoque_produtos', prodEstocado);
+            } else {
+              const diferenca = quantidade - qtdDisponivelProd;
+
+              if (!receita) {
+                const prosseguir = confirm(`Atenção: Estoque insuficiente de "${itemNome}" em estoque (${qtdDisponivelProd} un. disponíveis) e este produto não possui receita cadastrada. Deseja realizar a venda mesmo assim?`);
+                if (!prosseguir) return;
+
+                if (prodEstocado) {
+                  prodEstocado.quantidade = 0;
+                  prodEstocado.synced = 0;
+                  await updateRecord('estoque_produtos', prodEstocado);
+                }
+              } else {
+                const estoqueInsumos = await getAllRecords('estoque');
+                let insumosInsuficientes = false;
+                let insumoFaltante = '';
+
+                for (const mp of receita.materiaPrima) {
+                  const totalDisponivel = estoqueInsumos
+                    .filter(e => e.item.toLowerCase().trim() === mp.item.toLowerCase().trim())
+                    .reduce((sum, e) => sum + e.quantidade, 0);
+                  const qtdNecessaria = mp.quantidade * diferenca;
+
+                  if (totalDisponivel < qtdNecessaria) {
+                    insumosInsuficientes = true;
+                    insumoFaltante = mp.item;
+                    break;
+                  }
+                }
+
+                if (insumosInsuficientes) {
+                  const prosseguir = confirm(`Atenção: Estoque insuficiente de produtos e insumos para completar esta venda!\nNão há insumo "${insumoFaltante}" suficiente no estoque para fabricar as ${diferenca} un. restantes.\nDeseja realizar a venda mesmo assim (deixando o estoque de insumos negativo)?`);
+                  if (!prosseguir) return;
+                }
+
+                if (prodEstocado) {
+                  prodEstocado.quantidade = 0;
+                  prodEstocado.synced = 0;
+                  await updateRecord('estoque_produtos', prodEstocado);
+                }
+
+                for (const mp of receita.materiaPrima) {
+                  const qtdNecessaria = mp.quantidade * diferenca;
+                  await consumirInsumoFIFO(mp.item, qtdNecessaria);
+                }
+              }
+            }
+          } else if (type === 'avulso') {
+            const estoqueInsumos = await getAllRecords('estoque');
+            const totalDisponivel = estoqueInsumos
+              .filter(e => e.item.toLowerCase().trim() === itemNome.toLowerCase().trim())
+              .reduce((sum, e) => sum + e.quantidade, 0);
+
+            if (totalDisponivel < quantidade) {
+              const prosseguir = confirm(`Atenção: Estoque de insumo insuficiente para o item avulso "${itemNome}"!\nDisponível: ${totalDisponivel} un. Solicitado: ${quantidade} un.\nDeseja realizar a venda mesmo assim (deixando o estoque negativo)?`);
+              if (!prosseguir) return;
+            }
+
+            await consumirInsumoFIFO(itemNome, quantidade);
+          }
+        }
+
+        const service = await getRecordById('pedidos', Number(id));
+        if (service) {
+          service.nome = nome;
+          service.telefone = telefone;
+          service.itens = itens;
+          service.valor = valor;
+          service.frete = frete;
+          service.meioPagamento = meioPagamento;
+          service.status = 'Finalizado';
+          service.synced = 0;
+
+          // Remove legacy keys
+          delete service.item;
+          delete service.quantidade;
+
+          await updateRecord('pedidos', service);
+          showToast('Venda concluída com sucesso!');
+          fecharModal();
+          await reloadAllViews();
+        }
+      } catch (err) {
+        showToast('Erro ao concluir venda: ' + err.message, 'error');
+      }
+    });
+  }
+
+  // Evento delegado no modal para preenchimento de preços
+  document.addEventListener('change', (e) => {
+    if (e.target.classList.contains('modal-ped-select')) {
+      const row = e.target.closest('.dynamic-item-row');
+      const selectedOption = e.target.options[e.target.selectedIndex];
+      const priceInput = row.querySelector('.modal-ped-price');
+      const price = selectedOption ? parseFloat(selectedOption.getAttribute('data-preco')) || 0 : 0;
+      if (priceInput) {
+        priceInput.value = price.toFixed(2);
+      }
+      recalculaValorModalPedido();
+    }
+  });
+
+  // Evento delegado no modal para recálculo de valor total
+  document.addEventListener('input', (e) => {
+    if (e.target.classList.contains('modal-ped-qty') || e.target.classList.contains('modal-ped-price') || e.target.id === 'modalPedFrete') {
+      recalculaValorModalPedido();
+    }
+  });
+}
+
+function recalculaValorModalPedido() {
+  let total = 0;
+  const rows = document.querySelectorAll('.modal-ped-row');
+  rows.forEach(row => {
+    const qtyInput = row.querySelector('.modal-ped-qty');
+    const priceInput = row.querySelector('.modal-ped-price');
+    if (qtyInput && priceInput) {
+      const qty = parseFloat(qtyInput.value) || 0;
+      const price = parseFloat(priceInput.value) || 0;
+      total += qty * price;
+    }
+  });
+
+  const freteInput = document.getElementById('modalPedFrete');
+  const frete = freteInput ? parseFloat(freteInput.value) || 0 : 0;
+
+  const totalText = document.getElementById('modalPedTotalText');
+  if (totalText) {
+    totalText.innerHTML = formatMoney(total + frete);
+  }
+}
+
+async function addModalPedItemRow(name = '', qty = 1, price = '') {
+  const container = document.getElementById('modalPedItensContainer');
+  if (!container) return;
+
+  const salesOptions = await updateSalesSelectors();
+
+  const row = document.createElement('div');
+  row.className = 'dynamic-item-row modal-ped-row';
+  row.style.flexWrap = 'wrap';
+  row.style.marginBottom = '8px';
+
+  row.innerHTML = `
+    <div style="display: flex; gap: 8px; width: 100%; align-items: center;">
+      <select class="form-control modal-ped-select" style="flex: 1;" required>
+        ${salesOptions}
+      </select>
+      <input type="number" class="form-control modal-ped-qty" placeholder="Qtd" min="1" value="${qty}" style="width: 65px;" required>
+      <input type="number" class="form-control modal-ped-price" placeholder="Preço" step="0.01" min="0" value="${price}" style="width: 85px;" required>
+      <button type="button" class="btn-icon-only danger btnRemoveModalRow">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+      </button>
+    </div>
+  `;
+  container.appendChild(row);
+
+  const select = row.querySelector('.modal-ped-select');
+  if (name) {
+    select.value = name;
+  }
+
+  recalculaValorModalPedido();
+}
+
+// --- FUNÇÕES DO MODAL DE DETALHES DO PEDIDO ---
+function setupModalDetalhesPedido() {
+  const fecharModal = () => {
+    const modal = document.getElementById('modalDetalhesPedido');
+    if (modal) modal.style.display = 'none';
+  };
+
+  const btnFecharModalDetalhesPedido = document.getElementById('btnFecharModalDetalhesPedido');
+  if (btnFecharModalDetalhesPedido) btnFecharModalDetalhesPedido.addEventListener('click', fecharModal);
+
+  // Delegação global para abrir os detalhes de um pedido ao clicar na linha
+  document.addEventListener('click', (e) => {
+    const row = e.target.closest('.pedido-row');
+    if (row && !e.target.closest('.btnDelete')) {
+      const id = row.getAttribute('data-id');
+      exibirDetalhesPedido(id);
+    }
+  });
+}
+
+async function exibirDetalhesPedido(id) {
+  try {
+    const p = await getRecordById('pedidos', Number(id));
+    if (!p) return;
+
+    document.getElementById('detalhePedCliente').textContent = p.nome || 'Cliente Avulso';
+    document.getElementById('detalhePedTelefone').textContent = p.telefone || 'Não informado';
+    document.getElementById('detalhePedData').textContent = formatDate(new Date(p.data));
+    document.getElementById('detalhePedPagamento').textContent = p.meioPagamento || 'Pix';
+
+    const listContainer = document.getElementById('detalhePedItensList');
+    listContainer.innerHTML = '';
+
+    let subtotal = 0;
+    const regex = /^(.*?)\s*\(x(\d+)(?:\s*-\s*R\$\s*([\d.]+))?\)$/i;
+
+    const adList = p.itens ? (Array.isArray(p.itens) ? p.itens : [p.itens]) : [`${p.item} (x${p.quantidade} - R$ ${p.valor.toFixed(2)})`];
+
+    adList.forEach(itemStr => {
+      const match = itemStr.match(regex);
+      if (match) {
+        const nome = match[1];
+        const qty = parseInt(match[2], 10) || 1;
+        const precoUnitario = match[3] ? parseFloat(match[3]) || 0 : 0;
+        const totalItem = qty * precoUnitario;
+        subtotal += totalItem;
+
+        listContainer.innerHTML += `
+          <div style="display: flex; justify-content: space-between; font-size: 0.9rem;">
+            <span><strong>${escapeHTML(nome)}</strong> (x${qty}) <span style="color: var(--text-muted); font-size: 0.8rem; margin-left: 4px;">a ${formatMoney(precoUnitario)} cada</span></span>
+            <span style="color: var(--text-main); font-weight: 500;">${formatMoney(totalItem)}</span>
+          </div>
+        `;
+      } else {
+        listContainer.innerHTML += `
+          <div style="display: flex; justify-content: space-between; font-size: 0.9rem;">
+            <span><strong>${escapeHTML(itemStr)}</strong></span>
+            <span style="color: var(--text-muted); font-style: italic;">R$ 0,00</span>
+          </div>
+        `;
+      }
+    });
+
+    document.getElementById('detalhePedSubtotal').textContent = formatMoney(subtotal || p.valor);
+    document.getElementById('detalhePedFrete').textContent = formatMoney(p.frete || 0);
+    document.getElementById('detalhePedTotal').textContent = formatMoney((subtotal || p.valor) + (p.frete || 0));
+
+    document.getElementById('modalDetalhesPedido').style.display = 'flex';
+  } catch (err) {
+    showToast('Erro ao abrir detalhes: ' + err.message, 'error');
   }
 }
 
