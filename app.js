@@ -479,7 +479,8 @@ function setupFormSubmissions() {
     formServico.addEventListener('submit', async (e) => {
       e.preventDefault();
       try {
-        const nome = document.getElementById('servNome').value;
+        const nome = document.getElementById('servNome').value.trim() || 'Cliente Avulso';
+        const telefone = document.getElementById('servTelefone') ? document.getElementById('servTelefone').value.trim() : '';
         const valor = parseFloat(document.getElementById('servValor').value) || 0;
         const frete = parseFloat(document.getElementById('servFrete').value) || 0;
         const meioPagamento = document.getElementById('servPagamento').value;
@@ -577,6 +578,7 @@ function setupFormSubmissions() {
 
         const novoServico = {
           nome,
+          telefone,
           itens,
           adicionais,
           valor,
@@ -1147,7 +1149,8 @@ async function renderServicosView() {
           <div class="mural-card" style="background: var(--bg-card); border: 1px solid var(--border-glass); border-radius: var(--radius-md); padding: 16px; display: flex; flex-direction: column; gap: 12px; transition: var(--transition-smooth); box-shadow: var(--shadow-lg);">
             <div style="display: flex; justify-content: space-between; align-items: flex-start;">
               <div>
-                <h3 style="font-family: var(--font-heading); font-size: 1.05rem; color: var(--text-main); margin-bottom: 2px;">${escapeHTML(s.nome)}</h3>
+                <h3 style="font-family: var(--font-heading); font-size: 1.05rem; color: var(--text-main); margin-bottom: 2px;">${escapeHTML(s.nome || 'Cliente Avulso')}</h3>
+                ${s.telefone ? `<div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 4px;">📞 ${escapeHTML(s.telefone)}</div>` : ''}
                 <span style="font-size: 0.75rem; color: var(--text-muted);">${formatDate(new Date(s.data))}</span>
               </div>
               <span style="background: rgba(245, 158, 11, 0.1); color: var(--warning); padding: 4px 8px; border-radius: var(--radius-sm); font-size: 0.75rem; font-weight: bold; border: 1px solid rgba(245, 158, 11, 0.2);">Fila</span>
@@ -1208,7 +1211,11 @@ async function renderServicosView() {
 
       return `
         <tr class="servico-row" data-id="${s.id}" style="cursor: pointer;">
-          <td><strong>${escapeHTML(s.nome)}</strong><br><small style="color:var(--text-muted);">${formatDate(new Date(s.data))}</small></td>
+          <td>
+            <strong>${escapeHTML(s.nome || 'Cliente Avulso')}</strong>
+            ${s.telefone ? `<br><small style="color:var(--text-muted); font-size: 0.75rem;">📞 ${escapeHTML(s.telefone)}</small>` : ''}
+            <br><small style="color:var(--text-muted);">${formatDate(new Date(s.data))}</small>
+          </td>
           <td>${contentHtml}</td>
           <td>
             Subtotal: ${formatMoney(s.valor)}
@@ -1243,6 +1250,7 @@ async function renderServicosView() {
         // Abre o modal de conclusão com os dados pré-carregados
         const modalIdInput = document.getElementById('modalServId');
         const modalNomeInput = document.getElementById('modalServNome');
+        const modalTelefoneInput = document.getElementById('modalServTelefone');
         const modalFreteInput = document.getElementById('modalServFrete');
         const modalPagamentoSelect = document.getElementById('modalServPagamento');
         const modalValorInput = document.getElementById('modalServValor');
@@ -1250,7 +1258,8 @@ async function renderServicosView() {
         const modalAdicionaisContainer = document.getElementById('modalServAdicionaisContainer');
 
         if (modalIdInput) modalIdInput.value = service.id;
-        if (modalNomeInput) modalNomeInput.value = service.nome;
+        if (modalNomeInput) modalNomeInput.value = service.nome || '';
+        if (modalTelefoneInput) modalTelefoneInput.value = service.telefone || '';
         if (modalFreteInput) modalFreteInput.value = service.frete || 0;
         if (modalPagamentoSelect) modalPagamentoSelect.value = service.meioPagamento || 'Pix';
         if (modalValorInput) modalValorInput.value = service.valor.toFixed(2);
@@ -2473,6 +2482,7 @@ function setupModalConcluir() {
       try {
         const id = document.getElementById('modalServId').value;
         const nome = document.getElementById('modalServNome').value.trim();
+        const telefone = document.getElementById('modalServTelefone') ? document.getElementById('modalServTelefone').value.trim() : '';
         const valor = parseFloat(document.getElementById('modalServValor').value) || 0;
         const frete = parseFloat(document.getElementById('modalServFrete').value) || 0;
         const meioPagamento = document.getElementById('modalServPagamento').value;
@@ -2592,6 +2602,7 @@ function setupModalConcluir() {
           }
 
           service.nome = nome;
+          service.telefone = telefone;
           service.itens = itens;
           service.adicionais = adicionais;
           service.valor = valor;
@@ -2850,7 +2861,11 @@ async function exibirDetalhesServico(id) {
     if (!s) return;
 
     // Preenche cabeçalho
-    document.getElementById('detalheCliente').textContent = s.nome;
+    document.getElementById('detalheCliente').textContent = s.nome || 'Cliente Avulso';
+    const detalheTelefone = document.getElementById('detalheTelefone');
+    if (detalheTelefone) {
+      detalheTelefone.textContent = s.telefone || 'Não informado';
+    }
     document.getElementById('detalheData').textContent = formatDate(new Date(s.data));
     document.getElementById('detalhePagamento').textContent = s.meioPagamento;
 

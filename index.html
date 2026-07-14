@@ -211,9 +211,15 @@
           <div class="form-panel">
             <h2>Novo Serviço</h2>
             <form id="formServico">
-              <div class="form-group">
-                <label for="servNome">Nome do Cliente</label>
-                <input type="text" id="servNome" class="form-control" placeholder="Ex: Marcenaria Pinheiro" required>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="servNome">Nome do Cliente</label>
+                  <input type="text" id="servNome" class="form-control" placeholder="Ex: Marcenaria Pinheiro (Opcional)">
+                </div>
+                <div class="form-group">
+                  <label for="servTelefone">Telefone do Cliente</label>
+                  <input type="text" id="servTelefone" class="form-control" placeholder="Ex: (41) 99999-9999 (Opcional)">
+                </div>
               </div>
               
               <div class="form-group">
@@ -766,9 +772,15 @@
       <form id="formModalConcluir">
         <input type="hidden" id="modalServId">
         
-        <div class="form-group">
-          <label>Cliente</label>
-          <input type="text" id="modalServNome" class="form-control" required>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Cliente</label>
+            <input type="text" id="modalServNome" class="form-control">
+          </div>
+          <div class="form-group">
+            <label>Telefone</label>
+            <input type="text" id="modalServTelefone" class="form-control">
+          </div>
         </div>
 
         <div class="form-group">
@@ -835,9 +847,15 @@
       </div>
 
       <div style="display: flex; flex-direction: column; gap: 16px;">
-        <div>
-          <div style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; font-weight: bold; margin-bottom: 4px;">Cliente</div>
-          <div id="detalheCliente" style="font-size: 1.1rem; font-weight: 600; color: var(--text-main);"></div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+          <div>
+            <div style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; font-weight: bold; margin-bottom: 4px;">Cliente</div>
+            <div id="detalheCliente" style="font-size: 1.1rem; font-weight: 600; color: var(--text-main);"></div>
+          </div>
+          <div>
+            <div style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; font-weight: bold; margin-bottom: 4px;">Telefone</div>
+            <div id="detalheTelefone" style="font-size: 1.1rem; color: var(--text-main);"></div>
+          </div>
         </div>
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
