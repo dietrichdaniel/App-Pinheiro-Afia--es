@@ -389,35 +389,44 @@
               </button>
             </div>
 
-            <div class="form-row">
-              <div class="form-group">
-                <label for="servValor">Valor Cobrado (R$)</label>
-                <input type="number" id="servValor" class="form-control" step="0.01" min="0" placeholder="0.00" required>
-                <small id="servValorSugerido" style="display:block; margin-top: 4px; font-size: 0.75rem; color: var(--secondary);"></small>
-              </div>
-              <div class="form-group">
-                <label for="servFrete">Frete (R$)</label>
-                <input type="number" id="servFrete" class="form-control" step="0.01" min="0" value="0.00">
-              </div>
-            </div>
+            <!-- Seção de Faturamento e Fechamento -->
+            <div style="border-top: 1px solid var(--border-glass); padding-top: 20px; margin-top: 28px;">
+              <label style="font-family: var(--font-heading); color: var(--primary); font-size: 1.1rem; display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--primary);"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                Faturamento e Pagamento
+              </label>
+              <p style="color: var(--text-muted); font-size: 0.8rem; line-height: 1.4; margin-bottom: 16px;">Defina o valor cobrado final, frete, meio de pagamento e o status de entrega do serviço.</p>
 
-            <div class="form-row">
-              <div class="form-group">
-                <label for="servPagamento">Meio de Pagamento</label>
-                <select id="servPagamento" class="form-control" required>
-                  <option value="Pix">Pix</option>
-                  <option value="Dinheiro">Dinheiro</option>
-                  <option value="Cartão de Crédito">Cartão de Crédito</option>
-                  <option value="Cartão de Débito">Cartão de Débito</option>
-                  <option value="Boleto">Boleto / Faturado</option>
-                </select>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="servValor">Valor Cobrado (R$)</label>
+                  <input type="number" id="servValor" class="form-control" step="0.01" min="0" placeholder="0.00" required>
+                  <small id="servValorSugerido" style="display:block; margin-top: 4px; font-size: 0.75rem; color: var(--secondary);"></small>
+                </div>
+                <div class="form-group">
+                  <label for="servFrete">Frete (R$)</label>
+                  <input type="number" id="servFrete" class="form-control" step="0.01" min="0" value="0.00">
+                </div>
               </div>
-              <div class="form-group">
-                <label for="servStatus">Status do Serviço</label>
-                <select id="servStatus" class="form-control" required>
-                  <option value="Finalizado">Finalizado</option>
-                  <option value="Agendado">Agendado (Em Fila)</option>
-                </select>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="servPagamento">Meio de Pagamento</label>
+                  <select id="servPagamento" class="form-control" required>
+                    <option value="Pix">Pix</option>
+                    <option value="Dinheiro">Dinheiro</option>
+                    <option value="Cartão de Crédito">Cartão de Crédito</option>
+                    <option value="Cartão de Débito">Cartão de Débito</option>
+                    <option value="Boleto">Boleto / Faturado</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label style="color: var(--text-muted); font-size: 0.85rem;" for="servStatus">Status do Serviço</label>
+                  <select id="servStatus" class="form-control" required>
+                    <option value="Finalizado">Finalizado</option>
+                    <option value="Agendado">Agendado (Em Fila)</option>
+                  </select>
+                </div>
               </div>
             </div>
 
