@@ -252,6 +252,28 @@ function setupAppUpdatedModal() {
       }
     });
   }
+
+  // Simulação de Popups para desenvolvedor/teste
+  const btnTestUpdateAvailable = document.getElementById('btnTestUpdateAvailable');
+  const btnTestAppUpdated = document.getElementById('btnTestAppUpdated');
+
+  if (btnTestUpdateAvailable) {
+    btnTestUpdateAvailable.addEventListener('click', () => {
+      const modal = document.getElementById('modalUpdateDisponivel');
+      if (modal) {
+        modal.style.display = 'flex';
+      }
+    });
+  }
+
+  if (btnTestAppUpdated) {
+    btnTestAppUpdated.addEventListener('click', () => {
+      const modal = document.getElementById('modalAppAtualizado');
+      if (modal) {
+        modal.style.display = 'flex';
+      }
+    });
+  }
 }
 
 // --- TRAVA DO BOTÃO VOLTAR DO CELULAR ---
@@ -259,37 +281,37 @@ let backButtonPressCount = 0;
 let backButtonTimeout = null;
 
 function setupBackButtonLock() {
-  // Inicializa Estado de Histórico
-  if (window.history.state === null) {
-    window.history.replaceState({ tab: 'menu' }, '', '#menu');
-  }
+  // Sempre garante que há uma hash no histórico e a armadilha inicial
+  window.history.replaceState({ tab: 'menu' }, '', '#menu');
+  window.history.pushState({ tab: 'menu', trap: true }, '', '#menu');
 
   window.addEventListener('popstate', (event) => {
     const state = event.state;
-    if (state && state.tab) {
-      switchTabWithoutPush(state.tab);
-    } else {
-      // Sem histórico de navegação
-      if (activeTab !== 'menu') {
-        switchTabWithoutPush('menu');
-        window.history.pushState({ tab: 'menu' }, '', '#menu');
-      } else {
-        // Já está no menu inicial
-        if (backButtonPressCount === 0) {
-          backButtonPressCount++;
-          showToast('Pressione voltar novamente para sair do aplicativo.', 'info');
-          // Re-insere o estado no histórico para "travar" o primeiro clique
-          window.history.pushState({ tab: 'menu' }, '', '#menu');
-          
-          backButtonTimeout = setTimeout(() => {
-            backButtonPressCount = 0;
-          }, 2000);
-        } else {
-          // Segundo clique rápido: limpa o timeout e deixa fechar
-          clearTimeout(backButtonTimeout);
+    
+    // Se o usuário tentar voltar a partir do menu principal (ou quando activeTab é menu)
+    if (activeTab === 'menu') {
+      if (backButtonPressCount === 0) {
+        backButtonPressCount++;
+        showToast('Pressione voltar novamente para sair do aplicativo.', 'info');
+        
+        // Empurra a armadilha de volta no histórico imediatamente para impedir a saída imediata
+        window.history.pushState({ tab: 'menu', trap: true }, '', '#menu');
+        
+        backButtonTimeout = setTimeout(() => {
           backButtonPressCount = 0;
-          window.history.go(-1);
-        }
+        }, 2000);
+      } else {
+        // Segundo clique rápido: limpa o timeout e deixa fechar o aplicativo voltando -2 slots
+        clearTimeout(backButtonTimeout);
+        backButtonPressCount = 0;
+        window.history.go(-2);
+      }
+    } else {
+      // Se estiver em outra aba, o botão de voltar retorna para a aba anterior ou para o menu principal
+      if (state && state.tab) {
+        switchTabWithoutPush(state.tab);
+      } else {
+        switchTabWithoutPush('menu');
       }
     }
   });
