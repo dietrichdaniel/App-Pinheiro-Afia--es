@@ -182,7 +182,7 @@
         </div>
 
         <!-- Gráficos de Indicadores do Dashboard -->
-        <div class="dashboard-charts-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 32px;">
+        <div class="dashboard-charts-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 20px;">
           <div class="table-panel" style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 350px; padding: 20px;">
             <h2 style="align-self: flex-start; margin-bottom: 16px; font-size: 1.15rem;">Distribuição do Faturamento</h2>
             <div style="position: relative; width: 100%; max-width: 250px; height: 250px;">
@@ -191,9 +191,17 @@
           </div>
           <div class="table-panel" style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 350px; padding: 20px;">
             <h2 style="align-self: flex-start; margin-bottom: 16px; font-size: 1.15rem;">Valor do Estoque por Item</h2>
-            <div style="position: relative; width: 100%; height: 250px;">
+            <div style="position: relative; width: 100%; max-width: 250px; height: 250px;">
               <canvas id="chartEstoqueValor"></canvas>
             </div>
+          </div>
+        </div>
+
+        <!-- Gráfico de Faturamento Anual (Linhas) -->
+        <div class="table-panel" style="display: flex; flex-direction: column; min-height: 350px; padding: 20px; margin-bottom: 32px;">
+          <h2 style="margin-bottom: 16px; font-size: 1.15rem;" id="tituloFaturamentoAnual">Faturamento Anual</h2>
+          <div style="position: relative; width: 100%; height: 280px;">
+            <canvas id="chartFaturamentoAnual"></canvas>
           </div>
         </div>
 

@@ -21,6 +21,7 @@ let currentPecas = [];
 let currentAdicionais = [];
 let chartFaturamento = null;
 let chartEstoque = null;
+let chartFaturamentoAnual = null;
 
 // --- EVENTOS INICIAIS ---
 window.addEventListener('DOMContentLoaded', async () => {
@@ -1186,6 +1187,33 @@ async function renderDashboard() {
   });
   const totalPedidos = pedidosMes.reduce((acc, curr) => acc + ((curr.itens ? curr.valor : (curr.quantidade * curr.valor)) + (curr.frete || 0)), 0);
 
+  // Cálculos de Faturamento Anual (acumulado por mês do ano corrente)
+  const faturamentoMensalServicos = Array(12).fill(0);
+  const faturamentoMensalVendas = Array(12).fill(0);
+  const faturamentoMensalTotal = Array(12).fill(0);
+
+  servicosFinalizadosAll.forEach(s => {
+    if (!s.data) return;
+    const sDate = new Date(s.data);
+    if (sDate.getFullYear() === currentYear) {
+      const monthIndex = sDate.getMonth();
+      const val = s.valor || 0;
+      faturamentoMensalServicos[monthIndex] += val;
+      faturamentoMensalTotal[monthIndex] += val;
+    }
+  });
+
+  pedidosFinalizadosAll.forEach(p => {
+    if (!p.data) return;
+    const pDate = new Date(p.data);
+    if (pDate.getFullYear() === currentYear) {
+      const monthIndex = pDate.getMonth();
+      const val = (p.itens ? p.valor : (p.quantidade * p.valor)) + (p.frete || 0);
+      faturamentoMensalVendas[monthIndex] += val;
+      faturamentoMensalTotal[monthIndex] += val;
+    }
+  });
+
   // Cálculos de Valor do Estoque (Insumos + Produtos acabados)
   const totalInsumos = estoque.reduce((acc, e) => acc + (e.quantidade * e.valor), 0);
   const estoqueInsumosAgrupado = obterEstoqueAgrupado(estoque);
@@ -1240,6 +1268,7 @@ async function renderDashboard() {
   // --- RENDERIZAÇÃO DOS GRÁFICOS (CHART.JS) ---
   if (chartFaturamento) chartFaturamento.destroy();
   if (chartEstoque) chartEstoque.destroy();
+  if (chartFaturamentoAnual) chartFaturamentoAnual.destroy();
 
   const ctxFaturamento = document.getElementById('chartFaturamentoComposicao');
   if (ctxFaturamento) {
@@ -1281,7 +1310,7 @@ async function renderDashboard() {
     });
   }
 
-  // Processa dados de estoque agrupados para o gráfico de barras
+  // Processa dados de estoque agrupados para o gráfico de pizza
   const itemsValueList = [];
   estoqueInsumosAgrupado.forEach(i => {
     const valTotal = i.quantidade * i.valor;
@@ -1316,14 +1345,15 @@ async function renderDashboard() {
   const ctxEstoque = document.getElementById('chartEstoqueValor');
   if (ctxEstoque) {
     const temEstoque = topStockItems.length > 0;
+    const coresPie = ['#f59e0b', '#06b6d4', '#10b981', '#ef4444', '#3b82f6'];
+
     chartEstoque = new Chart(ctxEstoque, {
-      type: 'bar',
+      type: 'pie',
       data: {
         labels: temEstoque ? topItemNames : ['Sem itens'],
         datasets: [{
-          data: temEstoque ? topItemValues : [0],
-          backgroundColor: '#f59e0b',
-          borderRadius: 6,
+          data: temEstoque ? topItemValues : [1],
+          backgroundColor: temEstoque ? coresPie.slice(0, topStockItems.length) : ['rgba(255,255,255,0.06)'],
           borderWidth: 0
         }]
       },
@@ -1331,11 +1361,89 @@ async function renderDashboard() {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-          legend: { display: false },
+          legend: {
+            position: 'bottom',
+            labels: {
+              color: '#f8fafc',
+              font: { family: 'Inter', size: 10 },
+              boxWidth: 12
+            }
+          },
+          tooltip: {
+            enabled: temEstoque,
+            callbacks: {
+              label: function(context) {
+                const label = context.label || '';
+                const value = context.raw || 0;
+                return `${label}: ${formatMoney(value)}`;
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  // Gráfico de Faturamento Anual (Linhas)
+  const ctxFaturamentoAnual = document.getElementById('chartFaturamentoAnual');
+  if (ctxFaturamentoAnual) {
+    const tituloFaturamentoAnual = document.getElementById('tituloFaturamentoAnual');
+    if (tituloFaturamentoAnual) {
+      tituloFaturamentoAnual.textContent = `Faturamento Anual (${currentYear})`;
+    }
+
+    chartFaturamentoAnual = new Chart(ctxFaturamentoAnual, {
+      type: 'line',
+      data: {
+        labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'],
+        datasets: [
+          {
+            label: 'Serviços',
+            data: faturamentoMensalServicos,
+            borderColor: '#10b981',
+            backgroundColor: 'rgba(16, 185, 129, 0.05)',
+            fill: true,
+            tension: 0.3,
+            borderWidth: 2
+          },
+          {
+            label: 'Vendas/Pedidos',
+            data: faturamentoMensalVendas,
+            borderColor: '#06b6d4',
+            backgroundColor: 'rgba(6, 182, 212, 0.05)',
+            fill: true,
+            tension: 0.3,
+            borderWidth: 2
+          },
+          {
+            label: 'Total',
+            data: faturamentoMensalTotal,
+            borderColor: '#f59e0b',
+            backgroundColor: 'rgba(245, 158, 11, 0.05)',
+            fill: true,
+            tension: 0.3,
+            borderWidth: 3,
+            borderDash: [5, 5]
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'top',
+            labels: {
+              color: '#f8fafc',
+              font: { family: 'Inter', size: 11 }
+            }
+          },
           tooltip: {
             callbacks: {
               label: function(context) {
-                return `Valor: ${formatMoney(context.raw)}`;
+                const label = context.dataset.label || '';
+                const value = context.raw || 0;
+                return `${label}: ${formatMoney(value)}`;
               }
             }
           }
