@@ -47,6 +47,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     // Inicializa Eventos da Interface
     setupNavigation();
     setupInputAutoSelect();
+    setupServiceWorker();
     setupDynamicRows();
     setupFormSubmissions();
     setupConnectionMonitoring();
@@ -67,6 +68,85 @@ window.addEventListener('DOMContentLoaded', async () => {
     showToast('Erro ao iniciar a aplicação: ' + err.message, 'error');
   }
 });
+
+// --- REGISTRO E ATUALIZAÇÃO DO SERVICE WORKER (PWA) ---
+function setupServiceWorker() {
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js')
+        .then((registration) => {
+          console.log('PWA Service Worker registrado com sucesso: ', registration.scope);
+
+          // Função para mostrar notificação de atualização
+          function showUpdateToast() {
+            const container = document.getElementById('toastContainer');
+            if (!container) return;
+
+            // Evita duplicar o toast de atualização se já estiver na tela
+            if (document.getElementById('updateToastNotify')) return;
+
+            const toast = document.createElement('div');
+            toast.id = 'updateToastNotify';
+            toast.className = 'toast warning';
+            toast.style.cursor = 'pointer';
+            toast.style.borderLeftWidth = '6px';
+            
+            toast.innerHTML = `
+              <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 4px;">
+                <span style="font-weight: bold; font-size: 0.9rem; color: #f59e0b;">Atualização Disponível!</span>
+                <span style="font-size: 0.8rem; color: var(--text-main);">Clique aqui para carregar a nova versão.</span>
+              </div>
+              <button class="toast-close" style="font-size: 1.2rem; padding: 4px;">&times;</button>
+            `;
+
+            // Se clicar na notificação, força a atualização
+            toast.addEventListener('click', (e) => {
+              if (e.target.classList.contains('toast-close')) {
+                toast.remove();
+                return;
+              }
+              if (registration.waiting) {
+                registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+              }
+              toast.remove();
+            });
+
+            container.appendChild(toast);
+          }
+
+          // Se já houver um Service Worker em fila (waiting) pronto para ativar
+          if (registration.waiting) {
+            showUpdateToast();
+          }
+
+          // Monitora novos Service Workers que forem baixados/instalados
+          registration.addEventListener('updatefound', () => {
+            const newWorker = registration.installing;
+            if (newWorker) {
+              newWorker.addEventListener('statechange', () => {
+                // Só avisa quando o estado for 'installed' e se já existir uma versão ativa controlando a página
+                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  showUpdateToast();
+                }
+              });
+            }
+          });
+        })
+        .catch((err) => {
+          console.error('Falha ao registrar o Service Worker: ', err);
+        });
+
+      // Recarrega a página assim que o novo Service Worker pular a espera e se tornar o controlador ativo
+      let refreshing = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (!refreshing) {
+          refreshing = true;
+          window.location.reload();
+        }
+      });
+    });
+  }
+}
 
 // --- AUTO-SELEÇÃO DE INPUTS AO FOCAR (MELHORA A RESPONSIVIDADE) ---
 function setupInputAutoSelect() {

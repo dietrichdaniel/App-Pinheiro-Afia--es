@@ -1099,20 +1099,6 @@
 
   <!-- JS Scripts -->
   <script type="module" src="app.js"></script>
-
-  <!-- Script para Registrar o Service Worker do PWA -->
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js')
-          .then((registration) => {
-            console.log('PWA Service Worker registrado com sucesso: ', registration.scope);
-          })
-          .catch((err) => {
-            console.error('Falha ao registrar o Service Worker: ', err);
-          });
-      });
-    }
   </script>
 </body>
 </html>
