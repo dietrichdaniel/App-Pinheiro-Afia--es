@@ -319,12 +319,13 @@ function setupConnectionMonitoring() {
 }
 
 // --- SISTEMA DE NOTIFICAÇÃO (TOAST) ---
-function showToast(message, type = 'success', action = null, autoDismiss = true) {
-  const container = document.getElementById('toastContainer');
+function showToast(message, type = 'success', action = null, autoDismiss = true, centered = false) {
+  const containerId = centered ? 'toastCenteredContainer' : 'toastContainer';
+  const container = document.getElementById(containerId);
   if (!container) return;
 
   const toast = document.createElement('div');
-  toast.className = `toast ${type}`;
+  toast.className = `toast ${type} ${centered ? 'toast-card' : ''}`;
 
   // Icone dinâmico
   let icon = '';
@@ -338,14 +339,34 @@ function showToast(message, type = 'success', action = null, autoDismiss = true)
     actionHtml = `<button class="btn btn-primary btn-sm" style="font-size: 0.75rem; padding: 4px 10px; margin-left: 12px; margin-right: 4px; background: var(--primary); color: var(--text-dark); border: none; font-weight: bold; border-radius: var(--radius-sm); cursor: pointer;">${action.text}</button>`;
   }
 
-  toast.innerHTML = `
-    <div style="display: flex; align-items: center; flex-grow: 1;">
-      <span style="font-weight: bold; margin-right: 8px; font-size: 1rem;">${icon}</span>
-      <span style="font-size: 0.85rem; line-height: 1.3;">${message}</span>
-    </div>
-    ${actionHtml}
-    <button class="toast-close" style="background: transparent; border: none; color: var(--text-muted); cursor: pointer; font-size: 1.2rem; line-height: 1; padding: 0 4px;">&times;</button>
-  `;
+  if (centered) {
+    // Layout empilhado (Card de Sucesso / Alerta)
+    toast.innerHTML = `
+      <div style="width: 56px; height: 56px; border-radius: 50%; background: ${type === 'success' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(234, 179, 8, 0.1)'}; color: ${type === 'success' ? 'var(--success)' : 'var(--primary)'}; display: flex; align-items: center; justify-content: center; margin-bottom: 4px;">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2.5">
+          ${type === 'success' 
+            ? '<polyline points="20 6 9 17 4 12"/>' 
+            : '<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>'}
+        </svg>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 6px;">
+        <h4 style="font-family: var(--font-heading); font-size: 1.25rem; font-weight: bold; color: var(--text-main); margin: 0;">${type === 'success' ? 'Sucesso!' : 'Aviso!'}</h4>
+        <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.4; margin: 0;">${message}</p>
+      </div>
+      ${actionHtml}
+      <button class="toast-close" style="position: absolute; top: 12px; right: 12px; background: transparent; border: none; color: var(--text-muted); cursor: pointer; font-size: 1.2rem; line-height: 1;">&times;</button>
+    `;
+  } else {
+    // Layout padrão em linha
+    toast.innerHTML = `
+      <div style="display: flex; align-items: center; flex-grow: 1;">
+        <span style="font-weight: bold; margin-right: 8px; font-size: 1rem;">${icon}</span>
+        <span style="font-size: 0.85rem; line-height: 1.3;">${message}</span>
+      </div>
+      ${actionHtml}
+      <button class="toast-close" style="background: transparent; border: none; color: var(--text-muted); cursor: pointer; font-size: 1.2rem; line-height: 1; padding: 0 4px;">&times;</button>
+    `;
+  }
 
   container.appendChild(toast);
 
@@ -812,10 +833,7 @@ function setupFormSubmissions() {
         };
 
         await addRecord('servicos', novoServico);
-        const modalReg = document.getElementById('modalServicoRegistrado');
-        if (modalReg) {
-          modalReg.style.display = 'flex';
-        }
+        showToast('Serviço registrado com sucesso!', 'success', null, true, true);
         formServico.reset();
 
         // Limpa adicionais dinâmicos e oculta o container
@@ -861,16 +879,7 @@ function setupFormSubmissions() {
     });
   }
 
-  // Vincular botão de fechar do modal de sucesso de cadastro
-  const btnServicoRegistradoOk = document.getElementById('btnServicoRegistradoOk');
-  if (btnServicoRegistradoOk) {
-    btnServicoRegistradoOk.addEventListener('click', () => {
-      const modal = document.getElementById('modalServicoRegistrado');
-      if (modal) {
-        modal.style.display = 'none';
-      }
-    });
-  }
+
 
   // 2. FORMULÁRIO DE ESTOQUE
   const formEstoque = document.getElementById('formEstoque');
