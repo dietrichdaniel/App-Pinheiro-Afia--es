@@ -82,35 +82,21 @@ function setupServiceWorker() {
         .then((registration) => {
           console.log('PWA Service Worker registrado com sucesso: ', registration.scope);
 
-          // Função para mostrar o modal de atualização
-          function showUpdateModal() {
-            const modal = document.getElementById('modalUpdateDisponivel');
-            if (!modal) return;
-            
-            modal.style.display = 'flex';
-
-            const btnAgora = document.getElementById('btnUpdateAgora');
-            const btnDepois = document.getElementById('btnUpdateDepois');
-
-            if (btnAgora) {
-              btnAgora.onclick = () => {
+          // Função para mostrar a notificação de atualização em formato Toast
+          function showUpdateNotification() {
+            showToast('Nova atualização do sistema disponível!', 'warning', {
+              text: 'Atualizar',
+              callback: () => {
                 if (registration.waiting) {
                   registration.waiting.postMessage({ type: 'SKIP_WAITING' });
                 }
-                modal.style.display = 'none';
-              };
-            }
-
-            if (btnDepois) {
-              btnDepois.onclick = () => {
-                modal.style.display = 'none';
-              };
-            }
+              }
+            }, false); // autoDismiss: false para dar tempo ao usuário de clicar
           }
 
           // Se já houver um Service Worker em fila (waiting) pronto para ativar
           if (registration.waiting) {
-            showUpdateModal();
+            showUpdateNotification();
           }
 
           // Monitora novos Service Workers que forem baixados/instalados
@@ -120,7 +106,7 @@ function setupServiceWorker() {
               newWorker.addEventListener('statechange', () => {
                 // Só avisa quando o estado for 'installed' e se já existir uma versão ativa controlando a página
                 if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                  showUpdateModal();
+                  showUpdateNotification();
                 }
               });
             }
@@ -237,41 +223,31 @@ function switchTabWithoutPush(tabId) {
 function setupAppUpdatedModal() {
   if (localStorage.getItem('app_just_updated') === 'true') {
     localStorage.removeItem('app_just_updated');
-    const modal = document.getElementById('modalAppAtualizado');
-    if (modal) {
-      modal.style.display = 'flex';
-    }
+    showToast('O aplicativo foi atualizado com sucesso!', 'success');
   }
 
-  const btnOk = document.getElementById('btnAppAtualizadoOk');
-  if (btnOk) {
-    btnOk.addEventListener('click', () => {
-      const modal = document.getElementById('modalAppAtualizado');
-      if (modal) {
-        modal.style.display = 'none';
-      }
-    });
-  }
-
-  // Simulação de Popups para desenvolvedor/teste
+  // Simulação de Popups para desenvolvedor/teste (via sistema de Toasts)
   const btnTestUpdateAvailable = document.getElementById('btnTestUpdateAvailable');
   const btnTestAppUpdated = document.getElementById('btnTestAppUpdated');
 
   if (btnTestUpdateAvailable) {
     btnTestUpdateAvailable.addEventListener('click', () => {
-      const modal = document.getElementById('modalUpdateDisponivel');
-      if (modal) {
-        modal.style.display = 'flex';
-      }
+      showToast('Nova atualização do sistema disponível!', 'warning', {
+        text: 'Atualizar',
+        callback: () => {
+          showToast('Simulando atualização... Recarregando página.', 'info');
+          setTimeout(() => {
+            localStorage.setItem('app_just_updated', 'true');
+            window.location.reload();
+          }, 1500);
+        }
+      }, false);
     });
   }
 
   if (btnTestAppUpdated) {
     btnTestAppUpdated.addEventListener('click', () => {
-      const modal = document.getElementById('modalAppAtualizado');
-      if (modal) {
-        modal.style.display = 'flex';
-      }
+      showToast('O aplicativo foi atualizado com sucesso!', 'success');
     });
   }
 }
@@ -343,8 +319,10 @@ function setupConnectionMonitoring() {
 }
 
 // --- SISTEMA DE NOTIFICAÇÃO (TOAST) ---
-function showToast(message, type = 'success') {
+function showToast(message, type = 'success', action = null, autoDismiss = true) {
   const container = document.getElementById('toastContainer');
+  if (!container) return;
+
   const toast = document.createElement('div');
   toast.className = `toast ${type}`;
 
@@ -355,13 +333,32 @@ function showToast(message, type = 'success') {
   else if (type === 'warning') icon = '⚠';
   else icon = 'ℹ';
 
+  let actionHtml = '';
+  if (action) {
+    actionHtml = `<button class="btn btn-primary btn-sm" style="font-size: 0.75rem; padding: 4px 10px; margin-left: 12px; margin-right: 4px; background: var(--primary); color: var(--text-dark); border: none; font-weight: bold; border-radius: var(--radius-sm); cursor: pointer;">${action.text}</button>`;
+  }
+
   toast.innerHTML = `
-    <span style="font-weight: bold; margin-right: 8px;">${icon}</span>
-    <span style="flex-grow: 1; font-size: 0.85rem;">${message}</span>
-    <button class="toast-close">&times;</button>
+    <div style="display: flex; align-items: center; flex-grow: 1;">
+      <span style="font-weight: bold; margin-right: 8px; font-size: 1rem;">${icon}</span>
+      <span style="font-size: 0.85rem; line-height: 1.3;">${message}</span>
+    </div>
+    ${actionHtml}
+    <button class="toast-close" style="background: transparent; border: none; color: var(--text-muted); cursor: pointer; font-size: 1.2rem; line-height: 1; padding: 0 4px;">&times;</button>
   `;
 
   container.appendChild(toast);
+
+  // Se houver uma ação, vincula o evento
+  if (action) {
+    const actionBtn = toast.querySelector('.btn-primary');
+    if (actionBtn) {
+      actionBtn.addEventListener('click', () => {
+        action.callback();
+        toast.remove();
+      });
+    }
+  }
 
   // Evento para fechar ao clicar no "X"
   toast.querySelector('.toast-close').addEventListener('click', () => {
@@ -369,11 +366,13 @@ function showToast(message, type = 'success') {
   });
 
   // Remove automaticamente após 4 segundos
-  setTimeout(() => {
-    if (toast.parentNode) {
-      toast.remove();
-    }
-  }, 4000);
+  if (autoDismiss) {
+    setTimeout(() => {
+      if (toast.parentNode) {
+        toast.remove();
+      }
+    }, 4000);
+  }
 }
 
 // --- CONFIGURAÇÃO DE INPUTS DINÂMICOS (LINHAS ADICIONAIS) ---
