@@ -1157,11 +1157,32 @@ async function renderDashboard() {
   const pedidos = await getAllRecords('pedidos');
   const receitas = await getAllRecords('receitas');
 
-  // Cálculos de Faturamento
-  const servicosFinalizados = servicos.filter(s => s.status !== 'Agendado');
-  const totalServicos = servicosFinalizados.reduce((acc, curr) => acc + (curr.valor || 0), 0);
-  const pedidosFinalizados = pedidos.filter(p => p.status !== 'Agendado');
-  const totalPedidos = pedidosFinalizados.reduce((acc, curr) => acc + ((curr.itens ? curr.valor : (curr.quantidade * curr.valor)) + (curr.frete || 0)), 0);
+  const now = new Date();
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
+
+  const meses = [
+    'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+  ];
+  const nomeMesAtual = meses[currentMonth];
+
+  // Cálculos de Faturamento - Filtrados pelo mês atual
+  const servicosFinalizadosAll = servicos.filter(s => s.status !== 'Agendado');
+  const servicosMes = servicosFinalizadosAll.filter(s => {
+    if (!s.data) return false;
+    const sDate = new Date(s.data);
+    return sDate.getMonth() === currentMonth && sDate.getFullYear() === currentYear;
+  });
+  const totalServicos = servicosMes.reduce((acc, curr) => acc + (curr.valor || 0), 0);
+
+  const pedidosFinalizadosAll = pedidos.filter(p => p.status !== 'Agendado');
+  const pedidosMes = pedidosFinalizadosAll.filter(p => {
+    if (!p.data) return false;
+    const pDate = new Date(p.data);
+    return pDate.getMonth() === currentMonth && pDate.getFullYear() === currentYear;
+  });
+  const totalPedidos = pedidosMes.reduce((acc, curr) => acc + ((curr.itens ? curr.valor : (curr.quantidade * curr.valor)) + (curr.frete || 0)), 0);
 
   // Contadores de Estoque
   const totalItensEstoque = estoque.length;
@@ -1183,7 +1204,12 @@ async function renderDashboard() {
     unsyncedBadge.style.color = 'var(--info)';
   }
 
-  // Atualiza no DOM do Dashboard
+  // Atualiza no DOM do Dashboard com o mês correspondente
+  const labelServicos = document.querySelector('#dashboard .info-card:nth-child(1) h3');
+  if (labelServicos) labelServicos.textContent = `Faturamento Serviços (${nomeMesAtual})`;
+  const labelPedidos = document.querySelector('#dashboard .info-card:nth-child(2) h3');
+  if (labelPedidos) labelPedidos.textContent = `Vendas/Pedidos (${nomeMesAtual})`;
+
   document.getElementById('dashTotalServicos').textContent = formatMoney(totalServicos);
   document.getElementById('dashTotalPedidos').textContent = formatMoney(totalPedidos);
   document.getElementById('dashTotalEstoque').textContent = `${totalItensEstoque} insumo${totalItensEstoque !== 1 ? 's' : ''}`;
@@ -1192,7 +1218,7 @@ async function renderDashboard() {
   const recentesTable = document.getElementById('tableRecentes').querySelector('tbody');
 
   const atividades = [];
-  servicosFinalizados.forEach(s => {
+  servicosFinalizadosAll.forEach(s => {
     atividades.push({
       tipo: 'Serviço',
       desc: `Serviço prestado a: ${s.nome}`,
@@ -1201,7 +1227,7 @@ async function renderDashboard() {
       synced: s.synced
     });
   });
-  pedidosFinalizados.forEach(p => {
+  pedidosFinalizadosAll.forEach(p => {
     const itensDesc = p.itens ? (Array.isArray(p.itens) ? p.itens.map(i => i.replace(/\s*-\s*R\$\s*[\d.]+/i, '')).join(', ') : p.itens) : `${p.item}`;
     atividades.push({
       tipo: 'Pedido (Venda)',
@@ -1239,9 +1265,31 @@ async function renderServicosView() {
   const servicos = await getAllRecords('servicos');
   const tbody = document.getElementById('tableServicos').querySelector('tbody');
 
-  // Filtra os serviços agendados (fila) e os já finalizados (histórico)
+  const now = new Date();
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
+
+  const meses = [
+    'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+  ];
+  const nomeMesAtual = meses[currentMonth];
+  const anoAtual = now.getFullYear();
+
+  // Atualiza o título do histórico dinamicamente para mostrar o mês correspondente
+  const tituloHistorico = document.querySelector('#servicos .table-panel h2');
+  if (tituloHistorico) {
+    tituloHistorico.textContent = `Histórico de Serviços (${nomeMesAtual}/${anoAtual})`;
+  }
+
+  // Filtra os serviços agendados (fila) e os já finalizados (histórico do mês atual)
   const servicosFila = servicos.filter(s => s.status === 'Agendado');
-  const servicosHistorico = servicos.filter(s => s.status !== 'Agendado');
+  const servicosHistorico = servicos.filter(s => {
+    if (s.status === 'Agendado') return false;
+    if (!s.data) return false;
+    const sDate = new Date(s.data);
+    return sDate.getMonth() === currentMonth && sDate.getFullYear() === currentYear;
+  });
 
   // --- RENDERIZA O MURAL DA FILA DE ESPERA ---
   const muralPanel = document.getElementById('muralFilaPanel');
@@ -1501,9 +1549,31 @@ async function renderPedidosView() {
   const pedidos = await getAllRecords('pedidos');
   const tbody = document.getElementById('tablePedidos').querySelector('tbody');
 
-  // Filtra pedidos em fila (Agendados) e histórico (Finalizados)
+  const now = new Date();
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
+
+  const meses = [
+    'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+  ];
+  const nomeMesAtual = meses[currentMonth];
+  const anoAtual = now.getFullYear();
+
+  // Atualiza o título do histórico dinamicamente para mostrar o mês correspondente
+  const tituloHistorico = document.querySelector('#pedidos .table-panel h2');
+  if (tituloHistorico) {
+    tituloHistorico.textContent = `Pedidos Realizados (${nomeMesAtual}/${anoAtual})`;
+  }
+
+  // Filtra pedidos em fila (Agendados) e histórico (Finalizados do mês atual)
   const pedidosFila = pedidos.filter(p => p.status === 'Agendado');
-  const pedidosHistorico = pedidos.filter(p => p.status !== 'Agendado');
+  const pedidosHistorico = pedidos.filter(p => {
+    if (p.status === 'Agendado') return false;
+    if (!p.data) return false;
+    const pDate = new Date(p.data);
+    return pDate.getMonth() === currentMonth && pDate.getFullYear() === currentYear;
+  });
 
   // --- RENDERIZA O MURAL DA FILA DE ESPERA ---
   const muralPanel = document.getElementById('muralPedidosPanel');
