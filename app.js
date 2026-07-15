@@ -61,6 +61,8 @@ window.addEventListener('DOMContentLoaded', async () => {
     setupModalDetalhes();
     setupModalDetalhesPedido();
     setupModalLotes();
+    setupAppUpdatedModal();
+    setupBackButtonLock();
 
     // Renderiza dados iniciais
     await reloadAllViews();
@@ -80,46 +82,35 @@ function setupServiceWorker() {
         .then((registration) => {
           console.log('PWA Service Worker registrado com sucesso: ', registration.scope);
 
-          // Função para mostrar notificação de atualização
-          function showUpdateToast() {
-            const container = document.getElementById('toastContainer');
-            if (!container) return;
-
-            // Evita duplicar o toast de atualização se já estiver na tela
-            if (document.getElementById('updateToastNotify')) return;
-
-            const toast = document.createElement('div');
-            toast.id = 'updateToastNotify';
-            toast.className = 'toast warning';
-            toast.style.cursor = 'pointer';
-            toast.style.borderLeftWidth = '6px';
+          // Função para mostrar o modal de atualização
+          function showUpdateModal() {
+            const modal = document.getElementById('modalUpdateDisponivel');
+            if (!modal) return;
             
-            toast.innerHTML = `
-              <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 4px;">
-                <span style="font-weight: bold; font-size: 0.9rem; color: #f59e0b;">Atualização Disponível!</span>
-                <span style="font-size: 0.8rem; color: var(--text-main);">Clique aqui para carregar a nova versão.</span>
-              </div>
-              <button class="toast-close" style="font-size: 1.2rem; padding: 4px;">&times;</button>
-            `;
+            modal.style.display = 'flex';
 
-            // Se clicar na notificação, força a atualização
-            toast.addEventListener('click', (e) => {
-              if (e.target.classList.contains('toast-close')) {
-                toast.remove();
-                return;
-              }
-              if (registration.waiting) {
-                registration.waiting.postMessage({ type: 'SKIP_WAITING' });
-              }
-              toast.remove();
-            });
+            const btnAgora = document.getElementById('btnUpdateAgora');
+            const btnDepois = document.getElementById('btnUpdateDepois');
 
-            container.appendChild(toast);
+            if (btnAgora) {
+              btnAgora.onclick = () => {
+                if (registration.waiting) {
+                  registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+                }
+                modal.style.display = 'none';
+              };
+            }
+
+            if (btnDepois) {
+              btnDepois.onclick = () => {
+                modal.style.display = 'none';
+              };
+            }
           }
 
           // Se já houver um Service Worker em fila (waiting) pronto para ativar
           if (registration.waiting) {
-            showUpdateToast();
+            showUpdateModal();
           }
 
           // Monitora novos Service Workers que forem baixados/instalados
@@ -129,7 +120,7 @@ function setupServiceWorker() {
               newWorker.addEventListener('statechange', () => {
                 // Só avisa quando o estado for 'installed' e se já existir uma versão ativa controlando a página
                 if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                  showUpdateToast();
+                  showUpdateModal();
                 }
               });
             }
@@ -144,6 +135,7 @@ function setupServiceWorker() {
       navigator.serviceWorker.addEventListener('controllerchange', () => {
         if (!refreshing) {
           refreshing = true;
+          localStorage.setItem('app_just_updated', 'true');
           window.location.reload();
         }
       });
@@ -207,6 +199,15 @@ function setupNavigation() {
 }
 
 function switchTab(tabId) {
+  switchTabWithoutPush(tabId);
+  
+  // Push history state if it's different from the current state
+  if (window.location.hash !== '#' + tabId) {
+    window.history.pushState({ tab: tabId }, '', '#' + tabId);
+  }
+}
+
+function switchTabWithoutPush(tabId) {
   if (!tabId) return;
   activeTab = tabId;
 
@@ -230,6 +231,68 @@ function switchTab(tabId) {
 
   // Recarrega dados da aba específica
   reloadAllViews();
+}
+
+// --- DIALOGO DE APLICATIVO ATUALIZADO ---
+function setupAppUpdatedModal() {
+  if (localStorage.getItem('app_just_updated') === 'true') {
+    localStorage.removeItem('app_just_updated');
+    const modal = document.getElementById('modalAppAtualizado');
+    if (modal) {
+      modal.style.display = 'flex';
+    }
+  }
+
+  const btnOk = document.getElementById('btnAppAtualizadoOk');
+  if (btnOk) {
+    btnOk.addEventListener('click', () => {
+      const modal = document.getElementById('modalAppAtualizado');
+      if (modal) {
+        modal.style.display = 'none';
+      }
+    });
+  }
+}
+
+// --- TRAVA DO BOTÃO VOLTAR DO CELULAR ---
+let backButtonPressCount = 0;
+let backButtonTimeout = null;
+
+function setupBackButtonLock() {
+  // Inicializa Estado de Histórico
+  if (window.history.state === null) {
+    window.history.replaceState({ tab: 'menu' }, '', '#menu');
+  }
+
+  window.addEventListener('popstate', (event) => {
+    const state = event.state;
+    if (state && state.tab) {
+      switchTabWithoutPush(state.tab);
+    } else {
+      // Sem histórico de navegação
+      if (activeTab !== 'menu') {
+        switchTabWithoutPush('menu');
+        window.history.pushState({ tab: 'menu' }, '', '#menu');
+      } else {
+        // Já está no menu inicial
+        if (backButtonPressCount === 0) {
+          backButtonPressCount++;
+          showToast('Pressione voltar novamente para sair do aplicativo.', 'info');
+          // Re-insere o estado no histórico para "travar" o primeiro clique
+          window.history.pushState({ tab: 'menu' }, '', '#menu');
+          
+          backButtonTimeout = setTimeout(() => {
+            backButtonPressCount = 0;
+          }, 2000);
+        } else {
+          // Segundo clique rápido: limpa o timeout e deixa fechar
+          clearTimeout(backButtonTimeout);
+          backButtonPressCount = 0;
+          window.history.go(-1);
+        }
+      }
+    }
+  });
 }
 
 // --- MONITORAÇÃO DE CONEXÃO ---

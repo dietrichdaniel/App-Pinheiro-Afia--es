@@ -1212,6 +1212,33 @@
       </div>
     </div>
 
+  <!-- Modal: Nova Atualização Disponível -->
+  <div class="modal" id="modalUpdateDisponivel" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 15, 25, 0.85); backdrop-filter: blur(8px); z-index: 9999; align-items: center; justify-content: center; padding: 20px;">
+    <div class="form-panel" style="width: 100%; max-width: 400px; box-shadow: var(--shadow-lg); border: 1px solid var(--border-glass); animation: fadeIn 0.3s ease-out; text-align: center; padding: 32px;">
+      <div style="width: 64px; height: 64px; border-radius: 50%; background: rgba(234, 179, 8, 0.1); color: var(--primary); display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+      </div>
+      <h2 style="margin: 0 0 12px 0; border: none; padding: 0; font-size: 1.4rem; font-family: var(--font-heading); color: var(--text-main);">Atualização Disponível!</h2>
+      <p style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.5; margin-bottom: 24px;">Uma nova versão do sistema está pronta. Deseja carregar agora para obter as últimas melhorias e novidades?</p>
+      <div style="display: flex; gap: 12px;">
+        <button type="button" class="btn btn-secondary" id="btnUpdateDepois" style="flex: 1; justify-content: center; padding: 10px;">Depois</button>
+        <button type="button" class="btn btn-primary" id="btnUpdateAgora" style="flex: 1; justify-content: center; padding: 10px;">Atualizar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Aplicativo Atualizado -->
+  <div class="modal" id="modalAppAtualizado" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 15, 25, 0.85); backdrop-filter: blur(8px); z-index: 9999; align-items: center; justify-content: center; padding: 20px;">
+    <div class="form-panel" style="width: 100%; max-width: 400px; box-shadow: var(--shadow-lg); border: 1px solid var(--border-glass); animation: fadeIn 0.3s ease-out; text-align: center; padding: 32px;">
+      <div style="width: 64px; height: 64px; border-radius: 50%; background: rgba(16, 185, 129, 0.1); color: var(--success); display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <h2 style="margin: 0 0 12px 0; border: none; padding: 0; font-size: 1.4rem; font-family: var(--font-heading); color: var(--text-main);">Sistema Atualizado!</h2>
+      <p style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.5; margin-bottom: 24px;">O aplicativo foi atualizado com sucesso para a versão mais recente contendo correções e melhorias.</p>
+      <button type="button" class="btn btn-primary" id="btnAppAtualizadoOk" style="width: 100%; justify-content: center; padding: 10px 24px;">Entendi</button>
+    </div>
+  </div>
+
   <!-- JS Scripts -->
   <script src="chart.js"></script>
   <script type="module" src="app.js"></script>
