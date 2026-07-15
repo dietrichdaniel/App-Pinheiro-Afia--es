@@ -812,7 +812,10 @@ function setupFormSubmissions() {
         };
 
         await addRecord('servicos', novoServico);
-        showToast('Serviço registrado localmente!');
+        const modalReg = document.getElementById('modalServicoRegistrado');
+        if (modalReg) {
+          modalReg.style.display = 'flex';
+        }
         formServico.reset();
 
         // Limpa adicionais dinâmicos e oculta o container
@@ -854,6 +857,17 @@ function setupFormSubmissions() {
         await reloadAllViews();
       } catch (err) {
         showToast('Erro ao salvar serviço: ' + err.message, 'error');
+      }
+    });
+  }
+
+  // Vincular botão de fechar do modal de sucesso de cadastro
+  const btnServicoRegistradoOk = document.getElementById('btnServicoRegistradoOk');
+  if (btnServicoRegistradoOk) {
+    btnServicoRegistradoOk.addEventListener('click', () => {
+      const modal = document.getElementById('modalServicoRegistrado');
+      if (modal) {
+        modal.style.display = 'none';
       }
     });
   }
