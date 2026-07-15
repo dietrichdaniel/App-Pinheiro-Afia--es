@@ -46,6 +46,7 @@ window.addEventListener('DOMContentLoaded', async () => {
 
     // Inicializa Eventos da Interface
     setupNavigation();
+    setupInputAutoSelect();
     setupDynamicRows();
     setupFormSubmissions();
     setupConnectionMonitoring();
@@ -66,6 +67,38 @@ window.addEventListener('DOMContentLoaded', async () => {
     showToast('Erro ao iniciar a aplicação: ' + err.message, 'error');
   }
 });
+
+// --- AUTO-SELEÇÃO DE INPUTS AO FOCAR (MELHORA A RESPONSIVIDADE) ---
+function setupInputAutoSelect() {
+  let selectAllPending = false;
+
+  document.addEventListener('focusin', (e) => {
+    if (e.target.tagName === 'INPUT' && e.target.type === 'number') {
+      e.target.select();
+      selectAllPending = true;
+    }
+  });
+
+  document.addEventListener('mouseup', (e) => {
+    if (selectAllPending && e.target.tagName === 'INPUT' && e.target.type === 'number') {
+      e.target.select();
+      selectAllPending = false;
+    }
+  });
+
+  document.addEventListener('touchend', (e) => {
+    if (selectAllPending && e.target.tagName === 'INPUT' && e.target.type === 'number') {
+      e.target.select();
+      selectAllPending = false;
+    }
+  });
+
+  document.addEventListener('blur', (e) => {
+    if (e.target.tagName === 'INPUT' && e.target.type === 'number') {
+      selectAllPending = false;
+    }
+  }, true);
+}
 
 // --- ROTEAMENTO E NAVEGAÇÃO DE ABAS ---
 function setupNavigation() {
