@@ -984,4 +984,8 @@ code.code-block {
   .menu-card-content h2 {
     font-size: 1.1rem;
   }
+  .settings-split {
+    grid-template-columns: 1fr;
+  }
 }
+
