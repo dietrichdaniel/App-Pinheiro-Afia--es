@@ -1024,4 +1024,20 @@ code.code-block {
   transform: translateY(0);
 }
 
+/* Destaques da Tela de Registrar Novo Serviço */
+#novo_servico .page-title h1,
+#novo_servico .form-panel h2 {
+  color: var(--primary);
+}
+
+#novo_servico .form-control {
+  border: 1px solid rgba(234, 179, 8, 0.25) !important;
+  background: rgba(13, 17, 28, 0.85) !important;
+}
+
+#novo_servico .form-control:focus {
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 3px rgba(234, 179, 8, 0.25) !important;
+}
+
 
