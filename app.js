@@ -15,7 +15,7 @@ import {
 } from './db.js';
 
 // --- ESTADO GLOBAL DA APLICAÇÃO ---
-let activeTab = 'dashboard';
+let activeTab = 'menu';
 let discountConfig = { qtd1: 5, pct1: 5, qtd2: 10, pct2: 10 };
 let currentPecas = [];
 let currentAdicionais = [];
@@ -192,6 +192,17 @@ function setupNavigation() {
       const tab = item.getAttribute('data-tab');
       switchTab(tab);
     });
+  });
+
+  // Listener para os cartões do Menu Principal
+  document.addEventListener('click', (e) => {
+    const card = e.target.closest('.menu-card');
+    if (card) {
+      const tab = card.getAttribute('data-tab');
+      if (tab) {
+        switchTab(tab);
+      }
+    }
   });
 }
 
@@ -1266,209 +1277,211 @@ async function renderDashboard() {
   document.getElementById('dashTotalEstoque').textContent = formatMoney(totalValorEstoque);
 
   // --- RENDERIZAÇÃO DOS GRÁFICOS (CHART.JS) ---
-  if (chartFaturamento) chartFaturamento.destroy();
-  if (chartEstoque) chartEstoque.destroy();
-  if (chartFaturamentoAnual) chartFaturamentoAnual.destroy();
+  if (chartFaturamento) { chartFaturamento.destroy(); chartFaturamento = null; }
+  if (chartEstoque) { chartEstoque.destroy(); chartEstoque = null; }
+  if (chartFaturamentoAnual) { chartFaturamentoAnual.destroy(); chartFaturamentoAnual = null; }
 
-  const ctxFaturamento = document.getElementById('chartFaturamentoComposicao');
-  if (ctxFaturamento) {
-    const temDados = totalServicos > 0 || totalPedidos > 0;
-    chartFaturamento = new Chart(ctxFaturamento, {
-      type: 'doughnut',
-      data: {
-        labels: temDados ? ['Serviços', 'Vendas/Pedidos'] : ['Sem Lançamentos'],
-        datasets: [{
-          data: temDados ? [totalServicos, totalPedidos] : [1],
-          backgroundColor: temDados ? ['#eab308', '#f59e0b'] : ['rgba(255,255,255,0.06)'],
-          borderWidth: 0
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            position: 'bottom',
-            labels: {
-              color: '#f8fafc',
-              font: { family: 'Inter', size: 12 }
-            }
-          },
-          tooltip: {
-            enabled: temDados,
-            callbacks: {
-              label: function(context) {
-                const label = context.label || '';
-                const value = context.raw || 0;
-                return `${label}: ${formatMoney(value)}`;
+  if (activeTab === 'dashboard') {
+    const ctxFaturamento = document.getElementById('chartFaturamentoComposicao');
+    if (ctxFaturamento) {
+      const temDados = totalServicos > 0 || totalPedidos > 0;
+      chartFaturamento = new Chart(ctxFaturamento, {
+        type: 'doughnut',
+        data: {
+          labels: temDados ? ['Serviços', 'Vendas/Pedidos'] : ['Sem Lançamentos'],
+          datasets: [{
+            data: temDados ? [totalServicos, totalPedidos] : [1],
+            backgroundColor: temDados ? ['#eab308', '#f59e0b'] : ['rgba(255,255,255,0.06)'],
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: {
+                color: '#f8fafc',
+                font: { family: 'Inter', size: 12 }
+              }
+            },
+            tooltip: {
+              enabled: temDados,
+              callbacks: {
+                label: function(context) {
+                  const label = context.label || '';
+                  const value = context.raw || 0;
+                  return `${label}: ${formatMoney(value)}`;
+                }
               }
             }
-          }
-        },
-        cutout: '75%'
+          },
+          cutout: '75%'
+        }
+      });
+    }
+
+    // Processa dados de estoque agrupados para o gráfico de pizza
+    const itemsValueList = [];
+    estoqueInsumosAgrupado.forEach(i => {
+      const valTotal = i.quantidade * i.valor;
+      if (valTotal > 0) {
+        itemsValueList.push({ nome: i.item + ' (Insumo)', valor: valTotal });
       }
     });
-  }
-
-  // Processa dados de estoque agrupados para o gráfico de pizza
-  const itemsValueList = [];
-  estoqueInsumosAgrupado.forEach(i => {
-    const valTotal = i.quantidade * i.valor;
-    if (valTotal > 0) {
-      itemsValueList.push({ nome: i.item + ' (Insumo)', valor: valTotal });
-    }
-  });
-  estoqueProdutos.forEach(p => {
-    const receita = receitas.find(r => r.produtoFinal.toLowerCase() === p.produto.toLowerCase());
-    let custoUnitario = 0;
-    if (receita) {
-      custoUnitario += receita.maoDeObra || 0;
-      if (Array.isArray(receita.materiaPrima)) {
-        receita.materiaPrima.forEach(mp => {
-          const insumo = estoqueInsumosAgrupado.find(i => i.item.toLowerCase() === mp.item.toLowerCase());
-          const precoUnitarioInsumo = insumo ? insumo.valor : 0;
-          custoUnitario += precoUnitarioInsumo * mp.quantidade;
-        });
+    estoqueProdutos.forEach(p => {
+      const receita = receitas.find(r => r.produtoFinal.toLowerCase() === p.produto.toLowerCase());
+      let custoUnitario = 0;
+      if (receita) {
+        custoUnitario += receita.maoDeObra || 0;
+        if (Array.isArray(receita.materiaPrima)) {
+          receita.materiaPrima.forEach(mp => {
+            const insumo = estoqueInsumosAgrupado.find(i => i.item.toLowerCase() === mp.item.toLowerCase());
+            const precoUnitarioInsumo = insumo ? insumo.valor : 0;
+            custoUnitario += precoUnitarioInsumo * mp.quantidade;
+          });
+        }
       }
-    }
-    const valTotal = custoUnitario * p.quantidade;
-    if (valTotal > 0) {
-      itemsValueList.push({ nome: p.produto + ' (Acabado)', valor: valTotal });
-    }
-  });
+      const valTotal = custoUnitario * p.quantidade;
+      if (valTotal > 0) {
+        itemsValueList.push({ nome: p.produto + ' (Acabado)', valor: valTotal });
+      }
+    });
 
-  itemsValueList.sort((a, b) => b.valor - a.valor);
-  const topStockItems = itemsValueList.slice(0, 5);
-  const topItemNames = topStockItems.map(x => x.nome);
-  const topItemValues = topStockItems.map(x => x.valor);
+    itemsValueList.sort((a, b) => b.valor - a.valor);
+    const topStockItems = itemsValueList.slice(0, 5);
+    const topItemNames = topStockItems.map(x => x.nome);
+    const topItemValues = topStockItems.map(x => x.valor);
 
-  const ctxEstoque = document.getElementById('chartEstoqueValor');
-  if (ctxEstoque) {
-    const temEstoque = topStockItems.length > 0;
-    const coresPie = ['#eab308', '#f59e0b', '#f97316', '#ea580c', '#b45309'];
+    const ctxEstoque = document.getElementById('chartEstoqueValor');
+    if (ctxEstoque) {
+      const temEstoque = topStockItems.length > 0;
+      const coresPie = ['#eab308', '#f59e0b', '#f97316', '#ea580c', '#b45309'];
 
-    chartEstoque = new Chart(ctxEstoque, {
-      type: 'pie',
-      data: {
-        labels: temEstoque ? topItemNames : ['Sem itens'],
-        datasets: [{
-          data: temEstoque ? topItemValues : [1],
-          backgroundColor: temEstoque ? coresPie.slice(0, topStockItems.length) : ['rgba(255,255,255,0.06)'],
-          borderWidth: 0
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            position: 'bottom',
-            labels: {
-              color: '#f8fafc',
-              font: { family: 'Inter', size: 10 },
-              boxWidth: 12
-            }
-          },
-          tooltip: {
-            enabled: temEstoque,
-            callbacks: {
-              label: function(context) {
-                const label = context.label || '';
-                const value = context.raw || 0;
-                return `${label}: ${formatMoney(value)}`;
+      chartEstoque = new Chart(ctxEstoque, {
+        type: 'pie',
+        data: {
+          labels: temEstoque ? topItemNames : ['Sem itens'],
+          datasets: [{
+            data: temEstoque ? topItemValues : [1],
+            backgroundColor: temEstoque ? coresPie.slice(0, topStockItems.length) : ['rgba(255,255,255,0.06)'],
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: {
+                color: '#f8fafc',
+                font: { family: 'Inter', size: 10 },
+                boxWidth: 12
+              }
+            },
+            tooltip: {
+              enabled: temEstoque,
+              callbacks: {
+                label: function(context) {
+                  const label = context.label || '';
+                  const value = context.raw || 0;
+                  return `${label}: ${formatMoney(value)}`;
+                }
               }
             }
           }
         }
-      }
-    });
-  }
-
-  // Gráfico de Faturamento Anual (Linhas)
-  const ctxFaturamentoAnual = document.getElementById('chartFaturamentoAnual');
-  if (ctxFaturamentoAnual) {
-    const tituloFaturamentoAnual = document.getElementById('tituloFaturamentoAnual');
-    if (tituloFaturamentoAnual) {
-      tituloFaturamentoAnual.textContent = `Faturamento Anual (${currentYear})`;
+      });
     }
 
-    chartFaturamentoAnual = new Chart(ctxFaturamentoAnual, {
-      type: 'line',
-      data: {
-        labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'],
-        datasets: [
-          {
-            label: 'Serviços',
-            data: faturamentoMensalServicos,
-            borderColor: '#eab308',
-            backgroundColor: 'rgba(234, 179, 8, 0.04)',
-            fill: true,
-            tension: 0.3,
-            borderWidth: 2
-          },
-          {
-            label: 'Vendas/Pedidos',
-            data: faturamentoMensalVendas,
-            borderColor: '#f59e0b',
-            backgroundColor: 'rgba(245, 158, 11, 0.04)',
-            fill: true,
-            tension: 0.3,
-            borderWidth: 2
-          },
-          {
-            label: 'Total',
-            data: faturamentoMensalTotal,
-            borderColor: '#f97316',
-            backgroundColor: 'rgba(249, 115, 22, 0.04)',
-            fill: true,
-            tension: 0.3,
-            borderWidth: 3,
-            borderDash: [5, 5]
-          }
-        ]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            position: 'top',
-            labels: {
-              color: '#f8fafc',
-              font: { family: 'Inter', size: 11 }
+    // Gráfico de Faturamento Anual (Linhas)
+    const ctxFaturamentoAnual = document.getElementById('chartFaturamentoAnual');
+    if (ctxFaturamentoAnual) {
+      const tituloFaturamentoAnual = document.getElementById('tituloFaturamentoAnual');
+      if (tituloFaturamentoAnual) {
+        tituloFaturamentoAnual.textContent = `Faturamento Anual (${currentYear})`;
+      }
+
+      chartFaturamentoAnual = new Chart(ctxFaturamentoAnual, {
+        type: 'line',
+        data: {
+          labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'],
+          datasets: [
+            {
+              label: 'Serviços',
+              data: faturamentoMensalServicos,
+              borderColor: '#eab308',
+              backgroundColor: 'rgba(234, 179, 8, 0.04)',
+              fill: true,
+              tension: 0.3,
+              borderWidth: 2
+            },
+            {
+              label: 'Vendas/Pedidos',
+              data: faturamentoMensalVendas,
+              borderColor: '#f59e0b',
+              backgroundColor: 'rgba(245, 158, 11, 0.04)',
+              fill: true,
+              tension: 0.3,
+              borderWidth: 2
+            },
+            {
+              label: 'Total',
+              data: faturamentoMensalTotal,
+              borderColor: '#f97316',
+              backgroundColor: 'rgba(249, 115, 22, 0.04)',
+              fill: true,
+              tension: 0.3,
+              borderWidth: 3,
+              borderDash: [5, 5]
             }
-          },
-          tooltip: {
-            callbacks: {
-              label: function(context) {
-                const label = context.dataset.label || '';
-                const value = context.raw || 0;
-                return `${label}: ${formatMoney(value)}`;
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'top',
+              labels: {
+                color: '#f8fafc',
+                font: { family: 'Inter', size: 11 }
+              }
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  const label = context.dataset.label || '';
+                  const value = context.raw || 0;
+                  return `${label}: ${formatMoney(value)}`;
+                }
               }
             }
-          }
-        },
-        scales: {
-          x: {
-            grid: { display: false },
-            ticks: {
-              color: '#94a3b8',
-              font: { family: 'Inter', size: 10 }
-            }
           },
-          y: {
-            grid: { color: 'rgba(255,255,255,0.06)' },
-            ticks: {
-              color: '#94a3b8',
-              font: { family: 'Inter', size: 10 },
-              callback: function(value) {
-                return 'R$ ' + value;
+          scales: {
+            x: {
+              grid: { display: false },
+              ticks: {
+                color: '#94a3b8',
+                font: { family: 'Inter', size: 10 }
+              }
+            },
+            y: {
+              grid: { color: 'rgba(255,255,255,0.06)' },
+              ticks: {
+                color: '#94a3b8',
+                font: { family: 'Inter', size: 10 },
+                callback: function(value) {
+                  return 'R$ ' + value;
+                }
               }
             }
           }
         }
-      }
-    });
+      });
+    }
   }
 
   // Atividades Recentes (combina as últimas 5 transações de vendas e serviços ordenadas por data)

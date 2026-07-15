@@ -30,7 +30,13 @@
       </div>
       
       <nav class="nav-menu">
-        <li class="nav-item active" data-tab="dashboard">
+        <li class="nav-item active" data-tab="menu">
+          <button>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            Início
+          </button>
+        </li>
+        <li class="nav-item" data-tab="dashboard">
           <button>
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
             Dashboard
@@ -79,10 +85,10 @@
     <!-- Barra de Navegação Inferior (Mobile Only) -->
     <nav class="mobile-nav">
       <ul class="mobile-nav-list">
-        <li class="mobile-nav-item active" data-tab="dashboard">
+        <li class="mobile-nav-item active" data-tab="menu">
           <button>
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
-            Dashboard
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            Início
           </button>
         </li>
         <li class="mobile-nav-item" data-tab="servicos">
@@ -121,8 +127,104 @@
     <!-- Área de Exibição das Abas -->
     <main class="main-content">
       
+      <!-- ABA 0: MENU PRINCIPAL -->
+      <section id="menu" class="tab-panel active">
+        <div class="page-header">
+          <div class="page-title">
+            <h1>Menu Principal</h1>
+            <p>Selecione uma das opções abaixo para gerenciar a Pinheiro Afiações</p>
+          </div>
+        </div>
+
+        <div class="menu-grid">
+          <!-- Card 1: Serviços -->
+          <div class="menu-card" data-tab="servicos">
+            <div class="menu-card-icon cyan">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.54 5.23l-1.39-1.68C18.88 3.21 18.47 3 18 3H6c-.47 0-.88.21-1.16.55L3.46 5.23C3.17 5.57 3 6.02 3 6.5V19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6.5c0-.48-.17-.93-.46-1.27zM6.24 5h11.52l.83 1H5.41l.83-1zM5 19V8h14v11H5zm3-5h2.55v3h2.9v-3H16l-4-4z"/></svg>
+            </div>
+            <div class="menu-card-content">
+              <h2>Serviços Prestados</h2>
+              <p>Registre novos serviços de afiação, consulte o histórico e gerencie a fila de espera dos clientes.</p>
+            </div>
+            <div class="menu-card-arrow">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+            </div>
+          </div>
+
+          <!-- Card 2: Estoque -->
+          <div class="menu-card" data-tab="estoque">
+            <div class="menu-card-icon warning">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-5 12H4V8h11v8zm5 0h-3V8h3v8z"/></svg>
+            </div>
+            <div class="menu-card-content">
+              <h2>Estoque / Insumos</h2>
+              <p>Controle a entrada e saída de insumos, matérias-primas e produtos finalizados em estoque.</p>
+            </div>
+            <div class="menu-card-arrow">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+            </div>
+          </div>
+
+          <!-- Card 3: Pedidos -->
+          <div class="menu-card" data-tab="pedidos">
+            <div class="menu-card-icon emerald">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>
+            </div>
+            <div class="menu-card-content">
+              <h2>Pedidos (Vendas)</h2>
+              <p>Registre saídas e vendas de produtos prontos e gerencie a fila de entrega de mercadorias.</p>
+            </div>
+            <div class="menu-card-arrow">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+            </div>
+          </div>
+
+          <!-- Card 4: Receitas -->
+          <div class="menu-card" data-tab="receitas">
+            <div class="menu-card-icon info">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8.12 19.38c1.91 0 3.7-.74 5.05-2.09l7.07-7.07c.78-.78.78-2.05 0-2.83l-3.54-3.54c-.78-.78-2.05-.78-2.83 0l-7.07 7.07c-1.35 1.35-2.09 3.14-2.09 5.05v3.54h3.42zM18.66 6.04l2.12 2.12-1.41 1.41-2.12-2.12 1.41-1.41zM6.92 14.92L14.4 7.45l2.12 2.12-7.48 7.48H6.92v-2.13zM3 20h18v2H3v-2z"/></svg>
+            </div>
+            <div class="menu-card-content">
+              <h2>Receitas de Produtos</h2>
+              <p>Defina as matérias-primas, custos de mão de obra e composição de fabricação dos seus produtos.</p>
+            </div>
+            <div class="menu-card-arrow">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+            </div>
+          </div>
+
+          <!-- Card 5: Dashboard -->
+          <div class="menu-card" data-tab="dashboard">
+            <div class="menu-card-icon purple">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+            </div>
+            <div class="menu-card-content">
+              <h2>Painel de Controle</h2>
+              <p>Visualize relatórios de faturamento, gráficos de vendas e estoque, além do histórico de atividades recentes.</p>
+            </div>
+            <div class="menu-card-arrow">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+            </div>
+          </div>
+
+          <!-- Card 6: Configurações -->
+          <div class="menu-card" data-tab="configuracoes">
+            <div class="menu-card-icon gray">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+            </div>
+            <div class="menu-card-content">
+              <h2>Configurações</h2>
+              <p>Configure preços padrões de peças e adicionais, faixas de desconto progressivo e realize backups de dados.</p>
+            </div>
+            <div class="menu-card-arrow">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <!-- ABA 1: DASHBOARD -->
-      <section id="dashboard" class="tab-panel active">
+      <section id="dashboard" class="tab-panel">
         <div class="page-header">
           <div class="page-title">
             <h1>Painel de Controle</h1>
@@ -660,7 +762,7 @@
             <h2 style="font-family: var(--font-heading); font-size: 1.5rem; color: var(--primary); margin-bottom: 8px;">Cadastro de Peças & Adicionais</h2>
             <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 20px;">Cadastre os tipos de peças para afiação e os adicionais de serviço com seus respectivos preços padrões.</p>
             
-            <div class="layout-split" style="gap: 24px;">
+            <div class="settings-split">
               <!-- Coluna das Peças -->
               <div class="form-panel" style="flex: 1; min-width: 280px; background: rgba(255,255,255,0.01); border: 1px solid var(--border-glass); padding: 16px; border-radius: var(--radius-lg);">
                 <h3 style="font-family: var(--font-heading); color: var(--text-main); margin-bottom: 12px;">Peças de Afiação</h3>
