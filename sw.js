@@ -3,7 +3,7 @@
  * Habilita funcionamento 100% offline e cache de recursos estáticos.
  */
 
-const CACHE_NAME = 'pinheiro-afiacoes-cache-v38';
+const CACHE_NAME = 'pinheiro-afiacoes-cache-v41';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -13,7 +13,8 @@ const ASSETS_TO_CACHE = [
   './chart.js',
   './manifest.json',
   './icons/icon.svg',
-  './icons/icon-maskable.svg'
+  './icons/icon-maskable.svg',
+  './icons/LOGOig.png'
 ];
 
 // Instalação do Service Worker e cache dos arquivos estáticos

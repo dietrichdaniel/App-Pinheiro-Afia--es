@@ -1279,7 +1279,7 @@ async function renderDashboard() {
         labels: temDados ? ['Serviços', 'Vendas/Pedidos'] : ['Sem Lançamentos'],
         datasets: [{
           data: temDados ? [totalServicos, totalPedidos] : [1],
-          backgroundColor: temDados ? ['#10b981', '#06b6d4'] : ['rgba(255,255,255,0.06)'],
+          backgroundColor: temDados ? ['#eab308', '#f59e0b'] : ['rgba(255,255,255,0.06)'],
           borderWidth: 0
         }]
       },
@@ -1345,7 +1345,7 @@ async function renderDashboard() {
   const ctxEstoque = document.getElementById('chartEstoqueValor');
   if (ctxEstoque) {
     const temEstoque = topStockItems.length > 0;
-    const coresPie = ['#f59e0b', '#06b6d4', '#10b981', '#ef4444', '#3b82f6'];
+    const coresPie = ['#eab308', '#f59e0b', '#f97316', '#ea580c', '#b45309'];
 
     chartEstoque = new Chart(ctxEstoque, {
       type: 'pie',
@@ -1400,8 +1400,8 @@ async function renderDashboard() {
           {
             label: 'Serviços',
             data: faturamentoMensalServicos,
-            borderColor: '#10b981',
-            backgroundColor: 'rgba(16, 185, 129, 0.05)',
+            borderColor: '#eab308',
+            backgroundColor: 'rgba(234, 179, 8, 0.04)',
             fill: true,
             tension: 0.3,
             borderWidth: 2
@@ -1409,8 +1409,8 @@ async function renderDashboard() {
           {
             label: 'Vendas/Pedidos',
             data: faturamentoMensalVendas,
-            borderColor: '#06b6d4',
-            backgroundColor: 'rgba(6, 182, 212, 0.05)',
+            borderColor: '#f59e0b',
+            backgroundColor: 'rgba(245, 158, 11, 0.04)',
             fill: true,
             tension: 0.3,
             borderWidth: 2
@@ -1418,8 +1418,8 @@ async function renderDashboard() {
           {
             label: 'Total',
             data: faturamentoMensalTotal,
-            borderColor: '#f59e0b',
-            backgroundColor: 'rgba(245, 158, 11, 0.05)',
+            borderColor: '#f97316',
+            backgroundColor: 'rgba(249, 115, 22, 0.04)',
             fill: true,
             tension: 0.3,
             borderWidth: 3,

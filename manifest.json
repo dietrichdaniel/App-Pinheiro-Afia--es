@@ -13,11 +13,23 @@
       "type": "image/svg+xml",
       "sizes": "any",
       "purpose": "maskable"
+    },
+    {
+      "src": "icons/LOGOig.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/LOGOig.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "maskable"
     }
   ],
   "start_url": "./index.html",
-  "background_color": "#0f172a",
-  "theme_color": "#10b981",
+  "background_color": "#0b0f19",
+  "theme_color": "#eab308",
   "display": "standalone",
   "orientation": "portrait",
   "description": "Sistema de registro de serviços, estoque, pedidos e receitas para a Pinheiro Afiações integrado com o Firebase e funcionamento offline."

@@ -9,20 +9,20 @@
   --font-heading: 'Outfit', sans-serif;
   --font-body: 'Inter', sans-serif;
 
-  /* Cores Temáticas */
-  --bg-app: #0b0f19;
-  --bg-card: rgba(19, 27, 46, 0.7);
-  --bg-card-hover: rgba(30, 41, 59, 0.8);
-  --border-glass: rgba(255, 255, 255, 0.06);
-  --border-focus: #10b981;
+  /* Cores Temáticas - Alinhadas à Marca (Preto e Amarelo/Dourado) */
+  --bg-app: #06080d;
+  --bg-card: rgba(24, 28, 41, 0.75);
+  --bg-card-hover: rgba(38, 44, 61, 0.85);
+  --border-glass: rgba(255, 255, 255, 0.05);
+  --border-focus: #eab308;
   
-  --primary: #10b981;
-  --primary-hover: #059669;
-  --primary-glow: rgba(16, 185, 129, 0.15);
+  --primary: #eab308;
+  --primary-hover: #ca8a04;
+  --primary-glow: rgba(234, 179, 8, 0.12);
   
-  --secondary: #06b6d4;
-  --secondary-hover: #0891b2;
-  --secondary-glow: rgba(6, 182, 212, 0.15);
+  --secondary: #f59e0b;
+  --secondary-hover: #d97706;
+  --secondary-glow: rgba(245, 158, 11, 0.12);
   
   --text-main: #f8fafc;
   --text-muted: #94a3b8;
