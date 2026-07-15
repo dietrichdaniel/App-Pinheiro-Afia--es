@@ -42,10 +42,16 @@
             Dashboard
           </button>
         </li>
+        <li class="nav-item" data-tab="novo_servico">
+          <button>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+            Novo Serviço
+          </button>
+        </li>
         <li class="nav-item" data-tab="servicos">
           <button>
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.54 5.23l-1.39-1.68C18.88 3.21 18.47 3 18 3H6c-.47 0-.88.21-1.16.55L3.46 5.23C3.17 5.57 3 6.02 3 6.5V19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6.5c0-.48-.17-.93-.46-1.27zM6.24 5h11.52l.83 1H5.41l.83-1zM5 19V8h14v11H5zm3-5h2.55v3h2.9v-3H16l-4-4z"/></svg>
-            Serviços
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+            Fila & Histórico
           </button>
         </li>
         <li class="nav-item" data-tab="estoque">
@@ -91,28 +97,10 @@
             Início
           </button>
         </li>
-        <li class="mobile-nav-item" data-tab="servicos">
+        <li class="mobile-nav-item" data-tab="novo_servico">
           <button>
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.54 5.23l-1.39-1.68C18.88 3.21 18.47 3 18 3H6c-.47 0-.88.21-1.16.55L3.46 5.23C3.17 5.57 3 6.02 3 6.5V19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6.5c0-.48-.17-.93-.46-1.27zM5 19V8h14v11H5z"/></svg>
-            Serviços
-          </button>
-        </li>
-        <li class="mobile-nav-item" data-tab="estoque">
-          <button>
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2z"/></svg>
-            Estoque
-          </button>
-        </li>
-        <li class="mobile-nav-item" data-tab="pedidos">
-          <button>
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>
-            Pedidos
-          </button>
-        </li>
-        <li class="mobile-nav-item" data-tab="receitas">
-          <button>
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8.12 19.38c1.91 0 3.7-.74 5.05-2.09l7.07-7.07c.78-.78.78-2.05 0-2.83l-3.54-3.54c-.78-.78-2.05-.78-2.83 0l-7.07 7.07c-1.35 1.35-2.09 3.14-2.09 5.05v3.54h3.42zM18.66 6.04l2.12 2.12-1.41 1.41-2.12-2.12 1.41-1.41zM6.92 14.92L14.4 7.45l2.12 2.12-7.48 7.48H6.92v-2.13zM3 20h18v2H3v-2z"/></svg>
-            Receitas
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+            Novo Serv.
           </button>
         </li>
         <li class="mobile-nav-item" data-tab="configuracoes">
@@ -137,14 +125,28 @@
         </div>
 
         <div class="menu-grid">
-          <!-- Card 1: Serviços -->
-          <div class="menu-card" data-tab="servicos">
+          <!-- Card 1: Registrar Serviço -->
+          <div class="menu-card" data-tab="novo_servico">
             <div class="menu-card-icon cyan">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.54 5.23l-1.39-1.68C18.88 3.21 18.47 3 18 3H6c-.47 0-.88.21-1.16.55L3.46 5.23C3.17 5.57 3 6.02 3 6.5V19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6.5c0-.48-.17-.93-.46-1.27zM6.24 5h11.52l.83 1H5.41l.83-1zM5 19V8h14v11H5zm3-5h2.55v3h2.9v-3H16l-4-4z"/></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
             </div>
             <div class="menu-card-content">
-              <h2>Serviços Prestados</h2>
-              <p>Registre novos serviços de afiação, consulte o histórico e gerencie a fila de espera dos clientes.</p>
+              <h2>Registrar Novo Serviço</h2>
+              <p>Abra o formulário para cadastrar um novo cliente, peças de afiação e serviços adicionais.</p>
+            </div>
+            <div class="menu-card-arrow">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+            </div>
+          </div>
+
+          <!-- Card 1B: Fila & Histórico de Serviços -->
+          <div class="menu-card" data-tab="servicos">
+            <div class="menu-card-icon info">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2m-6 9l2 2 4-4"/></svg>
+            </div>
+            <div class="menu-card-content">
+              <h2>Fila & Histórico de Serviços</h2>
+              <p>Monitore a fila de espera dos serviços agendados e consulte os faturamentos concluídos.</p>
             </div>
             <div class="menu-card-arrow">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
@@ -318,131 +320,149 @@
         </div>
       </section>
 
-      <!-- ABA 2: SERVIÇOS -->
-      <section id="servicos" class="tab-panel">
+      <!-- ABA 2: REGISTRAR NOVO SERVIÇO -->
+      <section id="novo_servico" class="tab-panel">
         <div class="page-header">
           <div class="page-title">
-            <h1>Serviços Prestados</h1>
-            <p>Registre e acompanhe as afiações e serviços fornecidos</p>
+            <h1>Registrar Novo Serviço</h1>
+            <p>Registre um novo serviço de afiação no sistema</p>
           </div>
         </div>
-        
-        <div class="layout-split">
-          <!-- Formulário de Cadastro -->
-          <div class="form-panel">
-            <h2>Novo Serviço</h2>
-            <form id="formServico">
-              <div class="form-row">
-                <div class="form-group">
-                  <label for="servNome">Nome do Cliente</label>
-                  <input type="text" id="servNome" class="form-control" placeholder="Ex: Marcenaria Pinheiro (Opcional)">
-                </div>
-                <div class="form-group">
-                  <label for="servTelefone">Telefone do Cliente</label>
-                  <input type="text" id="servTelefone" class="form-control" placeholder="Ex: (41) 99999-9999 (Opcional)">
-                </div>
+
+        <div class="form-panel" style="max-width: 800px; margin: 0 auto;">
+          <h2>Novo Serviço</h2>
+          <form id="formServico">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="servNome">Nome do Cliente</label>
+                <input type="text" id="servNome" class="form-control" placeholder="Ex: Marcenaria Pinheiro (Opcional)">
               </div>
+              <div class="form-group">
+                <label for="servTelefone">Telefone do Cliente</label>
+                <input type="text" id="servTelefone" class="form-control" placeholder="Ex: (41) 99999-9999 (Opcional)">
+              </div>
+            </div>
+            
+            <div class="form-group" style="border-top: 1px solid var(--border-glass); padding-top: 20px; margin-top: 20px;">
+              <label style="font-family: var(--font-heading); color: var(--primary); font-size: 1.1rem; display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--primary);"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                Itens Afiados / Modificados
+              </label>
+              <p style="color: var(--text-muted); font-size: 0.8rem; line-height: 1.4; margin-bottom: 16px;">Selecione as peças afiadas ou digite um item personalizado, definindo a quantidade e o preço cobrado.</p>
               
-              <div class="form-group">
-                <label>Itens Afiados / Modificados</label>
-                <div class="dynamic-items-container" id="servItensContainer">
-                  <div class="dynamic-item-row" style="flex-wrap: wrap; margin-bottom: 8px;">
-                    <div style="display: flex; gap: 8px; width: 100%; align-items: center;">
-                      <select class="form-control item-select" style="flex: 1;" required>
-                        <option value="">Selecione a peça...</option>
-                        <!-- Alimentado dinamicamente -->
-                        <option value="custom">Outro (Digitar)...</option>
-                      </select>
-                      <input type="number" class="form-control item-qty" placeholder="Qtd" min="1" value="1" style="width: 70px;" required>
-                      <input type="number" class="form-control item-price" placeholder="Preço" step="0.01" min="0" style="width: 90px;" required>
-                      <button type="button" class="btn-icon-only danger btnRemoveRow" style="display:none;">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                      </button>
-                    </div>
-                    <input type="text" class="form-control item-name-custom" placeholder="Nome da peça personalizada" style="display: none; margin-top: 8px; width: 100%;" />
+              <div class="dynamic-items-container" id="servItensContainer">
+                <div class="dynamic-item-row" style="flex-wrap: wrap; margin-bottom: 8px;">
+                  <div style="display: flex; gap: 8px; width: 100%; align-items: center;">
+                    <select class="form-control item-select" style="flex: 1;" required>
+                      <option value="">Selecione a peça...</option>
+                      <!-- Alimentado dinamicamente -->
+                      <option value="custom">Outro (Digitar)...</option>
+                    </select>
+                    <input type="number" class="form-control item-qty" placeholder="Qtd" min="1" value="1" style="width: 70px;" required>
+                    <input type="number" class="form-control item-price" placeholder="Preço" step="0.01" min="0" style="width: 90px;" required>
+                    <button type="button" class="btn-icon-only danger btnRemoveRow">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                    </button>
                   </div>
+                  <input type="text" class="form-control item-name-custom" placeholder="Nome da peça personalizada" style="display: none; margin-top: 8px; width: 100%;" />
                 </div>
-                <button type="button" class="btn btn-secondary" id="btnAddServItem" style="width:100%; padding: 6px; font-size: 0.8rem; margin-top: 8px;">
-                  + Adicionar Item
-                </button>
               </div>
+              <button type="button" class="btn-dashed-highlight" id="btnAddServItem">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Adicionar Peça Afiada
+              </button>
+            </div>
 
+            <div class="form-group" style="border-top: 1px solid var(--border-glass); padding-top: 20px; margin-top: 20px;">
+              <label style="font-family: var(--font-heading); color: var(--primary); font-size: 1.1rem; display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--primary);"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                Serviços Adicionais
+              </label>
+              <p style="color: var(--text-muted); font-size: 0.8rem; line-height: 1.4; margin-bottom: 16px;">Adicione serviços ou taxas extras relacionadas à ordem de serviço (ex: solda de dente, tempera ou frete especial).</p>
+              
+              <div class="dynamic-items-container" id="servAdicionaisContainer" style="display: none;">
+                <!-- Alimentado dinamicamente -->
+              </div>
+              <button type="button" class="btn-dashed-highlight" id="btnAddAdicionalRow">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Adicionar Serviço Adicional
+              </button>
+            </div>
+
+            <div class="form-row">
               <div class="form-group">
-                <label>Serviços Adicionais</label>
-                <div class="dynamic-items-container" id="servAdicionaisContainer">
-                  <!-- Alimentado dinamicamente -->
-                </div>
-                <button type="button" class="btn btn-secondary" id="btnAddAdicionalRow" style="width:100%; padding: 6px; font-size: 0.8rem; margin-top: 8px;">
-                  + Adicionar Adicional
-                </button>
+                <label for="servValor">Valor Cobrado (R$)</label>
+                <input type="number" id="servValor" class="form-control" step="0.01" min="0" placeholder="0.00" required>
+                <small id="servValorSugerido" style="display:block; margin-top: 4px; font-size: 0.75rem; color: var(--secondary);"></small>
               </div>
-
-              <div class="form-row">
-                <div class="form-group">
-                  <label for="servValor">Valor Cobrado (R$)</label>
-                  <input type="number" id="servValor" class="form-control" step="0.01" min="0" placeholder="0.00" required>
-                  <small id="servValorSugerido" style="display:block; margin-top: 4px; font-size: 0.75rem; color: var(--secondary);"></small>
-                </div>
-                <div class="form-group">
-                  <label for="servFrete">Frete (R$)</label>
-                  <input type="number" id="servFrete" class="form-control" step="0.01" min="0" value="0.00">
-                </div>
-              </div>
-
-              <div class="form-row">
-                <div class="form-group">
-                  <label for="servPagamento">Meio de Pagamento</label>
-                  <select id="servPagamento" class="form-control" required>
-                    <option value="Pix">Pix</option>
-                    <option value="Dinheiro">Dinheiro</option>
-                    <option value="Cartão de Crédito">Cartão de Crédito</option>
-                    <option value="Cartão de Débito">Cartão de Débito</option>
-                    <option value="Boleto">Boleto / Faturado</option>
-                  </select>
-                </div>
-                <div class="form-group">
-                  <label for="servStatus">Status do Serviço</label>
-                  <select id="servStatus" class="form-control" required>
-                    <option value="Finalizado">Finalizado</option>
-                    <option value="Agendado">Agendado (Em Fila)</option>
-                  </select>
-                </div>
-              </div>
-
-              <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">Registrar Serviço</button>
-            </form>
-          </div>
-
-          <!-- Tabela de Listagem e Mural da Fila -->
-          <div style="display: flex; flex-direction: column; gap: 24px; width: 100%;">
-            <!-- Mural de Serviços em Fila (Agendados) -->
-            <div class="table-panel" id="muralFilaPanel" style="display: none;">
-              <h2 style="margin-bottom: 8px;">Fila de Espera (Serviços Agendados)</h2>
-              <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 16px;">Serviços pendentes de realização. Clique em "Concluir" para finalizá-los.</p>
-              <div id="muralFilaGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;">
-                <!-- Preenchido dinamicamente via JS -->
+              <div class="form-group">
+                <label for="servFrete">Frete (R$)</label>
+                <input type="number" id="servFrete" class="form-control" step="0.01" min="0" value="0.00">
               </div>
             </div>
 
-            <!-- Histórico de Serviços -->
-            <div class="table-panel">
-              <h2>Histórico de Serviços</h2>
-              <div class="table-responsive">
-                <table class="data-table" id="tableServicos">
-                  <thead>
-                    <tr>
-                      <th>Cliente</th>
-                      <th>Itens</th>
-                      <th>Valor</th>
-                      <th>Pagamento</th>
-                      <th>Ações</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <!-- Inserido dinamicamente via JS -->
-                  </tbody>
-                </table>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="servPagamento">Meio de Pagamento</label>
+                <select id="servPagamento" class="form-control" required>
+                  <option value="Pix">Pix</option>
+                  <option value="Dinheiro">Dinheiro</option>
+                  <option value="Cartão de Crédito">Cartão de Crédito</option>
+                  <option value="Cartão de Débito">Cartão de Débito</option>
+                  <option value="Boleto">Boleto / Faturado</option>
+                </select>
               </div>
+              <div class="form-group">
+                <label for="servStatus">Status do Serviço</label>
+                <select id="servStatus" class="form-control" required>
+                  <option value="Finalizado">Finalizado</option>
+                  <option value="Agendado">Agendado (Em Fila)</option>
+                </select>
+              </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">Registrar Serviço</button>
+          </form>
+        </div>
+      </section>
+
+      <!-- ABA 3: FILA E HISTÓRICO DE SERVIÇOS -->
+      <section id="servicos" class="tab-panel">
+        <div class="page-header">
+          <div class="page-title">
+            <h1>Mural & Histórico de Serviços</h1>
+            <p>Gerencie os serviços agendados na fila de espera e consulte o histórico de realizados</p>
+          </div>
+        </div>
+        
+        <div style="display: flex; flex-direction: column; gap: 24px; width: 100%;">
+          <!-- Mural de Serviços em Fila (Agendados) -->
+          <div class="table-panel" id="muralFilaPanel" style="display: none;">
+            <h2 style="margin-bottom: 8px;">Fila de Espera (Serviços Agendados)</h2>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 16px;">Serviços pendentes de realização. Clique em "Concluir" para finalizá-los.</p>
+            <div id="muralFilaGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;">
+              <!-- Preenchido dinamicamente via JS -->
+            </div>
+          </div>
+
+          <!-- Histórico de Serviços -->
+          <div class="table-panel">
+            <h2>Histórico de Serviços</h2>
+            <div class="table-responsive">
+              <table class="data-table" id="tableServicos">
+                <thead>
+                  <tr>
+                    <th>Cliente</th>
+                    <th>Itens</th>
+                    <th>Valor</th>
+                    <th>Pagamento</th>
+                    <th>Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- Inserido dinamicamente via JS -->
+                </tbody>
+              </table>
             </div>
           </div>
         </div>

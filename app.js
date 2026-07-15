@@ -594,22 +594,28 @@ function updateRemoveButtons(container) {
     const adContainer = document.getElementById('servAdicionaisContainer');
     const adRowsCount = adContainer ? adContainer.querySelectorAll('.dynamic-item-row').length : 0;
     
+    // Mostra ou oculta o container dependendo se há itens cadastrados
+    container.style.display = rows.length > 0 ? 'block' : 'none';
+
     rows.forEach((row) => {
       const btn = row.querySelector('.btnRemoveRow');
       if (btn) {
-        // Permite remover se houver mais de uma peça OU se houver pelo menos um adicional cadastrado
-        btn.style.display = (rows.length > 1 || adRowsCount > 0) ? 'inline-flex' : 'none';
+        // Permite remover sempre (validação ocorre no submit)
+        btn.style.display = 'inline-flex';
       }
     });
   } else if (container.id === 'servAdicionaisContainer') {
     const itemContainer = document.getElementById('servItensContainer');
     const itemRowsCount = itemContainer ? itemContainer.querySelectorAll('.dynamic-item-row').length : 0;
     
+    // Mostra ou oculta o container dependendo se há adicionais cadastrados
+    container.style.display = rows.length > 0 ? 'block' : 'none';
+
     rows.forEach((row) => {
       const btn = row.querySelector('.btnRemoveRow');
       if (btn) {
-        // Permite remover se houver mais de um adicional OU se houver pelo menos uma peça cadastrada
-        btn.style.display = (rows.length > 1 || itemRowsCount > 0) ? 'inline-flex' : 'none';
+        // Permite remover sempre (validação ocorre no submit)
+        btn.style.display = 'inline-flex';
       }
     });
   } else {
@@ -788,10 +794,11 @@ function setupFormSubmissions() {
         showToast('Serviço registrado localmente!');
         formServico.reset();
 
-        // Limpa adicionais dinâmicos
+        // Limpa adicionais dinâmicos e oculta o container
         const adicionaisContainer = document.getElementById('servAdicionaisContainer');
         if (adicionaisContainer) {
           adicionaisContainer.innerHTML = '';
+          adicionaisContainer.style.display = 'none';
         }
 
         // Limpa label de valor sugerido
@@ -802,22 +809,25 @@ function setupFormSubmissions() {
 
         // Mantém apenas uma linha em branco nos itens
         const container = document.getElementById('servItensContainer');
-        container.innerHTML = `
-          <div class="dynamic-item-row" style="flex-wrap: wrap; margin-bottom: 8px;">
-            <div style="display: flex; gap: 8px; width: 100%; align-items: center;">
-              <select class="form-control item-select" style="flex: 1;" required>
-                <option value="">Selecione a peça...</option>
-                <option value="custom">Outro (Digitar)...</option>
-              </select>
-              <input type="number" class="form-control item-qty" placeholder="Qtd" min="1" value="1" style="width: 70px;" required>
-              <input type="number" class="form-control item-price" placeholder="Preço" step="0.01" min="0" style="width: 90px;" required>
-              <button type="button" class="btn-icon-only danger btnRemoveRow" style="display:none;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-              </button>
+        if (container) {
+          container.style.display = 'block';
+          container.innerHTML = `
+            <div class="dynamic-item-row" style="flex-wrap: wrap; margin-bottom: 8px;">
+              <div style="display: flex; gap: 8px; width: 100%; align-items: center;">
+                <select class="form-control item-select" style="flex: 1;" required>
+                  <option value="">Selecione a peça...</option>
+                  <option value="custom">Outro (Digitar)...</option>
+                </select>
+                <input type="number" class="form-control item-qty" placeholder="Qtd" min="1" value="1" style="width: 70px;" required>
+                <input type="number" class="form-control item-price" placeholder="Preço" step="0.01" min="0" style="width: 90px;" required>
+                <button type="button" class="btn-icon-only danger btnRemoveRow">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                </button>
+              </div>
+              <input type="text" class="form-control item-name-custom" placeholder="Nome da peça personalizada" style="display: none; margin-top: 8px; width: 100%;" />
             </div>
-            <input type="text" class="form-control item-name-custom" placeholder="Nome da peça personalizada" style="display: none; margin-top: 8px; width: 100%;" />
-          </div>
-        `;
+          `;
+        }
 
         await updateAllSelectors();
         await reloadAllViews();

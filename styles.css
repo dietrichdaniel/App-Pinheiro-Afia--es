@@ -989,3 +989,33 @@ code.code-block {
   }
 }
 
+.btn-dashed-highlight {
+  width: 100%;
+  padding: 10px;
+  font-size: 0.85rem;
+  margin-top: 12px;
+  border: 1.5px dashed var(--primary);
+  color: var(--primary);
+  background: rgba(234, 179, 8, 0.02);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btn-dashed-highlight:hover {
+  background: rgba(234, 179, 8, 0.1);
+  border-style: solid;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(234, 179, 8, 0.1);
+}
+
+.btn-dashed-highlight:active {
+  transform: translateY(0);
+}
+
+
