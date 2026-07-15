@@ -69,11 +69,11 @@ body {
   background: var(--bg-app);
 }
 ::-webkit-scrollbar-thumb {
-  background: #1e293b;
+  background: #252a37;
   border-radius: var(--radius-sm);
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #334155;
+  background: #383f4f;
 }
 
 /* Layout Principal */
@@ -87,7 +87,7 @@ body {
 /* Sidebar Estilizada (Desktop) */
 aside.sidebar {
   width: var(--sidebar-width);
-  background: rgba(15, 23, 42, 0.95);
+  background: rgba(13, 17, 28, 0.96);
   border-right: 1px solid var(--border-glass);
   display: flex;
   flex-direction: column;
@@ -274,13 +274,13 @@ main.main-content {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, var(--primary), #059669);
-  color: #ffffff;
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: var(--text-dark);
+  box-shadow: 0 4px 12px rgba(234, 179, 8, 0.2);
 }
 .btn-primary:hover {
   transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.3);
+  box-shadow: 0 6px 16px rgba(234, 179, 8, 0.3);
 }
 
 .btn-secondary {
@@ -432,7 +432,7 @@ main.main-content {
 
 .form-control {
   width: 100%;
-  background: rgba(15, 23, 42, 0.6);
+  background: rgba(13, 17, 28, 0.65);
   border: 1px solid var(--border-glass);
   border-radius: var(--radius-md);
   padding: 10px 14px;
@@ -445,7 +445,7 @@ main.main-content {
 .form-control:focus {
   outline: none;
   border-color: var(--border-focus);
-  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+  box-shadow: 0 0 0 3px rgba(234, 179, 8, 0.15);
 }
 
 .form-row {
@@ -612,7 +612,7 @@ table.data-table td .tag.unsynced {
 }
 
 .toast {
-  background: #1e293b;
+  background: #181c25;
   border-left: 4px solid var(--primary);
   border-radius: var(--radius-sm);
   padding: 16px;
@@ -652,7 +652,7 @@ table.data-table td .tag.unsynced {
   left: 0;
   right: 0;
   height: 64px;
-  background: rgba(15, 23, 42, 0.95);
+  background: rgba(13, 17, 28, 0.96);
   backdrop-filter: blur(12px);
   border-top: 1px solid var(--border-glass);
   z-index: 100;
@@ -717,7 +717,7 @@ table.data-table td .tag.unsynced {
 
 code.code-block {
   display: block;
-  background: #0f172a;
+  background: #090d16;
   border: 1px solid var(--border-glass);
   padding: 16px;
   border-radius: var(--radius-md);
