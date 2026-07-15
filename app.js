@@ -19,6 +19,8 @@ let activeTab = 'dashboard';
 let discountConfig = { qtd1: 5, pct1: 5, qtd2: 10, pct2: 10 };
 let currentPecas = [];
 let currentAdicionais = [];
+let chartFaturamento = null;
+let chartEstoque = null;
 
 // --- EVENTOS INICIAIS ---
 window.addEventListener('DOMContentLoaded', async () => {
@@ -1184,8 +1186,29 @@ async function renderDashboard() {
   });
   const totalPedidos = pedidosMes.reduce((acc, curr) => acc + ((curr.itens ? curr.valor : (curr.quantidade * curr.valor)) + (curr.frete || 0)), 0);
 
-  // Contadores de Estoque
-  const totalItensEstoque = estoque.length;
+  // Cálculos de Valor do Estoque (Insumos + Produtos acabados)
+  const totalInsumos = estoque.reduce((acc, e) => acc + (e.quantidade * e.valor), 0);
+  const estoqueInsumosAgrupado = obterEstoqueAgrupado(estoque);
+  let totalProdutosVal = 0;
+  const estoqueProdutos = await getAllRecords('estoque_produtos');
+  
+  estoqueProdutos.forEach(p => {
+    const receita = receitas.find(r => r.produtoFinal.toLowerCase() === p.produto.toLowerCase());
+    let custoUnitario = 0;
+    if (receita) {
+      custoUnitario += receita.maoDeObra || 0;
+      if (Array.isArray(receita.materiaPrima)) {
+        receita.materiaPrima.forEach(mp => {
+          const insumo = estoqueInsumosAgrupado.find(i => i.item.toLowerCase() === mp.item.toLowerCase());
+          const precoUnitarioInsumo = insumo ? insumo.valor : 0;
+          custoUnitario += precoUnitarioInsumo * mp.quantidade;
+        });
+      }
+    }
+    totalProdutosVal += custoUnitario * p.quantidade;
+  });
+
+  const totalValorEstoque = totalInsumos + totalProdutosVal;
 
   // Status de Sincronização ou Total Pendente
   const unsyncedBadge = document.getElementById('dashTotalUnsynced');
@@ -1212,7 +1235,133 @@ async function renderDashboard() {
 
   document.getElementById('dashTotalServicos').textContent = formatMoney(totalServicos);
   document.getElementById('dashTotalPedidos').textContent = formatMoney(totalPedidos);
-  document.getElementById('dashTotalEstoque').textContent = `${totalItensEstoque} insumo${totalItensEstoque !== 1 ? 's' : ''}`;
+  document.getElementById('dashTotalEstoque').textContent = formatMoney(totalValorEstoque);
+
+  // --- RENDERIZAÇÃO DOS GRÁFICOS (CHART.JS) ---
+  if (chartFaturamento) chartFaturamento.destroy();
+  if (chartEstoque) chartEstoque.destroy();
+
+  const ctxFaturamento = document.getElementById('chartFaturamentoComposicao');
+  if (ctxFaturamento) {
+    const temDados = totalServicos > 0 || totalPedidos > 0;
+    chartFaturamento = new Chart(ctxFaturamento, {
+      type: 'doughnut',
+      data: {
+        labels: temDados ? ['Serviços', 'Vendas/Pedidos'] : ['Sem Lançamentos'],
+        datasets: [{
+          data: temDados ? [totalServicos, totalPedidos] : [1],
+          backgroundColor: temDados ? ['#10b981', '#06b6d4'] : ['rgba(255,255,255,0.06)'],
+          borderWidth: 0
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: {
+              color: '#f8fafc',
+              font: { family: 'Inter', size: 12 }
+            }
+          },
+          tooltip: {
+            enabled: temDados,
+            callbacks: {
+              label: function(context) {
+                const label = context.label || '';
+                const value = context.raw || 0;
+                return `${label}: ${formatMoney(value)}`;
+              }
+            }
+          }
+        },
+        cutout: '75%'
+      }
+    });
+  }
+
+  // Processa dados de estoque agrupados para o gráfico de barras
+  const itemsValueList = [];
+  estoqueInsumosAgrupado.forEach(i => {
+    const valTotal = i.quantidade * i.valor;
+    if (valTotal > 0) {
+      itemsValueList.push({ nome: i.item + ' (Insumo)', valor: valTotal });
+    }
+  });
+  estoqueProdutos.forEach(p => {
+    const receita = receitas.find(r => r.produtoFinal.toLowerCase() === p.produto.toLowerCase());
+    let custoUnitario = 0;
+    if (receita) {
+      custoUnitario += receita.maoDeObra || 0;
+      if (Array.isArray(receita.materiaPrima)) {
+        receita.materiaPrima.forEach(mp => {
+          const insumo = estoqueInsumosAgrupado.find(i => i.item.toLowerCase() === mp.item.toLowerCase());
+          const precoUnitarioInsumo = insumo ? insumo.valor : 0;
+          custoUnitario += precoUnitarioInsumo * mp.quantidade;
+        });
+      }
+    }
+    const valTotal = custoUnitario * p.quantidade;
+    if (valTotal > 0) {
+      itemsValueList.push({ nome: p.produto + ' (Acabado)', valor: valTotal });
+    }
+  });
+
+  itemsValueList.sort((a, b) => b.valor - a.valor);
+  const topStockItems = itemsValueList.slice(0, 5);
+  const topItemNames = topStockItems.map(x => x.nome);
+  const topItemValues = topStockItems.map(x => x.valor);
+
+  const ctxEstoque = document.getElementById('chartEstoqueValor');
+  if (ctxEstoque) {
+    const temEstoque = topStockItems.length > 0;
+    chartEstoque = new Chart(ctxEstoque, {
+      type: 'bar',
+      data: {
+        labels: temEstoque ? topItemNames : ['Sem itens'],
+        datasets: [{
+          data: temEstoque ? topItemValues : [0],
+          backgroundColor: '#f59e0b',
+          borderRadius: 6,
+          borderWidth: 0
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                return `Valor: ${formatMoney(context.raw)}`;
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: { display: false },
+            ticks: {
+              color: '#94a3b8',
+              font: { family: 'Inter', size: 10 }
+            }
+          },
+          y: {
+            grid: { color: 'rgba(255,255,255,0.06)' },
+            ticks: {
+              color: '#94a3b8',
+              font: { family: 'Inter', size: 10 },
+              callback: function(value) {
+                return 'R$ ' + value;
+              }
+            }
+          }
+        }
+      }
+    });
+  }
 
   // Atividades Recentes (combina as últimas 5 transações de vendas e serviços ordenadas por data)
   const recentesTable = document.getElementById('tableRecentes').querySelector('tbody');
