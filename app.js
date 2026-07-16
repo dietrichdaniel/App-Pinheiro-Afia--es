@@ -58,6 +58,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     setupPricingEvents();
     setupModalConcluir();
     setupModalConcluirPedido();
+    setupModalConfirmarPagamento();
     setupModalDetalhes();
     setupModalDetalhesPedido();
     setupModalLotes();
@@ -715,6 +716,24 @@ function recalculaCustoReceita() {
 
 // --- PROCESSAMENTO DE FORMULÁRIOS ---
 function setupFormSubmissions() {
+  // Listener para esconder/exibir o meio de pagamento de acordo com o status
+  const servStatus = document.getElementById('servStatus');
+  const servPagamento = document.getElementById('servPagamento');
+  if (servStatus && servPagamento) {
+    const pagGroup = servPagamento.closest('.form-group');
+    const handleStatusChange = () => {
+      if (servStatus.value === 'Finalizado') {
+        if (pagGroup) pagGroup.style.display = 'block';
+        servPagamento.setAttribute('required', 'required');
+      } else {
+        if (pagGroup) pagGroup.style.display = 'none';
+        servPagamento.removeAttribute('required');
+      }
+    };
+    servStatus.addEventListener('change', handleStatusChange);
+    // Executa uma vez no início
+    handleStatusChange();
+  }
 
   // 1. FORMULÁRIO DE SERVIÇOS
   const formServico = document.getElementById('formServico');
@@ -726,8 +745,8 @@ function setupFormSubmissions() {
         const telefone = document.getElementById('servTelefone') ? document.getElementById('servTelefone').value.trim() : '';
         const valor = parseFloat(document.getElementById('servValor').value) || 0;
         const frete = parseFloat(document.getElementById('servFrete').value) || 0;
-        const meioPagamento = document.getElementById('servPagamento').value;
         const status = document.getElementById('servStatus').value || 'Finalizado';
+        const meioPagamento = status === 'Finalizado' ? document.getElementById('servPagamento').value : 'Pendente';
 
         // Coleta itens dinâmicos
         const itens = [];
@@ -1299,7 +1318,7 @@ async function renderDashboard() {
   const nomeMesAtual = meses[currentMonth];
 
   // Cálculos de Faturamento - Filtrados pelo mês atual
-  const servicosFinalizadosAll = servicos.filter(s => s.status !== 'Agendado');
+  const servicosFinalizadosAll = servicos.filter(s => s.status === 'Finalizado');
   const servicosMes = servicosFinalizadosAll.filter(s => {
     if (!s.data) return false;
     const sDate = new Date(s.data);
@@ -1669,10 +1688,11 @@ async function renderServicosView() {
     tituloHistorico.textContent = `Histórico de Serviços (${nomeMesAtual}/${anoAtual})`;
   }
 
-  // Filtra os serviços agendados (fila) e os já finalizados (histórico do mês atual)
+  // Filtra os serviços agendados (fila), aguardando pagamento e os já finalizados (histórico do mês atual)
   const servicosFila = servicos.filter(s => s.status === 'Agendado');
+  const servicosAguardando = servicos.filter(s => s.status === 'Aguardando Pagamento');
   const servicosHistorico = servicos.filter(s => {
-    if (s.status === 'Agendado') return false;
+    if (s.status !== 'Finalizado') return false;
     if (!s.data) return false;
     const sDate = new Date(s.data);
     return sDate.getMonth() === currentMonth && sDate.getFullYear() === currentYear;
@@ -1735,6 +1755,66 @@ async function renderServicosView() {
     }
   }
 
+  // --- RENDERIZA O MURAL DE AGUARDANDO PAGAMENTO ---
+  const muralAguardandoPanel = document.getElementById('muralAguardandoPagamentoPanel');
+  const muralAguardandoGrid = document.getElementById('muralAguardandoPagamentoGrid');
+
+  if (muralAguardandoPanel && muralAguardandoGrid) {
+    if (servicosAguardando.length > 0) {
+      muralAguardandoPanel.style.display = 'block';
+      muralAguardandoGrid.innerHTML = servicosAguardando.map(s => {
+        const itensStr = Array.isArray(s.itens) ? s.itens.join(', ') : s.itens;
+        const adicionaisStr = s.adicionais ? s.adicionais : '';
+
+        let contentHtml = '';
+        if (itensStr) {
+          contentHtml += `<div><strong>Peças:</strong> ${escapeHTML(itensStr)}</div>`;
+        }
+        if (adicionaisStr) {
+          contentHtml += `<div style="margin-top: 4px; font-size: 0.82rem; color: var(--primary); font-weight: 500;"><strong>Adicionais:</strong> ${escapeHTML(adicionaisStr)}</div>`;
+        }
+        if (!itensStr && !adicionaisStr) {
+          contentHtml = '<span style="color: var(--text-muted); font-style: italic;">Sem itens/adicionais</span>';
+        }
+
+        return `
+          <div class="mural-card" style="background: var(--bg-card); border: 1px solid var(--border-glass); border-radius: var(--radius-md); padding: 16px; display: flex; flex-direction: column; gap: 12px; transition: var(--transition-smooth); box-shadow: var(--shadow-lg);">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+              <div>
+                <h3 style="font-family: var(--font-heading); font-size: 1.05rem; color: var(--text-main); margin-bottom: 2px;">${escapeHTML(s.nome || 'Cliente Avulso')}</h3>
+                ${s.telefone ? `<div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 4px;">📞 ${escapeHTML(s.telefone)}</div>` : ''}
+                <span style="font-size: 0.75rem; color: var(--text-muted);">${formatDate(new Date(s.data))}</span>
+              </div>
+              <span style="background: rgba(59, 130, 246, 0.1); color: var(--info); padding: 4px 8px; border-radius: var(--radius-sm); font-size: 0.75rem; font-weight: bold; border: 1px solid rgba(59, 130, 246, 0.2);">Aguardando Pagamento</span>
+            </div>
+            
+            <div style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.4; flex-grow: 1;">
+              ${contentHtml}
+            </div>
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-glass); padding-top: 12px; margin-top: 4px;">
+              <div style="font-size: 0.9rem; font-weight: bold; color: var(--text-main);">Total: <span style="color: var(--success);">${formatMoney(s.valor + (s.frete || 0))}</span></div>
+              <div style="display: flex; gap: 6px;">
+                <button class="btn btn-primary btnPagarServico" data-id="${s.id}" style="padding: 6px 12px; font-size: 0.75rem; border-radius: var(--radius-sm); background: var(--success); border-color: var(--success); color: #fff;">
+                  Pagar
+                </button>
+                <button class="btn btn-secondary btnAjustarPrecos" data-id="${s.id}" style="padding: 6px 12px; font-size: 0.75rem; border-radius: var(--radius-sm);">
+                  Ajustar
+                </button>
+                <button class="btn-icon-only danger btnDelete" data-store="servicos" data-id="${s.id}" title="Excluir Registro" style="padding: 6px; border-radius: var(--radius-sm);">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    } else {
+      muralAguardandoPanel.style.display = 'none';
+      muralAguardandoGrid.innerHTML = '';
+    }
+  }
+
   // --- RENDERIZA O HISTÓRICO DE SERVIÇOS ---
   if (servicosHistorico.length === 0) {
     tbody.innerHTML = `
@@ -1791,78 +1871,106 @@ async function renderServicosView() {
   // --- CONFIGURA OS EVENTOS ---
   setupTableActions();
 
-  // Evento para o botão de Concluir na Fila (Abre o modal de edição/ajuste antes de fechar)
+  // Evento para o botão de Concluir na Fila (Abre o modal de conclusão/ajuste)
   const btnConcluirList = document.querySelectorAll('.btnConcluirServico');
   btnConcluirList.forEach(btn => {
     btn.addEventListener('click', async () => {
       const id = btn.getAttribute('data-id');
       const service = servicos.find(s => String(s.id) === String(id));
       if (service) {
-        // Busca os cadastros de peças e adicionais para o modal
-        currentPecas = await getAllRecords('pecas');
-        currentAdicionais = await getAllRecords('adicionais');
+        await abrirModalConcluirAjustar(service);
+      }
+    });
+  });
 
-        // Abre o modal de conclusão com os dados pré-carregados
-        const modalIdInput = document.getElementById('modalServId');
-        const modalNomeInput = document.getElementById('modalServNome');
-        const modalTelefoneInput = document.getElementById('modalServTelefone');
-        const modalFreteInput = document.getElementById('modalServFrete');
-        const modalPagamentoSelect = document.getElementById('modalServPagamento');
-        const modalValorInput = document.getElementById('modalServValor');
-        const modalItensContainer = document.getElementById('modalServItensContainer');
-        const modalAdicionaisContainer = document.getElementById('modalServAdicionaisContainer');
+  // Evento para o botão de Ajustar Preços (Abre o modal de conclusão/ajuste)
+  const btnAjustarList = document.querySelectorAll('.btnAjustarPrecos');
+  btnAjustarList.forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.getAttribute('data-id');
+      const service = servicos.find(s => String(s.id) === String(id));
+      if (service) {
+        await abrirModalConcluirAjustar(service);
+      }
+    });
+  });
 
-        if (modalIdInput) modalIdInput.value = service.id;
-        if (modalNomeInput) modalNomeInput.value = service.nome || '';
-        if (modalTelefoneInput) modalTelefoneInput.value = service.telefone || '';
-        if (modalFreteInput) modalFreteInput.value = service.frete || 0;
-        if (modalPagamentoSelect) modalPagamentoSelect.value = service.meioPagamento || 'Pix';
-        if (modalValorInput) modalValorInput.value = service.valor.toFixed(2);
-
-        // Limpa os containers
-        if (modalItensContainer) modalItensContainer.innerHTML = '';
-        if (modalAdicionaisContainer) modalAdicionaisContainer.innerHTML = '';
-
-        // Popula os itens
-        const regex = /^(.*?)\s*\(x(\d+)(?:\s*-\s*R\$\s*([\d.]+))?\)$/i;
-        if (Array.isArray(service.itens)) {
-          service.itens.forEach(itemStr => {
-            const match = itemStr.match(regex);
-            if (match) {
-              addModalItemRow(match[1], parseInt(match[2], 10), match[3] || '');
-            } else {
-              addModalItemRow(itemStr, 1, '');
-            }
-          });
-        }
-
-        // Popula os adicionais
-        const adList = service.adicionais ? service.adicionais.split(', ') : [];
-        adList.forEach(adStr => {
-          if (!adStr.trim()) return;
-          const match = adStr.match(regex);
-          if (match) {
-            addModalAdicionalRow(match[1], parseInt(match[2], 10), match[3] || '');
-          } else {
-            addModalAdicionalRow(adStr, 1, '');
-          }
-        });
-
-        // Adiciona pelo menos uma linha de item vazia se estiver zerado
-        if (modalItensContainer && modalItensContainer.children.length === 0) {
-          addModalItemRow('', 1, '');
-        }
-
-        // Exibe o modal
-        const modal = document.getElementById('modalConcluirServico');
-        if (modal) {
-          modal.style.display = 'flex';
-          recalculaValorModal();
-        }
+  // Evento para o botão de Pagar (Abre o modal de confirmação de pagamento)
+  const btnPagarList = document.querySelectorAll('.btnPagarServico');
+  btnPagarList.forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.getAttribute('data-id');
+      const service = servicos.find(s => String(s.id) === String(id));
+      if (service) {
+        abrirModalConfirmarPagamento(service);
       }
     });
   });
 }
+
+// Helper para abrir o modal de conclusão/ajuste de peças do serviço
+async function abrirModalConcluirAjustar(service) {
+  // Busca os cadastros de peças e adicionais para o modal
+  currentPecas = await getAllRecords('pecas');
+  currentAdicionais = await getAllRecords('adicionais');
+
+  // Abre o modal de conclusão com os dados pré-carregados
+  const modalIdInput = document.getElementById('modalServId');
+  const modalNomeInput = document.getElementById('modalServNome');
+  const modalTelefoneInput = document.getElementById('modalServTelefone');
+  const modalFreteInput = document.getElementById('modalServFrete');
+  const modalValorInput = document.getElementById('modalServValor');
+  const modalItensContainer = document.getElementById('modalServItensContainer');
+  const modalAdicionaisContainer = document.getElementById('modalServAdicionaisContainer');
+
+  if (modalIdInput) modalIdInput.value = service.id;
+  if (modalNomeInput) modalNomeInput.value = service.nome || '';
+  if (modalTelefoneInput) modalTelefoneInput.value = service.telefone || '';
+  if (modalFreteInput) modalFreteInput.value = service.frete || 0;
+  if (modalValorInput) modalValorInput.value = service.valor.toFixed(2);
+
+  // Limpa os containers
+  if (modalItensContainer) modalItensContainer.innerHTML = '';
+  if (modalAdicionaisContainer) modalAdicionaisContainer.innerHTML = '';
+
+  // Popula os itens
+  const regex = /^(.*?)\s*\(x(\d+)(?:\s*-\s*R\$\s*([\d.]+))?\)$/i;
+  if (Array.isArray(service.itens)) {
+    service.itens.forEach(itemStr => {
+      const match = itemStr.match(regex);
+      if (match) {
+        addModalItemRow(match[1], parseInt(match[2], 10), match[3] || '');
+      } else {
+        addModalItemRow(itemStr, 1, '');
+      }
+    });
+  }
+
+  // Popula os adicionais
+  const adList = service.adicionais ? service.adicionais.split(', ') : [];
+  adList.forEach(adStr => {
+    if (!adStr.trim()) return;
+    const match = adStr.match(regex);
+    if (match) {
+      addModalAdicionalRow(match[1], parseInt(match[2], 10), match[3] || '');
+    } else {
+      addModalAdicionalRow(adStr, 1, '');
+    }
+  });
+
+  // Adiciona pelo menos uma linha de item vazia se estiver zerado
+  if (modalItensContainer && modalItensContainer.children.length === 0) {
+    addModalItemRow('', 1, '');
+  }
+
+  // Exibe o modal
+  const modal = document.getElementById('modalConcluirServico');
+  if (modal) {
+    modal.style.display = 'flex';
+    recalculaValorModal();
+  }
+}
+
 
 // 2. ABA DE ESTOQUE
 async function renderEstoqueView() {
@@ -3228,59 +3336,63 @@ function setupModalConcluir() {
 
         const service = await getRecordById('servicos', Number(id));
         if (service) {
-          // Processa dedução de estoque dos adicionais na conclusão do serviço
-          const todosAdicionais = await getAllRecords('adicionais');
-          const estoqueInsumos = await getAllRecords('estoque');
+          const isComingFromFila = service.status === 'Agendado';
 
-          const deducoesEstoque = [];
-          let estoqueInsuficiente = false;
-          let insumoFaltante = '';
+          if (isComingFromFila) {
+            // Processa dedução de estoque dos adicionais na conclusão do serviço
+            const todosAdicionais = await getAllRecords('adicionais');
+            const estoqueInsumos = await getAllRecords('estoque');
 
-          const adicionalRows = document.querySelectorAll('.modal-adicional-row');
-          adicionalRows.forEach(row => {
-            const select = row.querySelector('.modal-adicional-select');
-            const qtyInput = row.querySelector('.modal-adicional-qty');
-            const qtyVal = qtyInput ? parseFloat(qtyInput.value) || 0 : 0;
+            const deducoesEstoque = [];
+            let estoqueInsuficiente = false;
+            let insumoFaltante = '';
 
-            let name = '';
-            if (select) {
-              if (select.value === 'custom') {
-                const customInput = row.querySelector('.modal-adicional-name-custom');
-                name = customInput ? customInput.value.trim() : '';
-              } else {
-                name = select.value;
-              }
-            }
+            const adicionalRows = document.querySelectorAll('.modal-adicional-row');
+            adicionalRows.forEach(row => {
+              const select = row.querySelector('.modal-adicional-select');
+              const qtyInput = row.querySelector('.modal-adicional-qty');
+              const qtyVal = qtyInput ? parseFloat(qtyInput.value) || 0 : 0;
 
-            if (name) {
-              const ad = todosAdicionais.find(x => x.nome.toLowerCase() === name.toLowerCase());
-              if (ad && ad.insumoAtrelado) {
-                const totalDisponivel = estoqueInsumos
-                  .filter(e => e.item.toLowerCase().trim() === ad.insumoAtrelado.toLowerCase().trim())
-                  .reduce((sum, e) => sum + e.quantidade, 0);
-                const totalConsumo = ad.qtdConsumida * qtyVal;
-
-                if (totalDisponivel < totalConsumo) {
-                  estoqueInsuficiente = true;
-                  insumoFaltante = ad.insumoAtrelado;
+              let name = '';
+              if (select) {
+                if (select.value === 'custom') {
+                  const customInput = row.querySelector('.modal-adicional-name-custom');
+                  name = customInput ? customInput.value.trim() : '';
+                } else {
+                  name = select.value;
                 }
-
-                deducoesEstoque.push({
-                  insumoNome: ad.insumoAtrelado,
-                  quantidade: totalConsumo
-                });
               }
+
+              if (name) {
+                const ad = todosAdicionais.find(x => x.nome.toLowerCase() === name.toLowerCase());
+                if (ad && ad.insumoAtrelado) {
+                  const totalDisponivel = estoqueInsumos
+                    .filter(e => e.item.toLowerCase().trim() === ad.insumoAtrelado.toLowerCase().trim())
+                    .reduce((sum, e) => sum + e.quantidade, 0);
+                  const totalConsumo = ad.qtdConsumida * qtyVal;
+
+                  if (totalDisponivel < totalConsumo) {
+                    estoqueInsuficiente = true;
+                    insumoFaltante = ad.insumoAtrelado;
+                  }
+
+                  deducoesEstoque.push({
+                    insumoNome: ad.insumoAtrelado,
+                    quantidade: totalConsumo
+                  });
+                }
+              }
+            });
+
+            if (estoqueInsuficiente) {
+              const prosseguir = confirm(`Atenção: Não há estoque suficiente do insumo "${insumoFaltante}" atrelado aos adicionais selecionados.\nDeseja concluir o serviço mesmo assim (deixando o estoque do insumo negativo)?`);
+              if (!prosseguir) return;
             }
-          });
 
-          if (estoqueInsuficiente) {
-            const prosseguir = confirm(`Atenção: Não há estoque suficiente do insumo "${insumoFaltante}" atrelado aos adicionais selecionados.\nDeseja concluir o serviço mesmo assim (deixando o estoque do insumo negativo)?`);
-            if (!prosseguir) return;
-          }
-
-          // Executa a dedução de insumos de fato
-          for (const ded of deducoesEstoque) {
-            await consumirInsumoFIFO(ded.insumoNome, ded.quantidade);
+            // Executa a dedução de insumos de fato
+            for (const ded of deducoesEstoque) {
+              await consumirInsumoFIFO(ded.insumoNome, ded.quantidade);
+            }
           }
 
           service.nome = nome;
@@ -3289,12 +3401,16 @@ function setupModalConcluir() {
           service.adicionais = adicionais;
           service.valor = valor;
           service.frete = frete;
-          service.meioPagamento = meioPagamento;
-          service.status = 'Finalizado';
+          
+          if (isComingFromFila) {
+            service.status = 'Aguardando Pagamento';
+            service.meioPagamento = 'Pendente';
+          }
+          
           service.synced = 0;
 
           await updateRecord('servicos', service);
-          showToast('Serviço concluído com sucesso!');
+          showToast(isComingFromFila ? 'Trabalho concluído! Aguardando pagamento.' : 'Serviço atualizado com sucesso!');
           fecharModal();
           await reloadAllViews();
         }
@@ -4088,6 +4204,159 @@ async function exibirDetalhesPedido(id) {
     document.getElementById('modalDetalhesPedido').style.display = 'flex';
   } catch (err) {
     showToast('Erro ao abrir detalhes: ' + err.message, 'error');
+  }
+}
+
+// --- CONTROLE DO NOVO MODAL DE CONFIRMAÇÃO DE PAGAMENTO ---
+let currentServiceToPay = null;
+
+function abrirModalConfirmarPagamento(service) {
+  currentServiceToPay = service;
+  
+  const modal = document.getElementById('modalConfirmarPagamento');
+  const modalIdInput = document.getElementById('modalPagId');
+  const clienteText = document.getElementById('modalPagClienteText');
+  const valorText = document.getElementById('modalPagValorText');
+  
+  const total = service.valor + (service.frete || 0);
+
+  if (modalIdInput) modalIdInput.value = service.id;
+  if (clienteText) clienteText.textContent = service.nome || 'Cliente Avulso';
+  if (valorText) valorText.textContent = formatMoney(total);
+
+  // Reseta campos do modal
+  const checkboxDividir = document.getElementById('modalPagDividir');
+  if (checkboxDividir) checkboxDividir.checked = false;
+
+  const unicoContainer = document.getElementById('modalPagUnicoContainer');
+  const duploContainer = document.getElementById('modalPagDuploContainer');
+  if (unicoContainer) unicoContainer.style.display = 'block';
+  if (duploContainer) duploContainer.style.display = 'none';
+
+  const selectMeio = document.getElementById('modalPagMeio');
+  if (selectMeio) selectMeio.value = 'Pix';
+
+  // Configura valores padrões de divisão
+  const valor1Input = document.getElementById('modalPagValor1');
+  const valor2Input = document.getElementById('modalPagValor2');
+  if (valor1Input) valor1Input.value = (total / 2).toFixed(2);
+  if (valor2Input) valor2Input.value = (total / 2).toFixed(2);
+
+  const avisoSoma = document.getElementById('modalPagAvisoSoma');
+  if (avisoSoma) avisoSoma.style.display = 'none';
+
+  if (modal) modal.style.display = 'flex';
+}
+
+function setupModalConfirmarPagamento() {
+  const modal = document.getElementById('modalConfirmarPagamento');
+  const btnFecharModalPagamento = document.getElementById('btnFecharModalPagamento');
+  const btnCancelarModalPagamento = document.getElementById('btnCancelarModalPagamento');
+  const formModalPagamento = document.getElementById('formModalPagamento');
+  const checkboxDividir = document.getElementById('modalPagDividir');
+  const unicoContainer = document.getElementById('modalPagUnicoContainer');
+  const duploContainer = document.getElementById('modalPagDuploContainer');
+
+  const valor1Input = document.getElementById('modalPagValor1');
+  const valor2Input = document.getElementById('modalPagValor2');
+  const avisoSoma = document.getElementById('modalPagAvisoSoma');
+
+  const fecharModal = () => {
+    if (modal) modal.style.display = 'none';
+  };
+
+  if (btnFecharModalPagamento) btnFecharModalPagamento.addEventListener('click', fecharModal);
+  if (btnCancelarModalPagamento) btnCancelarModalPagamento.addEventListener('click', fecharModal);
+
+  if (checkboxDividir) {
+    checkboxDividir.addEventListener('change', () => {
+      if (checkboxDividir.checked) {
+        unicoContainer.style.display = 'none';
+        duploContainer.style.display = 'flex';
+      } else {
+        unicoContainer.style.display = 'block';
+        duploContainer.style.display = 'none';
+      }
+    });
+  }
+
+  // Lógica de cálculo automático do complemento de pagamento duplo
+  if (valor1Input && valor2Input) {
+    valor1Input.addEventListener('input', () => {
+      if (!currentServiceToPay) return;
+      const total = currentServiceToPay.valor + (currentServiceToPay.frete || 0);
+      const val1 = parseFloat(valor1Input.value) || 0;
+      const complement = Math.max(0, total - val1);
+      valor2Input.value = complement.toFixed(2);
+      validarSomaValores();
+    });
+
+    valor2Input.addEventListener('input', () => {
+      if (!currentServiceToPay) return;
+      const total = currentServiceToPay.valor + (currentServiceToPay.frete || 0);
+      const val2 = parseFloat(valor2Input.value) || 0;
+      const complement = Math.max(0, total - val2);
+      valor1Input.value = complement.toFixed(2);
+      validarSomaValores();
+    });
+  }
+
+  function validarSomaValores() {
+    if (!currentServiceToPay) return true;
+    const total = currentServiceToPay.valor + (currentServiceToPay.frete || 0);
+    const val1 = parseFloat(valor1Input.value) || 0;
+    const val2 = parseFloat(valor2Input.value) || 0;
+
+    const diff = Math.abs((val1 + val2) - total);
+    if (diff > 0.01) {
+      avisoSoma.textContent = `Atenção: A soma das parcelas (${formatMoney(val1 + val2)}) difere do total (${formatMoney(total)}).`;
+      avisoSoma.style.display = 'block';
+      return false;
+    } else {
+      avisoSoma.style.display = 'none';
+      return true;
+    }
+  }
+
+  if (formModalPagamento) {
+    formModalPagamento.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      try {
+        if (!currentServiceToPay) return;
+        const id = document.getElementById('modalPagId').value;
+        const dividir = checkboxDividir ? checkboxDividir.checked : false;
+
+        let meioPagamento = '';
+        if (dividir) {
+          if (!validarSomaValores()) {
+            showToast('A soma dos valores divididos deve ser igual ao total do serviço.', 'error');
+            return;
+          }
+          const meio1 = document.getElementById('modalPagMeio1').value;
+          const val1 = parseFloat(valor1Input.value) || 0;
+          const meio2 = document.getElementById('modalPagMeio2').value;
+          const val2 = parseFloat(valor2Input.value) || 0;
+          meioPagamento = `${meio1} (${formatMoney(val1)}) + ${meio2} (${formatMoney(val2)})`;
+        } else {
+          meioPagamento = document.getElementById('modalPagMeio').value;
+        }
+
+        const service = await getRecordById('servicos', Number(id));
+        if (service) {
+          service.meioPagamento = meioPagamento;
+          service.status = 'Finalizado';
+          service.data = new Date().toISOString(); // Atualiza a data para o momento do pagamento
+          service.synced = 0;
+
+          await updateRecord('servicos', service);
+          showToast('Pagamento confirmado e serviço finalizado!');
+          fecharModal();
+          await reloadAllViews();
+        }
+      } catch (err) {
+        showToast('Erro ao confirmar pagamento: ' + err.message, 'error');
+      }
+    });
   }
 }
 
