@@ -3275,7 +3275,6 @@ function setupModalConcluir() {
         const telefone = document.getElementById('modalServTelefone') ? document.getElementById('modalServTelefone').value.trim() : '';
         const valor = parseFloat(document.getElementById('modalServValor').value) || 0;
         const frete = parseFloat(document.getElementById('modalServFrete').value) || 0;
-        const meioPagamento = document.getElementById('modalServPagamento').value;
 
         // Coleta itens do modal
         const itens = [];
