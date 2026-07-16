@@ -1059,7 +1059,7 @@
         <div class="form-group" style="margin-bottom: 20px;">
           <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.95rem; color: var(--text-main);">
             <input type="checkbox" id="modalPagDividir" style="width: 18px; height: 18px; accent-color: var(--primary);">
-            Dividir pagamento em duas formas
+            Dividir em múltiplas formas de pagamento
           </label>
         </div>
 
@@ -1075,41 +1075,15 @@
           </select>
         </div>
 
-        <!-- Formas de Pagamento Duplas -->
+        <!-- Formas de Pagamento Múltiplas -->
         <div id="modalPagDuploContainer" style="display: none; flex-direction: column; gap: 16px; margin-bottom: 20px;">
-          <div class="form-row" style="gap: 12px;">
-            <div class="form-group" style="flex: 1.2;">
-              <label for="modalPagMeio1">Forma 1</label>
-              <select id="modalPagMeio1" class="form-control">
-                <option value="Pix">Pix</option>
-                <option value="Dinheiro" selected>Dinheiro</option>
-                <option value="Cartão de Crédito">Cartão de Crédito</option>
-                <option value="Cartão de Débito">Cartão de Débito</option>
-                <option value="Boleto">Boleto / Faturado</option>
-              </select>
-            </div>
-            <div class="form-group" style="flex: 1;">
-              <label for="modalPagValor1">Valor 1 (R$)</label>
-              <input type="number" id="modalPagValor1" class="form-control" step="0.01" min="0" placeholder="0.00">
-            </div>
+          <label style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: -4px;">Formas e Parcelas</label>
+          <div id="modalPagRowsContainer" style="display: flex; flex-direction: column; gap: 12px;">
+            <!-- Linhas geradas dinamicamente via JS -->
           </div>
-
-          <div class="form-row" style="gap: 12px;">
-            <div class="form-group" style="flex: 1.2;">
-              <label for="modalPagMeio2">Forma 2</label>
-              <select id="modalPagMeio2" class="form-control">
-                <option value="Pix" selected>Pix</option>
-                <option value="Dinheiro">Dinheiro</option>
-                <option value="Cartão de Crédito">Cartão de Crédito</option>
-                <option value="Cartão de Débito">Cartão de Débito</option>
-                <option value="Boleto">Boleto / Faturado</option>
-              </select>
-            </div>
-            <div class="form-group" style="flex: 1;">
-              <label for="modalPagValor2">Valor 2 (R$)</label>
-              <input type="number" id="modalPagValor2" class="form-control" step="0.01" min="0" placeholder="0.00">
-            </div>
-          </div>
+          <button type="button" class="btn btn-secondary" id="btnModalPagAddRow" style="width: 100%; padding: 8px; font-size: 0.8rem; border-radius: var(--radius-sm); border: 1px dashed var(--border-glass);">
+            + Adicionar Forma de Pagamento
+          </button>
           <small id="modalPagAvisoSoma" style="color: var(--error); font-size: 0.78rem; display: none; margin-top: 4px;"></small>
         </div>
 

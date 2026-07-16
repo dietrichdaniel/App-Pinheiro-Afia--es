@@ -4235,16 +4235,134 @@ function abrirModalConfirmarPagamento(service) {
   const selectMeio = document.getElementById('modalPagMeio');
   if (selectMeio) selectMeio.value = 'Pix';
 
-  // Configura valores padrões de divisão
-  const valor1Input = document.getElementById('modalPagValor1');
-  const valor2Input = document.getElementById('modalPagValor2');
-  if (valor1Input) valor1Input.value = (total / 2).toFixed(2);
-  if (valor2Input) valor2Input.value = (total / 2).toFixed(2);
+  // Configura as linhas de divisão iniciais (2 formas de pagamento por padrão)
+  const container = document.getElementById('modalPagRowsContainer');
+  if (container) {
+    container.innerHTML = '';
+    addModalPagRow('Dinheiro', (total / 2).toFixed(2));
+    addModalPagRow('Pix', (total / 2).toFixed(2));
+  }
 
   const avisoSoma = document.getElementById('modalPagAvisoSoma');
   if (avisoSoma) avisoSoma.style.display = 'none';
 
   if (modal) modal.style.display = 'flex';
+}
+
+// Gerencia a adição de novas linhas de pagamento dinâmicas
+function addModalPagRow(method = 'Pix', amount = '') {
+  const container = document.getElementById('modalPagRowsContainer');
+  if (!container) return;
+
+  const row = document.createElement('div');
+  row.className = 'dynamic-item-row modal-pag-row';
+  row.style.display = 'flex';
+  row.style.gap = '8px';
+  row.style.width = '100%';
+  row.style.alignItems = 'center';
+
+  row.innerHTML = `
+    <select class="form-control modal-pag-method-select" style="flex: 1.2;">
+      <option value="Pix">Pix</option>
+      <option value="Dinheiro">Dinheiro</option>
+      <option value="Cartão de Crédito">Cartão de Crédito</option>
+      <option value="Cartão de Débito">Cartão de Débito</option>
+      <option value="Boleto">Boleto / Faturado</option>
+    </select>
+    <input type="number" class="form-control modal-pag-amount-input" step="0.01" min="0" placeholder="0.00" style="flex: 1;" value="${amount}">
+    <button type="button" class="btn-icon-only danger btnRemovePagRow" style="padding: 6px;">
+      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+    </button>
+  `;
+
+  const select = row.querySelector('.modal-pag-method-select');
+  if (select) select.value = method;
+
+  const input = row.querySelector('.modal-pag-amount-input');
+  if (input) {
+    input.addEventListener('input', () => {
+      const rows = container.querySelectorAll('.modal-pag-row');
+      const currentIndex = Array.from(rows).indexOf(row);
+      if (currentIndex < rows.length - 1) {
+        recalcularSaldoRestante();
+      }
+      validarSomaValoresMultiplos();
+    });
+  }
+
+  const btnRemove = row.querySelector('.btnRemovePagRow');
+  if (btnRemove) {
+    btnRemove.addEventListener('click', () => {
+      row.remove();
+      updateRemovePagButtons();
+      recalcularSaldoRestante();
+      validarSomaValoresMultiplos();
+    });
+  }
+
+  container.appendChild(row);
+  updateRemovePagButtons();
+}
+
+function updateRemovePagButtons() {
+  const container = document.getElementById('modalPagRowsContainer');
+  if (!container) return;
+  const rows = container.querySelectorAll('.modal-pag-row');
+  rows.forEach(row => {
+    const btn = row.querySelector('.btnRemovePagRow');
+    if (btn) {
+      btn.style.display = rows.length > 2 ? 'inline-flex' : 'none';
+    }
+  });
+}
+
+function recalcularSaldoRestante() {
+  if (!currentServiceToPay) return;
+  const container = document.getElementById('modalPagRowsContainer');
+  if (!container) return;
+  const rows = container.querySelectorAll('.modal-pag-row');
+  if (rows.length < 2) return;
+
+  const total = currentServiceToPay.valor + (currentServiceToPay.frete || 0);
+
+  // Soma o valor de todas as parcelas exceto a última
+  let sumExceptLast = 0;
+  for (let i = 0; i < rows.length - 1; i++) {
+    const val = parseFloat(rows[i].querySelector('.modal-pag-amount-input').value) || 0;
+    sumExceptLast += val;
+  }
+
+  const lastInput = rows[rows.length - 1].querySelector('.modal-pag-amount-input');
+  if (lastInput) {
+    const complement = Math.max(0, total - sumExceptLast);
+    lastInput.value = complement.toFixed(2);
+  }
+}
+
+function validarSomaValoresMultiplos() {
+  if (!currentServiceToPay) return true;
+  const container = document.getElementById('modalPagRowsContainer');
+  const avisoSoma = document.getElementById('modalPagAvisoSoma');
+  if (!container || !avisoSoma) return true;
+
+  const total = currentServiceToPay.valor + (currentServiceToPay.frete || 0);
+  const rows = container.querySelectorAll('.modal-pag-row');
+
+  let totalDigitado = 0;
+  rows.forEach(row => {
+    const val = parseFloat(row.querySelector('.modal-pag-amount-input').value) || 0;
+    totalDigitado += val;
+  });
+
+  const diff = Math.abs(totalDigitado - total);
+  if (diff > 0.01) {
+    avisoSoma.textContent = `Atenção: A soma das parcelas (${formatMoney(totalDigitado)}) difere do total (${formatMoney(total)}).`;
+    avisoSoma.style.display = 'block';
+    return false;
+  } else {
+    avisoSoma.style.display = 'none';
+    return true;
+  }
 }
 
 function setupModalConfirmarPagamento() {
@@ -4255,10 +4373,7 @@ function setupModalConfirmarPagamento() {
   const checkboxDividir = document.getElementById('modalPagDividir');
   const unicoContainer = document.getElementById('modalPagUnicoContainer');
   const duploContainer = document.getElementById('modalPagDuploContainer');
-
-  const valor1Input = document.getElementById('modalPagValor1');
-  const valor2Input = document.getElementById('modalPagValor2');
-  const avisoSoma = document.getElementById('modalPagAvisoSoma');
+  const btnAddRow = document.getElementById('btnModalPagAddRow');
 
   const fecharModal = () => {
     if (modal) modal.style.display = 'none';
@@ -4272,6 +4387,8 @@ function setupModalConfirmarPagamento() {
       if (checkboxDividir.checked) {
         unicoContainer.style.display = 'none';
         duploContainer.style.display = 'flex';
+        recalcularSaldoRestante();
+        validarSomaValoresMultiplos();
       } else {
         unicoContainer.style.display = 'block';
         duploContainer.style.display = 'none';
@@ -4279,42 +4396,12 @@ function setupModalConfirmarPagamento() {
     });
   }
 
-  // Lógica de cálculo automático do complemento de pagamento duplo
-  if (valor1Input && valor2Input) {
-    valor1Input.addEventListener('input', () => {
-      if (!currentServiceToPay) return;
-      const total = currentServiceToPay.valor + (currentServiceToPay.frete || 0);
-      const val1 = parseFloat(valor1Input.value) || 0;
-      const complement = Math.max(0, total - val1);
-      valor2Input.value = complement.toFixed(2);
-      validarSomaValores();
+  if (btnAddRow) {
+    btnAddRow.addEventListener('click', () => {
+      addModalPagRow('Pix', '0.00');
+      recalcularSaldoRestante();
+      validarSomaValoresMultiplos();
     });
-
-    valor2Input.addEventListener('input', () => {
-      if (!currentServiceToPay) return;
-      const total = currentServiceToPay.valor + (currentServiceToPay.frete || 0);
-      const val2 = parseFloat(valor2Input.value) || 0;
-      const complement = Math.max(0, total - val2);
-      valor1Input.value = complement.toFixed(2);
-      validarSomaValores();
-    });
-  }
-
-  function validarSomaValores() {
-    if (!currentServiceToPay) return true;
-    const total = currentServiceToPay.valor + (currentServiceToPay.frete || 0);
-    const val1 = parseFloat(valor1Input.value) || 0;
-    const val2 = parseFloat(valor2Input.value) || 0;
-
-    const diff = Math.abs((val1 + val2) - total);
-    if (diff > 0.01) {
-      avisoSoma.textContent = `Atenção: A soma das parcelas (${formatMoney(val1 + val2)}) difere do total (${formatMoney(total)}).`;
-      avisoSoma.style.display = 'block';
-      return false;
-    } else {
-      avisoSoma.style.display = 'none';
-      return true;
-    }
   }
 
   if (formModalPagamento) {
@@ -4327,15 +4414,20 @@ function setupModalConfirmarPagamento() {
 
         let meioPagamento = '';
         if (dividir) {
-          if (!validarSomaValores()) {
-            showToast('A soma dos valores divididos deve ser igual ao total do serviço.', 'error');
+          if (!validarSomaValoresMultiplos()) {
+            showToast('A soma dos valores informados deve ser igual ao total do serviço.', 'error');
             return;
           }
-          const meio1 = document.getElementById('modalPagMeio1').value;
-          const val1 = parseFloat(valor1Input.value) || 0;
-          const meio2 = document.getElementById('modalPagMeio2').value;
-          const val2 = parseFloat(valor2Input.value) || 0;
-          meioPagamento = `${meio1} (${formatMoney(val1)}) + ${meio2} (${formatMoney(val2)})`;
+          
+          const container = document.getElementById('modalPagRowsContainer');
+          const rows = container.querySelectorAll('.modal-pag-row');
+          const partes = [];
+          rows.forEach(row => {
+            const method = row.querySelector('.modal-pag-method-select').value;
+            const val = parseFloat(row.querySelector('.modal-pag-amount-input').value) || 0;
+            partes.push(`${method} (${formatMoney(val)})`);
+          });
+          meioPagamento = partes.join(' + ');
         } else {
           meioPagamento = document.getElementById('modalPagMeio').value;
         }
@@ -4344,7 +4436,7 @@ function setupModalConfirmarPagamento() {
         if (service) {
           service.meioPagamento = meioPagamento;
           service.status = 'Finalizado';
-          service.data = new Date().toISOString(); // Atualiza a data para o momento do pagamento
+          service.data = new Date().toISOString(); // Atualiza a data para a data do pagamento de fato
           service.synced = 0;
 
           await updateRecord('servicos', service);
