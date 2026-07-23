@@ -61,10 +61,16 @@
             Estoque / Insumos
           </button>
         </li>
+        <li class="nav-item" data-tab="novo_pedido">
+          <button>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 9h2V6h3V4h-3V1h-2v3H8v2h3v3zm-4 9c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zm10 0c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2zM7.17 14.75l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H6.21l-.94-2H1v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.13 0-.25-.11-.25-.25z"/></svg>
+            Novo Pedido
+          </button>
+        </li>
         <li class="nav-item" data-tab="pedidos">
           <button>
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>
-            Pedidos (Vendas)
+            Fila & Hist. Pedidos
           </button>
         </li>
         <li class="nav-item" data-tab="receitas">
@@ -174,14 +180,28 @@
             </div>
           </div>
 
-          <!-- Card 3: Pedidos -->
+          <!-- Card 3A: Novo Pedido -->
+          <div class="menu-card" data-tab="novo_pedido">
+            <div class="menu-card-icon emerald">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 9h2V6h3V4h-3V1h-2v3H8v2h3v3zm-4 9c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zm10 0c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2zM7.17 14.75l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H6.21l-.94-2H1v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.13 0-.25-.11-.25-.25z"/></svg>
+            </div>
+            <div class="menu-card-content">
+              <h2>Novo Pedido (Venda)</h2>
+              <p>Registre saídas e vendas de produtos acabados ou insumos para seus clientes.</p>
+            </div>
+            <div class="menu-card-arrow">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+            </div>
+          </div>
+
+          <!-- Card 3B: Fila e Histórico de Pedidos -->
           <div class="menu-card" data-tab="pedidos">
             <div class="menu-card-icon emerald">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>
             </div>
             <div class="menu-card-content">
-              <h2>Pedidos (Vendas)</h2>
-              <p>Registre saídas e vendas de produtos prontos e gerencie a fila de entrega de mercadorias.</p>
+              <h2>Fila & Histórico de Pedidos</h2>
+              <p>Acompanhe a fila de produção, a fila de pagamento e consulte as vendas realizadas.</p>
             </div>
             <div class="menu-card-arrow">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
@@ -602,19 +622,19 @@
         </div>
       </section>
 
-      <!-- ABA 4: PEDIDOS (VENDAS) -->
-      <section id="pedidos" class="tab-panel">
+      <!-- ABA NOVO PEDIDO (VENDA) -->
+      <section id="novo_pedido" class="tab-panel">
         <div class="page-header">
           <div class="page-title">
-            <h1>Pedidos de Vendas</h1>
-            <p>Registre saídas de produtos prontos</p>
+            <h1>Novo Pedido (Venda)</h1>
+            <p>Registre saídas e vendas de produtos prontos para seus clientes</p>
           </div>
         </div>
 
-        <div class="layout-split">
+        <div class="layout-split" style="grid-template-columns: 1fr;">
           <!-- Formulário de Venda -->
-          <div class="form-panel">
-            <h2>Nova Venda</h2>
+          <div class="form-panel" style="max-width: 800px; margin: 0 auto; width: 100%;">
+            <h2>Cadastrar Nova Venda</h2>
             <form id="formPedido">
               <div class="form-row">
                 <div class="form-group">
@@ -666,47 +686,66 @@
               </div>
 
               <div class="form-group">
-                <label for="pedStatus">Status da Venda</label>
+                <label for="pedStatus">Status do Pedido</label>
                 <select id="pedStatus" class="form-control" required>
-                  <option value="Finalizado">Finalizado</option>
-                  <option value="Agendado">Agendado (Em Fila)</option>
+                  <option value="Finalizado">Finalizado / Concluído</option>
+                  <option value="Agendado">Fila de Produção (Agendado)</option>
+                  <option value="Aguardando Pagamento">Fila de Pagamento (Aguardando Pagamento)</option>
                 </select>
               </div>
 
               <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">Registrar Venda</button>
             </form>
           </div>
+        </div>
+      </section>
 
-          <!-- Tabela de Listagem e Mural da Fila de Pedidos -->
-          <div style="display: flex; flex-direction: column; gap: 24px; width: 100%;">
-            <!-- Mural de Pedidos em Fila (Agendados) -->
-            <div class="table-panel" id="muralPedidosPanel" style="display: none;">
-              <h2 style="margin-bottom: 8px;">Fila de Espera (Pedidos Agendados)</h2>
-              <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 16px;">Pedidos pendentes de finalização/entrega. Clique em "Concluir" para finalizá-los.</p>
-              <div id="muralPedidosGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;">
-                <!-- Preenchido dinamicamente via JS -->
-              </div>
+      <!-- ABA FILA E HISTÓRICO DE PEDIDOS (VENDAS) -->
+      <section id="pedidos" class="tab-panel">
+        <div class="page-header">
+          <div class="page-title">
+            <h1>Mural & Histórico de Pedidos</h1>
+            <p>Acompanhe a fila de produção, a fila de pagamento e o histórico de vendas realizadas</p>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 24px; width: 100%;">
+          <!-- Mural de Pedidos em Fila de Produção (Agendados) -->
+          <div class="table-panel" id="muralPedidosPanel" style="display: none;">
+            <h2 style="margin-bottom: 8px;">Fila de Produção (Pedidos Agendados)</h2>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 16px;">Pedidos pendentes de fabricação/produção. Clique em "Concluir" para avançar.</p>
+            <div id="muralPedidosGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;">
+              <!-- Preenchido dinamicamente via JS -->
             </div>
+          </div>
 
-            <!-- Pedidos Realizados -->
-            <div class="table-panel">
-              <h2>Pedidos Realizados</h2>
-              <div class="table-responsive">
-                <table class="data-table" id="tablePedidos">
-                  <thead>
-                    <tr>
-                      <th>Cliente</th>
-                      <th>Itens</th>
-                      <th>Valor Total</th>
-                      <th>Pagamento</th>
-                      <th>Ações</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <!-- Inserido dinamicamente via JS -->
-                  </tbody>
-                </table>
-              </div>
+          <!-- Mural de Pedidos Aguardando Pagamento -->
+          <div class="table-panel" id="muralPedidosPagamentoPanel" style="display: none;">
+            <h2 style="margin-bottom: 8px;">Fila de Pagamento (Aguardando Pagamento)</h2>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 16px;">Pedidos concluídos pendentes de pagamento. Clique em "Pagar" para confirmar a quitação.</p>
+            <div id="muralPedidosPagamentoGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;">
+              <!-- Preenchido dinamicamente via JS -->
+            </div>
+          </div>
+
+          <!-- Pedidos Realizados (Histórico) -->
+          <div class="table-panel">
+            <h2>Histórico de Pedidos Realizados</h2>
+            <div class="table-responsive">
+              <table class="data-table" id="tablePedidos">
+                <thead>
+                  <tr>
+                    <th>Cliente</th>
+                    <th>Itens</th>
+                    <th>Valor Total</th>
+                    <th>Pagamento</th>
+                    <th>Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- Inserido dinamicamente via JS -->
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
@@ -1050,7 +1089,7 @@
             <strong id="modalPagClienteText" style="color: var(--text-main);"></strong>
           </div>
           <div style="display: flex; justify-content: space-between; font-size: 1.1rem; font-weight: bold; border-top: 1px dashed var(--border-glass); padding-top: 8px; margin-top: 4px;">
-            <span style="color: var(--text-main);">Valor do Serviço:</span>
+            <span style="color: var(--text-main);">Valor Total:</span>
             <span id="modalPagValorText" style="color: var(--success);"></span>
           </div>
         </div>
@@ -1202,10 +1241,10 @@
   </div>
 
   <!-- Modal: Concluir e Ajustar Pedido/Venda -->
-  <div class="modal-backdrop" id="modalConcluirPedido" style="display: none;">
-    <div class="modal-content" style="max-width: 500px;">
-      <div class="modal-header">
-        <h2 style="margin: 0; border: none; padding: 0; font-size: 1.3rem;">Concluir e Ajustar Pedido</h2>
+  <div class="modal" id="modalConcluirPedido" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 15, 25, 0.85); backdrop-filter: blur(8px); z-index: 1000; align-items: center; justify-content: center; padding: 20px;">
+    <div class="form-panel" style="width: 100%; max-width: 500px; box-shadow: var(--shadow-lg); border: 1px solid var(--border-glass); animation: fadeIn 0.3s ease-out; max-height: 90vh; overflow-y: auto; padding: 24px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-glass); padding-bottom: 12px; margin-bottom: 20px;">
+        <h2 style="margin: 0; border: none; padding: 0; font-size: 1.3rem; color: var(--primary);">Concluir e Ajustar Pedido</h2>
         <button type="button" class="btn-icon-only" id="btnFecharModalConcluirPedido" style="padding: 4px;">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
@@ -1257,16 +1296,16 @@
           <strong id="modalPedTotalText" style="font-size: 1.2rem; color: var(--primary); margin-left: 8px;">R$ 0,00</strong>
         </div>
 
-        <button type="submit" class="btn btn-primary" style="width: 100%;">Concluir Venda</button>
+        <button type="submit" class="btn btn-primary" style="width: 100%;">Concluir Produção</button>
       </form>
     </div>
   </div>
 
   <!-- Modal: Detalhes do Pedido/Venda -->
-  <div class="modal-backdrop" id="modalDetalhesPedido" style="display: none;">
-    <div class="modal-content" style="max-width: 550px;">
-      <div class="modal-header">
-        <h2 style="margin: 0; border: none; padding: 0; font-size: 1.3rem;">Detalhes da Venda</h2>
+  <div class="modal" id="modalDetalhesPedido" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 15, 25, 0.85); backdrop-filter: blur(8px); z-index: 1000; align-items: center; justify-content: center; padding: 20px;">
+    <div class="form-panel" style="width: 100%; max-width: 500px; box-shadow: var(--shadow-lg); border: 1px solid var(--border-glass); animation: fadeIn 0.3s ease-out; max-height: 90vh; overflow-y: auto; padding: 24px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-glass); padding-bottom: 12px; margin-bottom: 20px;">
+        <h2 style="margin: 0; border: none; padding: 0; font-size: 1.3rem; color: var(--primary);">Detalhes da Venda</h2>
         <button type="button" class="btn-icon-only" id="btnFecharModalDetalhesPedido" style="padding: 4px;">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
@@ -1317,7 +1356,12 @@
           </div>
         </div>
       </div>
+
+      <div style="margin-top: 24px; display: flex; justify-content: flex-end;">
+        <button type="button" class="btn btn-secondary" id="btnFecharModalDetalhesPedidoAcoes" style="padding: 10px 24px;">Fechar</button>
+      </div>
     </div>
+  </div>
 
 
 

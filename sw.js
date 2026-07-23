@@ -5,7 +5,7 @@
  * É essa alteração no sw.js que faz os navegadores e celulares detectarem a nova versão
  * e dispararem a notificação Toast de atualização para os usuários!
  */
-const CACHE_NAME = 'pinheiro-afiacoes-cache-v48';
+const CACHE_NAME = 'pinheiro-afiacoes-cache-v49';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -65,7 +65,7 @@ self.addEventListener('fetch', (event) => {
         // Retorna o recurso do cache se disponível
         return cachedResponse;
       }
-      
+
       // Caso contrário, busca na rede
       return fetch(event.request).then((response) => {
         // Se a resposta for válida, coloca ela no cache (para recursos dinâmicos, se houver)

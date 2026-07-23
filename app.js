@@ -987,8 +987,11 @@ function setupFormSubmissions() {
     formPedido.addEventListener('submit', async (e) => {
       e.preventDefault();
       try {
+        const nome = document.getElementById('pedNome') ? document.getElementById('pedNome').value.trim() : '';
+        const telefone = document.getElementById('pedTelefone') ? document.getElementById('pedTelefone').value.trim() : '';
         const frete = parseFloat(document.getElementById('pedFrete').value) || 0;
         const meioPagamento = document.getElementById('pedPagamento').value;
+        const status = document.getElementById('pedStatus') ? document.getElementById('pedStatus').value : 'Finalizado';
 
         const rows = document.querySelectorAll('#pedItensContainer .dynamic-item-row');
         const itemsToSell = [];
@@ -1014,87 +1017,90 @@ function setupFormSubmissions() {
           return;
         }
 
-        // Realiza o processamento e baixa de estoque para cada item
-        for (const item of itemsToSell) {
-          const { itemNome, type, quantidade, valor } = item;
+        // Realiza o processamento e baixa de estoque APENAS se o pedido NÃO for para a Fila de Produção (Agendado)
+        // (Para pedidos agendados, a baixa de estoque ocorre apenas no momento de Concluir a Produção no mural)
+        if (status !== 'Agendado') {
+          for (const item of itemsToSell) {
+            const { itemNome, type, quantidade, valor } = item;
 
-          if (type === 'receita') {
-            const receitas = await getAllRecords('receitas');
-            const receita = receitas.find(r => r.produtoFinal.toLowerCase() === itemNome.toLowerCase());
+            if (type === 'receita') {
+              const receitas = await getAllRecords('receitas');
+              const receita = receitas.find(r => r.produtoFinal.toLowerCase() === itemNome.toLowerCase());
 
-            const estoqueFinalizado = await getAllRecords('estoque_produtos');
-            const prodEstocado = estoqueFinalizado.find(p => p.produto.toLowerCase() === itemNome.toLowerCase());
-            const qtdDisponivelProd = prodEstocado ? prodEstocado.quantidade : 0;
+              const estoqueFinalizado = await getAllRecords('estoque_produtos');
+              const prodEstocado = estoqueFinalizado.find(p => p.produto.toLowerCase() === itemNome.toLowerCase());
+              const qtdDisponivelProd = prodEstocado ? prodEstocado.quantidade : 0;
 
-            if (qtdDisponivelProd >= quantidade) {
-              // Caso 1: Estoque de produto finalizado é suficiente
-              prodEstocado.quantidade -= quantidade;
-              prodEstocado.synced = 0;
-              await updateRecord('estoque_produtos', prodEstocado);
-            } else {
-              // Caso 2: Estoque insuficiente, precisamos produzir a diferença
-              const diferenca = quantidade - qtdDisponivelProd;
-
-              if (!receita) {
-                const prosseguir = confirm(`Atenção: Estoque insuficiente de "${itemNome}" em estoque (${qtdDisponivelProd} un. disponíveis) e este produto não possui receita cadastrada. Deseja realizar a venda mesmo assim?`);
-                if (!prosseguir) return;
-
-                if (prodEstocado) {
-                  prodEstocado.quantidade = 0;
-                  prodEstocado.synced = 0;
-                  await updateRecord('estoque_produtos', prodEstocado);
-                }
+              if (qtdDisponivelProd >= quantidade) {
+                // Caso 1: Estoque de produto finalizado é suficiente
+                prodEstocado.quantidade -= quantidade;
+                prodEstocado.synced = 0;
+                await updateRecord('estoque_produtos', prodEstocado);
               } else {
-                const estoqueInsumos = await getAllRecords('estoque');
-                let insumosInsuficientes = false;
-                let insumoFaltante = '';
+                // Caso 2: Estoque insuficiente, precisamos produzir a diferença
+                const diferenca = quantidade - qtdDisponivelProd;
 
-                for (const mp of receita.materiaPrima) {
-                  const totalDisponivel = estoqueInsumos
-                    .filter(e => e.item.toLowerCase().trim() === mp.item.toLowerCase().trim())
-                    .reduce((sum, e) => sum + e.quantidade, 0);
-                  const qtdNecessaria = mp.quantidade * diferenca;
+                if (!receita) {
+                  const prosseguir = confirm(`Atenção: Estoque insuficiente de "${itemNome}" em estoque (${qtdDisponivelProd} un. disponíveis) e este produto não possui receita cadastrada. Deseja realizar a venda mesmo assim?`);
+                  if (!prosseguir) return;
 
-                  if (totalDisponivel < qtdNecessaria) {
-                    insumosInsuficientes = true;
-                    insumoFaltante = mp.item;
-                    break;
+                  if (prodEstocado) {
+                    prodEstocado.quantidade = 0;
+                    prodEstocado.synced = 0;
+                    await updateRecord('estoque_produtos', prodEstocado);
+                  }
+                } else {
+                  const estoqueInsumos = await getAllRecords('estoque');
+                  let insumosInsuficientes = false;
+                  let insumoFaltante = '';
+
+                  for (const mp of receita.materiaPrima) {
+                    const totalDisponivel = estoqueInsumos
+                      .filter(e => e.item.toLowerCase().trim() === mp.item.toLowerCase().trim())
+                      .reduce((sum, e) => sum + e.quantidade, 0);
+                    const qtdNecessaria = mp.quantidade * diferenca;
+
+                    if (totalDisponivel < qtdNecessaria) {
+                      insumosInsuficientes = true;
+                      insumoFaltante = mp.item;
+                      break;
+                    }
+                  }
+
+                  if (insumosInsuficientes) {
+                    const prosseguir = confirm(`Atenção: Estoque insuficiente de produtos e insumos para completar esta venda!\nNão há insumo "${insumoFaltante}" suficiente no estoque para fabricar as ${diferenca} un. restantes.\nDeseja realizar a venda mesmo assim (deixando o estoque de insumos negativo)?`);
+                    if (!prosseguir) return;
+                  }
+
+                  // Zera o estoque do produto finalizado
+                  if (prodEstocado) {
+                    prodEstocado.quantidade = 0;
+                    prodEstocado.synced = 0;
+                    await updateRecord('estoque_produtos', prodEstocado);
+                  }
+
+                  // Desconta todos os insumos da receita via FIFO
+                  for (const mp of receita.materiaPrima) {
+                    const qtdNecessaria = mp.quantidade * diferenca;
+                    await consumirInsumoFIFO(mp.item, qtdNecessaria);
                   }
                 }
-
-                if (insumosInsuficientes) {
-                  const prosseguir = confirm(`Atenção: Estoque insuficiente de produtos e insumos para completar esta venda!\nNão há insumo "${insumoFaltante}" suficiente no estoque para fabricar as ${diferenca} un. restantes.\nDeseja realizar a venda mesmo assim (deixando o estoque de insumos negativo)?`);
-                  if (!prosseguir) return;
-                }
-
-                // Zera o estoque do produto finalizado
-                if (prodEstocado) {
-                  prodEstocado.quantidade = 0;
-                  prodEstocado.synced = 0;
-                  await updateRecord('estoque_produtos', prodEstocado);
-                }
-
-                // Desconta todos os insumos da receita via FIFO
-                for (const mp of receita.materiaPrima) {
-                  const qtdNecessaria = mp.quantidade * diferenca;
-                  await consumirInsumoFIFO(mp.item, qtdNecessaria);
-                }
               }
-            }
-          } else if (type === 'avulso') {
-            // Lógica para item avulso: consome direto do estoque (insumos)
-            const estoqueInsumos = await getAllRecords('estoque');
-            const totalDisponivel = estoqueInsumos
-              .filter(e => e.item.toLowerCase().trim() === itemNome.toLowerCase().trim())
-              .reduce((sum, e) => sum + e.quantidade, 0);
+            } else if (type === 'avulso') {
+              // Lógica para item avulso: consome direto do estoque (insumos)
+              const estoqueInsumos = await getAllRecords('estoque');
+              const totalDisponivel = estoqueInsumos
+                .filter(e => e.item.toLowerCase().trim() === itemNome.toLowerCase().trim())
+                .reduce((sum, e) => sum + e.quantidade, 0);
 
-            if (totalDisponivel < quantidade) {
-              const prosseguir = confirm(`Atenção: Estoque de insumo insuficiente para o item avulso "${itemNome}"!\nDisponível: ${totalDisponivel} un. Solicitado: ${quantidade} un.\nDeseja realizar a venda mesmo assim (deixando o estoque negativo)?`);
-              if (!prosseguir) return;
-            }
+              if (totalDisponivel < quantidade) {
+                const prosseguir = confirm(`Atenção: Estoque de insumo insuficiente para o item avulso "${itemNome}"!\nDisponível: ${totalDisponivel} un. Solicitado: ${quantidade} un.\nDeseja realizar a venda mesmo assim (deixando o estoque negativo)?`);
+                if (!prosseguir) return;
+              }
 
-            // Desconta o insumo diretamente via FIFO
-            await consumirInsumoFIFO(itemNome, quantidade);
+              // Desconta o insumo diretamente via FIFO
+              await consumirInsumoFIFO(itemNome, quantidade);
+            }
           }
         }
 
@@ -1103,6 +1109,9 @@ function setupFormSubmissions() {
         for (const item of itemsToSell) {
           const { itemNome, quantidade, valor } = item;
           const novoPedido = {
+            nome,
+            telefone,
+            status,
             item: itemNome,
             quantidade,
             valor,
@@ -1115,7 +1124,14 @@ function setupFormSubmissions() {
           first = false;
         }
 
-        showToast('Venda registrada com sucesso!');
+        if (status === 'Agendado') {
+          showToast('Pedido adicionado à Fila de Produção!');
+        } else if (status === 'Aguardando Pagamento') {
+          showToast('Pedido adicionado à Fila de Pagamento!');
+        } else {
+          showToast('Venda registrada com sucesso!');
+        }
+
         formPedido.reset();
 
         // Limpa as linhas extras de itens vendidos e restaura apenas a primeira em branco
@@ -1136,7 +1152,7 @@ function setupFormSubmissions() {
           </div>
         `;
 
-        await reloadAllViews();
+        switchTab('pedidos');
       } catch (err) {
         showToast('Erro ao registrar venda: ' + err.message, 'error');
       }
@@ -2080,24 +2096,26 @@ async function renderPedidosView() {
     tituloHistorico.textContent = `Pedidos Realizados (${nomeMesAtual}/${anoAtual})`;
   }
 
-  // Filtra pedidos em fila (Agendados) e histórico (Finalizados do mês atual)
-  const pedidosFila = pedidos.filter(p => p.status === 'Agendado');
+  // Filtra pedidos em Fila de Produção (Agendados), Fila de Pagamento e Histórico (Finalizados do mês atual)
+  const pedidosProducao = pedidos.filter(p => p.status === 'Agendado');
+  const pedidosPagamento = pedidos.filter(p => p.status === 'Aguardando Pagamento');
   const pedidosHistorico = pedidos.filter(p => {
-    if (p.status === 'Agendado') return false;
+    if (p.status === 'Agendado' || p.status === 'Aguardando Pagamento') return false;
     if (!p.data) return false;
     const pDate = new Date(p.data);
     return pDate.getMonth() === currentMonth && pDate.getFullYear() === currentYear;
   });
 
-  // --- RENDERIZA O MURAL DA FILA DE ESPERA ---
-  const muralPanel = document.getElementById('muralPedidosPanel');
-  const muralGrid = document.getElementById('muralPedidosGrid');
+  // --- RENDERIZA O MURAL DA FILA DE PRODUÇÃO ---
+  const muralProducaoPanel = document.getElementById('muralPedidosPanel');
+  const muralProducaoGrid = document.getElementById('muralPedidosGrid');
 
-  if (muralPanel && muralGrid) {
-    if (pedidosFila.length > 0) {
-      muralPanel.style.display = 'block';
-      muralGrid.innerHTML = pedidosFila.map(p => {
+  if (muralProducaoPanel && muralProducaoGrid) {
+    if (pedidosProducao.length > 0) {
+      muralProducaoPanel.style.display = 'block';
+      muralProducaoGrid.innerHTML = pedidosProducao.map(p => {
         const itensStr = p.itens ? (Array.isArray(p.itens) ? p.itens.join(', ') : p.itens) : `${p.quantidade}x ${p.item}`;
+        const total = (p.itens ? p.valor : (p.quantidade * p.valor)) + (p.frete || 0);
         return `
           <div class="mural-card" style="background: var(--bg-card); border: 1px solid var(--border-glass); border-radius: var(--radius-md); padding: 16px; display: flex; flex-direction: column; gap: 12px; transition: var(--transition-smooth); box-shadow: var(--shadow-lg);">
             <div style="display: flex; justify-content: space-between; align-items: flex-start;">
@@ -2106,7 +2124,7 @@ async function renderPedidosView() {
                 ${p.telefone ? `<div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 4px;">📞 ${escapeHTML(p.telefone)}</div>` : ''}
                 <span style="font-size: 0.75rem; color: var(--text-muted);">${formatDate(new Date(p.data))}</span>
               </div>
-              <span style="background: rgba(245, 158, 11, 0.1); color: var(--warning); padding: 4px 8px; border-radius: var(--radius-sm); font-size: 0.75rem; font-weight: bold; border: 1px solid rgba(245, 158, 11, 0.2);">Fila</span>
+              <span style="background: rgba(245, 158, 11, 0.1); color: var(--warning); padding: 4px 8px; border-radius: var(--radius-sm); font-size: 0.75rem; font-weight: bold; border: 1px solid rgba(245, 158, 11, 0.2);">Produção</span>
             </div>
             
             <div style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.4; flex-grow: 1;">
@@ -2114,15 +2132,66 @@ async function renderPedidosView() {
             </div>
             
             <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-glass); padding-top: 12px; margin-top: 4px;">
-              <span style="font-size: 1rem; font-weight: bold; color: var(--primary);">${formatMoney((p.itens ? p.valor : (p.quantidade * p.valor)) + (p.frete || 0))}</span>
-              <button class="btn btn-secondary btnConcluirPedido" data-id="${p.id}" style="padding: 6px 12px; font-size: 0.75rem;">Concluir</button>
+              <span style="font-size: 1rem; font-weight: bold; color: var(--primary);">${formatMoney(total)}</span>
+              <div style="display: flex; gap: 6px;">
+                <button class="btn btn-secondary btnConcluirPedido" data-id="${p.id}" style="padding: 6px 12px; font-size: 0.75rem;">Concluir</button>
+                <button class="btn-icon-only danger btnDelete" data-store="pedidos" data-id="${p.id}" title="Excluir Venda" style="padding: 6px; border-radius: var(--radius-sm);">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                </button>
+              </div>
             </div>
           </div>
         `;
       }).join('');
     } else {
-      muralPanel.style.display = 'none';
-      muralGrid.innerHTML = '';
+      muralProducaoPanel.style.display = 'none';
+      muralProducaoGrid.innerHTML = '';
+    }
+  }
+
+  // --- RENDERIZA O MURAL DA FILA DE PAGAMENTO ---
+  const muralPagamentoPanel = document.getElementById('muralPedidosPagamentoPanel');
+  const muralPagamentoGrid = document.getElementById('muralPedidosPagamentoGrid');
+
+  if (muralPagamentoPanel && muralPagamentoGrid) {
+    if (pedidosPagamento.length > 0) {
+      muralPagamentoPanel.style.display = 'block';
+      muralPagamentoGrid.innerHTML = pedidosPagamento.map(p => {
+        const itensStr = p.itens ? (Array.isArray(p.itens) ? p.itens.join(', ') : p.itens) : `${p.quantidade}x ${p.item}`;
+        const total = (p.itens ? p.valor : (p.quantidade * p.valor)) + (p.frete || 0);
+
+        return `
+          <div class="mural-card" style="background: var(--bg-card); border: 1px solid var(--border-glass); border-radius: var(--radius-md); padding: 16px; display: flex; flex-direction: column; gap: 12px; transition: var(--transition-smooth); box-shadow: var(--shadow-lg);">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+              <div>
+                <h3 style="font-family: var(--font-heading); font-size: 1.05rem; color: var(--text-main); margin-bottom: 2px;">${escapeHTML(p.nome || 'Cliente Avulso')}</h3>
+                ${p.telefone ? `<div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 4px;">📞 ${escapeHTML(p.telefone)}</div>` : ''}
+                <span style="font-size: 0.75rem; color: var(--text-muted);">${formatDate(new Date(p.data))}</span>
+              </div>
+              <span style="background: rgba(59, 130, 246, 0.1); color: var(--info); padding: 4px 8px; border-radius: var(--radius-sm); font-size: 0.75rem; font-weight: bold; border: 1px solid rgba(59, 130, 246, 0.2);">Aguardando Pagamento</span>
+            </div>
+            
+            <div style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.4; flex-grow: 1;">
+              <div><strong>Itens:</strong> ${escapeHTML(itensStr)}</div>
+            </div>
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-glass); padding-top: 12px; margin-top: 4px;">
+              <span style="font-size: 1rem; font-weight: bold; color: var(--primary);">${formatMoney(total)}</span>
+              <div style="display: flex; gap: 6px;">
+                <button class="btn btn-primary btnPagarPedido" data-id="${p.id}" style="padding: 6px 12px; font-size: 0.75rem; border-radius: var(--radius-sm); background: var(--success); border-color: var(--success); color: #fff;">
+                  Pagar
+                </button>
+                <button class="btn-icon-only danger btnDelete" data-store="pedidos" data-id="${p.id}" title="Excluir Venda" style="padding: 6px; border-radius: var(--radius-sm);">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    } else {
+      muralPagamentoPanel.style.display = 'none';
+      muralPagamentoGrid.innerHTML = '';
     }
   }
 
@@ -2168,6 +2237,22 @@ async function renderPedidosView() {
 
   // --- CONFIGURA OS EVENTOS ---
   setupTableActions();
+
+  // Evento para o botão de Pagar na Fila de Pagamento (Abre o modal de confirmação/divisão de pagamento)
+  const btnPagarList = document.querySelectorAll('.btnPagarPedido');
+  btnPagarList.forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = Number(btn.getAttribute('data-id'));
+      try {
+        const order = await getRecordById('pedidos', id);
+        if (order) {
+          abrirModalConfirmarPagamento(order, 'pedidos');
+        }
+      } catch (err) {
+        showToast('Erro ao abrir confirmação de pagamento: ' + err.message, 'error');
+      }
+    });
+  });
 
   // Evento para o botão de Concluir na Fila (Abre o modal de edição/ajuste antes de fechar)
   const btnConcluirList = document.querySelectorAll('.btnConcluirPedido');
@@ -4051,13 +4136,19 @@ function setupModalConcluirPedido() {
 
         const service = await getRecordById('pedidos', Number(id));
         if (service) {
+          const isComingFromFila = service.status === 'Agendado';
+
           service.nome = nome;
           service.telefone = telefone;
           service.itens = itens;
           service.valor = valor;
           service.frete = frete;
           service.meioPagamento = meioPagamento;
-          service.status = 'Finalizado';
+          if (isComingFromFila) {
+            service.status = 'Aguardando Pagamento';
+          } else {
+            service.status = 'Finalizado';
+          }
           service.synced = 0;
 
           // Remove legacy keys
@@ -4065,7 +4156,11 @@ function setupModalConcluirPedido() {
           delete service.quantidade;
 
           await updateRecord('pedidos', service);
-          showToast('Venda concluída com sucesso!');
+          if (isComingFromFila) {
+            showToast('Pedido concluído na produção! Enviado para a Fila de Pagamento.');
+          } else {
+            showToast('Venda concluída com sucesso!');
+          }
           fecharModal();
           await reloadAllViews();
         }
@@ -4162,6 +4257,9 @@ function setupModalDetalhesPedido() {
   const btnFecharModalDetalhesPedido = document.getElementById('btnFecharModalDetalhesPedido');
   if (btnFecharModalDetalhesPedido) btnFecharModalDetalhesPedido.addEventListener('click', fecharModal);
 
+  const btnFecharModalDetalhesPedidoAcoes = document.getElementById('btnFecharModalDetalhesPedidoAcoes');
+  if (btnFecharModalDetalhesPedidoAcoes) btnFecharModalDetalhesPedidoAcoes.addEventListener('click', fecharModal);
+
   // Delegação global para abrir os detalhes de um pedido ao clicar na linha
   document.addEventListener('click', (e) => {
     const row = e.target.closest('.pedido-row');
@@ -4226,20 +4324,26 @@ async function exibirDetalhesPedido(id) {
 }
 
 // --- CONTROLE DO NOVO MODAL DE CONFIRMAÇÃO DE PAGAMENTO ---
-let currentServiceToPay = null;
+let currentRecordToPay = null; // { record, storeName: 'servicos' | 'pedidos' }
 
-function abrirModalConfirmarPagamento(service) {
-  currentServiceToPay = service;
+function getRecordToPayTotal() {
+  if (!currentRecordToPay || !currentRecordToPay.record) return 0;
+  const r = currentRecordToPay.record;
+  return (r.itens ? r.valor : ((r.quantidade || 1) * r.valor)) + (r.frete || 0);
+}
+
+function abrirModalConfirmarPagamento(record, storeName = 'servicos') {
+  currentRecordToPay = { record, storeName };
   
   const modal = document.getElementById('modalConfirmarPagamento');
   const modalIdInput = document.getElementById('modalPagId');
   const clienteText = document.getElementById('modalPagClienteText');
   const valorText = document.getElementById('modalPagValorText');
   
-  const total = service.valor + (service.frete || 0);
+  const total = getRecordToPayTotal();
 
-  if (modalIdInput) modalIdInput.value = service.id;
-  if (clienteText) clienteText.textContent = service.nome || 'Cliente Avulso';
+  if (modalIdInput) modalIdInput.value = record.id;
+  if (clienteText) clienteText.textContent = record.nome || 'Cliente Avulso';
   if (valorText) valorText.textContent = formatMoney(total);
 
   // Reseta campos do modal
@@ -4252,7 +4356,7 @@ function abrirModalConfirmarPagamento(service) {
   if (duploContainer) duploContainer.style.display = 'none';
 
   const selectMeio = document.getElementById('modalPagMeio');
-  if (selectMeio) selectMeio.value = 'Pix';
+  if (selectMeio) selectMeio.value = record.meioPagamento || 'Pix';
 
   // Configura as linhas de divisão iniciais (2 formas de pagamento por padrão)
   const container = document.getElementById('modalPagRowsContainer');
@@ -4336,13 +4440,13 @@ function updateRemovePagButtons() {
 }
 
 function recalcularSaldoRestante() {
-  if (!currentServiceToPay) return;
+  if (!currentRecordToPay) return;
   const container = document.getElementById('modalPagRowsContainer');
   if (!container) return;
   const rows = container.querySelectorAll('.modal-pag-row');
   if (rows.length < 2) return;
 
-  const total = currentServiceToPay.valor + (currentServiceToPay.frete || 0);
+  const total = getRecordToPayTotal();
 
   // Soma o valor de todas as parcelas exceto a última
   let sumExceptLast = 0;
@@ -4359,12 +4463,12 @@ function recalcularSaldoRestante() {
 }
 
 function validarSomaValoresMultiplos() {
-  if (!currentServiceToPay) return true;
+  if (!currentRecordToPay) return true;
   const container = document.getElementById('modalPagRowsContainer');
   const avisoSoma = document.getElementById('modalPagAvisoSoma');
   if (!container || !avisoSoma) return true;
 
-  const total = currentServiceToPay.valor + (currentServiceToPay.frete || 0);
+  const total = getRecordToPayTotal();
   const rows = container.querySelectorAll('.modal-pag-row');
 
   let totalDigitado = 0;
@@ -4427,14 +4531,15 @@ function setupModalConfirmarPagamento() {
     formModalPagamento.addEventListener('submit', async (e) => {
       e.preventDefault();
       try {
-        if (!currentServiceToPay) return;
+        if (!currentRecordToPay || !currentRecordToPay.record) return;
+        const { record, storeName } = currentRecordToPay;
         const id = document.getElementById('modalPagId').value;
         const dividir = checkboxDividir ? checkboxDividir.checked : false;
 
         let meioPagamento = '';
         if (dividir) {
           if (!validarSomaValoresMultiplos()) {
-            showToast('A soma dos valores informados deve ser igual ao total do serviço.', 'error');
+            showToast('A soma dos valores informados deve ser igual ao valor total.', 'error');
             return;
           }
           
@@ -4451,15 +4556,16 @@ function setupModalConfirmarPagamento() {
           meioPagamento = document.getElementById('modalPagMeio').value;
         }
 
-        const service = await getRecordById('servicos', Number(id));
-        if (service) {
-          service.meioPagamento = meioPagamento;
-          service.status = 'Finalizado';
-          service.data = new Date().toISOString(); // Atualiza a data para a data do pagamento de fato
-          service.synced = 0;
+        const targetStore = storeName || 'servicos';
+        const itemToUpdate = await getRecordById(targetStore, Number(id));
+        if (itemToUpdate) {
+          itemToUpdate.meioPagamento = meioPagamento;
+          itemToUpdate.status = 'Finalizado';
+          itemToUpdate.data = new Date().toISOString(); // Atualiza a data para a data do pagamento de fato
+          itemToUpdate.synced = 0;
 
-          await updateRecord('servicos', service);
-          showToast('Pagamento confirmado e serviço finalizado!');
+          await updateRecord(targetStore, itemToUpdate);
+          showToast(targetStore === 'pedidos' ? 'Pagamento da venda confirmado com sucesso!' : 'Pagamento confirmado e serviço finalizado!');
           fecharModal();
           await reloadAllViews();
         }
