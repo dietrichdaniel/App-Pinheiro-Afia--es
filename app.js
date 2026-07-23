@@ -77,57 +77,76 @@ window.addEventListener('DOMContentLoaded', async () => {
 
 // --- REGISTRO E ATUALIZAÇÃO DO SERVICE WORKER (PWA) ---
 function setupServiceWorker() {
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('sw.js')
-        .then((registration) => {
-          console.log('PWA Service Worker registrado com sucesso: ', registration.scope);
+  if (!('serviceWorker' in navigator)) return;
 
-          // Função para mostrar a notificação de atualização em formato Toast
-          function showUpdateNotification() {
-            showToast('Nova atualização do sistema disponível!', 'warning', {
-              text: 'Atualizar',
-              callback: () => {
-                if (registration.waiting) {
-                  registration.waiting.postMessage({ type: 'SKIP_WAITING' });
-                }
-              }
-            }, false); // autoDismiss: false para dar tempo ao usuário de clicar
+  const registerSW = () => {
+    navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' })
+      .then((registration) => {
+        console.log('PWA Service Worker registrado com sucesso: ', registration.scope);
+
+        // Força checagem de atualização ao carregar
+        registration.update().catch((err) => console.log('Erro ao buscar atualização do SW:', err));
+
+        // Força checagem de atualização sempre que o usuário retornar ao app (foco)
+        document.addEventListener('visibilitychange', () => {
+          if (document.visibilityState === 'visible') {
+            registration.update().catch((err) => console.log('Erro ao buscar atualização do SW ao focar:', err));
           }
-
-          // Se já houver um Service Worker em fila (waiting) pronto para ativar
-          if (registration.waiting) {
-            showUpdateNotification();
-          }
-
-          // Monitora novos Service Workers que forem baixados/instalados
-          registration.addEventListener('updatefound', () => {
-            const newWorker = registration.installing;
-            if (newWorker) {
-              newWorker.addEventListener('statechange', () => {
-                // Só avisa quando o estado for 'installed' e se já existir uma versão ativa controlando a página
-                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                  showUpdateNotification();
-                }
-              });
-            }
-          });
-        })
-        .catch((err) => {
-          console.error('Falha ao registrar o Service Worker: ', err);
         });
 
-      // Recarrega a página assim que o novo Service Worker pular a espera e se tornar o controlador ativo
-      let refreshing = false;
-      navigator.serviceWorker.addEventListener('controllerchange', () => {
-        if (!refreshing) {
-          refreshing = true;
-          localStorage.setItem('app_just_updated', 'true');
-          window.location.reload();
+        // Função para mostrar a notificação de atualização em formato Toast
+        function showUpdateNotification() {
+          showToast('Nova atualização do sistema disponível!', 'warning', {
+            text: 'Atualizar',
+            callback: () => {
+              if (registration.waiting) {
+                registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+              } else {
+                window.location.reload();
+              }
+            }
+          }, false); // autoDismiss: false para dar tempo ao usuário de clicar
         }
+
+        // Se já houver um Service Worker em fila (waiting) pronto para ativar
+        if (registration.waiting) {
+          showUpdateNotification();
+        }
+
+        // Monitora novos Service Workers que forem baixados/instalados
+        registration.addEventListener('updatefound', () => {
+          const newWorker = registration.installing;
+          if (newWorker) {
+            newWorker.addEventListener('statechange', () => {
+              // Só avisa quando o estado for 'installed' e se já existir uma versão ativa controlando a página
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                showUpdateNotification();
+              }
+            });
+          }
+        });
+      })
+      .catch((err) => {
+        console.error('Falha ao registrar o Service Worker: ', err);
       });
-    });
+  };
+
+  // Se a página já foi carregada, registra imediatamente; caso contrário, aguarda o evento load
+  if (document.readyState === 'complete') {
+    registerSW();
+  } else {
+    window.addEventListener('load', registerSW);
   }
+
+  // Recarrega a página assim que o novo Service Worker pular a espera e se tornar o controlador ativo
+  let refreshing = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!refreshing) {
+      refreshing = true;
+      localStorage.setItem('app_just_updated', 'true');
+      window.location.reload();
+    }
+  });
 }
 
 // --- AUTO-SELEÇÃO DE INPUTS AO FOCAR (MELHORA A RESPONSIVIDADE) ---

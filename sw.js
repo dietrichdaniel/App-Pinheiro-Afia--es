@@ -1,8 +1,10 @@
 /**
- * sw.js - Service Worker para PWA Pinheiro Afiações
- * Habilita funcionamento 100% offline e cache de recursos estáticos.
+ * ATENÇÃO AO ATUALIZAR O APLICATIVO / GITHUB PAGES:
+ * Sempre que fizer alterações no código (index.html, app.js, styles.css, etc.),
+ * você DEVE incrementar a versão da constante CACHE_NAME abaixo (ex: v48 -> v49).
+ * É essa alteração no sw.js que faz os navegadores e celulares detectarem a nova versão
+ * e dispararem a notificação Toast de atualização para os usuários!
  */
-
 const CACHE_NAME = 'pinheiro-afiacoes-cache-v48';
 const ASSETS_TO_CACHE = [
   './',
