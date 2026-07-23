@@ -3,7 +3,7 @@
  * Habilita funcionamento 100% offline e cache de recursos estáticos.
  */
 
-const CACHE_NAME = 'pinheiro-afiacoes-cache-v47';
+const CACHE_NAME = 'pinheiro-afiacoes-cache-v48';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
