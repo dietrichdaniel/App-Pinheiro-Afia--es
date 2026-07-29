@@ -55,10 +55,16 @@
             Fila & Histórico
           </button>
         </li>
+        <li class="nav-item" data-tab="novo_estoque">
+          <button>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+            Entrada no Estoque
+          </button>
+        </li>
         <li class="nav-item" data-tab="estoque">
           <button>
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-5 12H4V8h11v8zm5 0h-3V8h3v8z"/></svg>
-            Estoque / Insumos
+            Consulta de Estoque
           </button>
         </li>
         <li class="nav-item" data-tab="novo_pedido">
@@ -95,35 +101,82 @@
       </div>
     </aside>
 
-    <!-- Barra de Navegação Inferior (Mobile Only) -->
+    <!-- Barra de Navegação Inferior (Mobile Only: 4 Opções) -->
     <nav class="mobile-nav">
       <ul class="mobile-nav-list">
         <li class="mobile-nav-item active" data-tab="menu">
-          <button>
+          <button type="button">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-            Início
+            Menu
           </button>
         </li>
-        <li class="mobile-nav-item" data-tab="novo_servico">
-          <button>
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
-            Novo Serv.
+        <li class="mobile-nav-item" id="mobileNavAddTrigger">
+          <button type="button">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+            Adicionar
           </button>
         </li>
-        <li class="mobile-nav-item" data-tab="servicos">
-          <button>
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
-            Fila/Hist.
+        <li class="mobile-nav-item" id="mobileNavHistoryTrigger">
+          <button type="button">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
+            Histórico
           </button>
         </li>
         <li class="mobile-nav-item" data-tab="configuracoes">
-          <button>
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+          <button type="button">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6-3.6z"/></svg>
             Ajustes
           </button>
         </li>
       </ul>
     </nav>
+
+    <!-- ACTION SHEETS MOBILE FOR MENU ADICIONAR & HISTÓRICO -->
+    <div id="actionSheetAdicionar" class="action-sheet-overlay" style="display: none;">
+      <div class="action-sheet-content">
+        <div class="action-sheet-header">
+          <h3>O que deseja adicionar?</h3>
+          <button type="button" class="action-sheet-close" id="btnCloseSheetAdd">&times;</button>
+        </div>
+        <div class="action-sheet-menu">
+          <button type="button" class="action-sheet-btn" data-action-tab="novo_servico">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+            Novo Serviço
+          </button>
+          <button type="button" class="action-sheet-btn" data-action-tab="novo_estoque">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+            Entrada no Estoque
+          </button>
+          <button type="button" class="action-sheet-btn" data-action-tab="novo_pedido">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+            Nova Venda
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="actionSheetHistorico" class="action-sheet-overlay" style="display: none;">
+      <div class="action-sheet-content">
+        <div class="action-sheet-header">
+          <h3>Consultas e Históricos</h3>
+          <button type="button" class="action-sheet-close" id="btnCloseSheetHistory">&times;</button>
+        </div>
+        <div class="action-sheet-menu">
+          <button type="button" class="action-sheet-btn" data-action-tab="servicos">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="12 8 12 12 14 14"/><path d="M3.05 11a9 9 0 1 1 .5 4m-.5 5v-5h5"/></svg>
+            Fila e Histórico de Serviços
+          </button>
+          <button type="button" class="action-sheet-btn" data-action-tab="estoque">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+            Consulta de Estoque
+          </button>
+          <button type="button" class="action-sheet-btn" data-action-tab="pedidos">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+            Fila e Histórico de Vendas
+          </button>
+        </div>
+      </div>
+    </div>
 
     <!-- Área de Exibição das Abas -->
     <main class="main-content">
@@ -166,14 +219,28 @@
             </div>
           </div>
 
-          <!-- Card 2: Estoque -->
+          <!-- Card 2: Nova Entrada no Estoque -->
+          <div class="menu-card" data-tab="novo_estoque">
+            <div class="menu-card-icon warning">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+            </div>
+            <div class="menu-card-content">
+              <h2>Entrada no Estoque</h2>
+              <p>Cadastre novos itens, insumos, produtos acabados, cotações e movimentações de estoque.</p>
+            </div>
+            <div class="menu-card-arrow">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+            </div>
+          </div>
+
+          <!-- Card 2B: Consulta de Estoque -->
           <div class="menu-card" data-tab="estoque">
             <div class="menu-card-icon warning">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-5 12H4V8h11v8zm5 0h-3V8h3v8z"/></svg>
             </div>
             <div class="menu-card-content">
-              <h2>Estoque / Insumos</h2>
-              <p>Controle a entrada e saída de insumos, matérias-primas e produtos finalizados em estoque.</p>
+              <h2>Consulta de Estoque</h2>
+              <p>Monitore os saldos disponíveis, custos médios e o detalhamento de lotes por item.</p>
             </div>
             <div class="menu-card-arrow">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
@@ -514,110 +581,229 @@
         </div>
       </section>
 
-      <!-- ABA 3: ESTOQUE / INSUMOS -->
-      <section id="estoque" class="tab-panel">
+      <!-- ABA EXCLUSIVA: REGISTRO DE NOVOS ITENS E COMPRAS NO ESTOQUE -->
+      <section id="novo_estoque" class="tab-panel">
         <div class="page-header">
           <div class="page-title">
-            <h1>Estoque de Insumos e Matérias-Primas</h1>
-            <p>Controle de entrada de insumos e cotação de matéria-prima</p>
+            <h1>Entrada / Cadastro no Estoque</h1>
+            <p>Registre compras com múltiplos itens, rateio de frete e despesas ou cadastre itens avulsos</p>
           </div>
         </div>
 
-        <div class="layout-split">
-          <!-- Formulário de Cadastro -->
-          <div class="form-panel">
-            <h2 id="estoqueFormTitle">Nova Entrada</h2>
-            <form id="formEstoque">
-              <input type="hidden" id="estoqueId">
+        <div class="form-panel" style="max-width: 1000px; margin: 0 auto; background: var(--bg-card); padding: 25px; border-radius: 12px; border: 1px solid var(--border-glass);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border-glass); padding-bottom: 12px; flex-wrap: wrap; gap: 10px;">
+            <h2 id="estoqueFormTitle" style="margin: 0;">Nova Entrada de Compra (Multi-Itens & Rateio)</h2>
+            <button type="button" class="btn btn-sm btn-secondary" id="btnToggleModoEntrada" style="font-size: 0.8rem;">
+              Alternar para Entrada Simples (1 Item)
+            </button>
+          </div>
+
+          <form id="formEstoque" novalidate>
+            <input type="hidden" id="estoqueId">
+
+            <!-- PAINEL DE ENTRADA SIMPLES (1 ITEM OU EDIÇÃO) -->
+            <div id="entradaSimplesWrapper" style="display: none; background: rgba(255,255,255,0.02); padding: 20px; border-radius: 8px; border: 1px solid var(--border-glass);">
               <div class="form-group">
                 <label for="estItem">Nome do Item/Insumo</label>
-                <input type="text" id="estItem" class="form-control" placeholder="Ex: Rebolo Diamantado" required>
+                <input type="text" id="estItem" class="form-control" list="dlEstoqueItens" placeholder="Ex: Rebolo Diamantado, Alicate Afiado">
               </div>
               
-              <div class="form-row">
+              <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
+                <div class="form-group">
+                  <label for="estTipoItem">Tipo de Item</label>
+                  <select id="estTipoItem" class="form-control">
+                    <option value="MATERIA_PRIMA">Matéria-Prima / Insumo</option>
+                    <option value="PRODUTO_ACABADO">Produto Acabado</option>
+                    <option value="USO_INTERNO">Uso Interno</option>
+                    <option value="PESQUISA_DESENVOLVIMENTO">Pesquisa & Desenvolvimento (P&D)</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="estUnidade">Unidade de Medida</label>
+                  <select id="estUnidade" class="form-control">
+                    <option value="UN">Unidade (UN)</option>
+                    <option value="KG">Quilograma (KG)</option>
+                    <option value="L">Litro (L)</option>
+                    <option value="M">Metro (M)</option>
+                    <option value="CX">Caixa (CX)</option>
+                    <option value="PCT">Pacote (PCT)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
                 <div class="form-group">
                   <label for="estQtd">Quantidade</label>
-                  <input type="number" id="estQtd" class="form-control" min="0" placeholder="0" required>
+                  <input type="number" id="estQtd" class="form-control" step="0.01" min="0" placeholder="0">
                 </div>
                 <div class="form-group">
-                  <label for="estValor">Preço Unitário (R$)</label>
-                  <input type="number" id="estValor" class="form-control" step="0.01" min="0" placeholder="0.00" required>
+                  <label for="estValor">Custo Unitário (R$)</label>
+                  <input type="number" id="estValor" class="form-control" step="0.01" min="0" placeholder="0.00">
                 </div>
               </div>
 
-              <button type="submit" class="btn btn-primary" id="btnEstoqueSubmit" style="width: 100%; margin-top: 10px;">Adicionar ao Estoque</button>
-              <button type="button" class="btn btn-secondary" id="btnEstoqueCancel" style="width: 100%; margin-top: 8px; display: none;">Cancelar Edição</button>
-            </form>
-          </div>
-
-          <!-- Tabela de Estoque -->
-          <div class="table-panel">
-            <h2>Itens Cadastrados</h2>
-            <div class="table-responsive">
-              <table class="data-table" id="tableEstoque">
-                <thead>
-                  <tr>
-                    <th>Item</th>
-                    <th>Qtd Disponível</th>
-                    <th>Valor Unitário</th>
-                    <th>Valor Total</th>
-                    <th>Ações</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <!-- Inserido dinamicamente via JS -->
-                </tbody>
-              </table>
+              <div class="form-group" id="groupEstJustificativa" style="display: none; margin-top: 15px;">
+                <label for="estJustificativa" style="color: var(--primary); font-weight: bold;">Justificativa do Ajuste <span style="color: var(--danger);">*</span></label>
+                <input type="text" id="estJustificativa" class="form-control" placeholder="Ex: Correção de inventário, Avaria, Perda, Acerto de saldo">
+              </div>
             </div>
+
+            <!-- CONTAINER COMPRA MULTI-ITENS -->
+            <div id="compraMultiItemWrapper">
+              <!-- CABEÇALHO DA COMPRA (FRETE E DESPESAS) -->
+              <div id="compraHeaderPanel" style="background: rgba(255,255,255,0.03); padding: 18px; border-radius: 8px; margin-bottom: 20px; border: 1px solid var(--border-glass);">
+                <h3 style="font-size: 1rem; color: var(--primary); margin-bottom: 12px;">Informações Financeiras da Compra / Nota</h3>
+                <div class="form-row" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px;">
+                  <div class="form-group">
+                    <label for="compraData">Data da Compra</label>
+                    <input type="date" id="compraData" class="form-control">
+                  </div>
+                  <div class="form-group">
+                    <label for="compraFrete">Valor do Frete (R$)</label>
+                    <input type="number" id="compraFrete" class="form-control calc-compra-trigger" step="0.01" min="0" placeholder="0.00">
+                  </div>
+                  <div class="form-group">
+                    <label for="compraOutrasDespesas">Outras Despesas (R$)</label>
+                    <input type="number" id="compraOutrasDespesas" class="form-control calc-compra-trigger" step="0.01" min="0" placeholder="0.00">
+                  </div>
+                  <div class="form-group">
+                    <label for="compraDescricaoDespesas">Descrição das Despesas</label>
+                    <input type="text" id="compraDescricaoDespesas" class="form-control" placeholder="Ex: Taxa de emissão, Embalagem">
+                  </div>
+                  <div class="form-group">
+                    <label for="compraFornecedor">Fornecedor / Origem</label>
+                    <input type="text" id="compraFornecedor" class="form-control" placeholder="Ex: Distribuidora Rebolos Ltda">
+                  </div>
+                </div>
+              </div>
+
+              <!-- PAINEL DINÂMICO DE ITENS DA COMPRA -->
+              <div id="compraItensWrapper">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                  <h3 style="font-size: 1rem; color: var(--text-main); margin: 0;">Itens da Compra</h3>
+                  <button type="button" class="btn btn-sm btn-secondary" id="btnAddItemCompra" style="display: inline-flex; align-items: center; gap: 6px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    Adicionar Outro Item
+                  </button>
+                </div>
+
+                <datalist id="dlEstoqueItens">
+                  <!-- Preenchido via JS com sugestões dos itens existentes -->
+                </datalist>
+
+                <div class="table-responsive">
+                  <table class="data-table" id="tableCompraItens" style="width: 100%; font-size: 0.88rem;">
+                    <thead>
+                      <tr>
+                        <th style="width: 25%;">Item / Nome</th>
+                        <th style="width: 15%;">Tipo</th>
+                        <th style="width: 10%;">Unid.</th>
+                        <th style="width: 10%;">Qtd</th>
+                        <th style="width: 12%;">Preço Base (R$)</th>
+                        <th style="width: 12%;">Frete + Desp. Rateado</th>
+                        <th style="width: 12%;">Custo Final Unit.</th>
+                        <th style="width: 4%;"></th>
+                      </tr>
+                    </thead>
+                    <tbody id="compraItensTableBody">
+                      <!-- Linhas adicionadas dinamicamente via JS -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- RESUMO FINANCEIRO DA COMPRA -->
+              <div id="compraResumoPanel" style="background: rgba(0,0,0,0.15); padding: 16px; border-radius: 8px; margin-top: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; border: 1px solid var(--border-glass);">
+                <div>
+                  <span style="font-size: 0.85rem; color: var(--text-muted);">Produtos: <strong id="resumoValorProdutos" style="color:var(--text-main);">R$ 0,00</strong></span> | 
+                  <span style="font-size: 0.85rem; color: var(--text-muted);">Frete: <strong id="resumoValorFrete" style="color:var(--text-main);">R$ 0,00</strong></span> | 
+                  <span style="font-size: 0.85rem; color: var(--text-muted);">Despesas: <strong id="resumoOutrasDespesas" style="color:var(--text-main);">R$ 0,00</strong></span>
+                </div>
+                <div>
+                  <span style="font-size: 1.1rem;">Total da Compra: <strong id="resumoValorTotal" style="color: var(--emerald); font-size: 1.3rem;">R$ 0,00</strong></span>
+                </div>
+              </div>
+            </div>
+
+            <div style="margin-top: 25px; display: flex; gap: 10px;">
+              <button type="submit" class="btn btn-primary" id="btnEstoqueSubmit" style="flex: 1; padding: 12px; font-size: 1rem;">Finalizar e Gravar Compra no Estoque</button>
+              <button type="button" class="btn btn-secondary" id="btnEstoqueCancel" style="display: none; flex: 1; padding: 12px;">Cancelar Edição</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- ABA: CONSULTA DO ESTOQUE UNIFICADO -->
+      <section id="estoque" class="tab-panel">
+        <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+          <div class="page-title">
+            <h1>Estoque Unificado</h1>
+            <p>Consulta de saldos disponíveis, custos médios e detalhamento de lotes por item</p>
+          </div>
+          <button class="btn btn-primary" onclick="switchTab('novo_estoque')" style="display: inline-flex; align-items: center; gap: 8px;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+            Nova Entrada no Estoque
+          </button>
+        </div>
+
+        <div class="table-panel" style="width: 100%; margin-top: 20px;">
+          <h2>Itens Cadastrados no Estoque Unificado</h2>
+          <div class="table-responsive">
+            <table class="data-table" id="tableEstoque">
+              <thead>
+                <tr>
+                  <th>Código ID</th>
+                  <th>Item</th>
+                  <th>Tipo</th>
+                  <th>Qtd Disponível</th>
+                  <th>Custo Médio</th>
+                  <th>Valor Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                <!-- Inserido dinamicamente via JS -->
+              </tbody>
+            </table>
           </div>
         </div>
 
-        <!-- Estoque de Produtos Finalizados (Ref: Receitas) -->
-        <div style="border-top: 1px solid var(--border-glass); margin-top: 40px; padding-top: 32px; margin-bottom: 24px;">
-          <h2 style="font-family: var(--font-heading); font-size: 1.75rem; color: var(--primary); margin-bottom: 8px;">Estoque de Produtos Finalizados</h2>
-          <p style="color: var(--text-muted); font-size: 0.9rem;">Registre a produção de itens prontos para venda (isso consumirá insumos de acordo com as receitas).</p>
-        </div>
-
-        <div class="layout-split">
-          <!-- Formulário de Fabricação -->
-          <div class="form-panel">
-            <h2>Nova Entrada (Fabricação)</h2>
-            <form id="formProducaoProduto">
-              <div class="form-group">
-                <label for="prodRecipeSelect">Produto Final (Receita)</label>
-                <select id="prodRecipeSelect" class="form-control" required>
-                  <option value="">Selecione um produto/receita...</option>
-                  <!-- Populado dinamicamente via JS -->
-                </select>
-              </div>
-              <div class="form-group">
-                <label for="prodQtd">Quantidade Fabricada</label>
-                <input type="number" id="prodQtd" class="form-control" min="1" value="1" required>
-              </div>
-              <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">Fabricar e Estocar</button>
-            </form>
+        <!-- REGISTRO DE ALTERAÇÕES NO ESTOQUE (AUDITORIA E MOVIMENTAÇÕES) -->
+        <div class="table-panel" style="margin-top: 35px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+            <div>
+              <h2 style="margin: 0; font-family: var(--font-heading); font-size: 1.5rem; color: var(--primary);">Registro de Alterações no Estoque</h2>
+              <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Histórico detalhado de entradas, compras, saídas, vendas e ajustes manuais</p>
+            </div>
+            <div style="display: flex; gap: 10px; align-items: center;">
+              <select id="filtroTipoMovimentacao" class="form-control" style="width: auto; padding: 6px 12px; font-size: 0.85rem;">
+                <option value="TODOS">Todas as Alterações</option>
+                <option value="ENTRADA">Entradas / Compras (+)</option>
+                <option value="SAIDA">Saídas / Vendas (-)</option>
+                <option value="EXCLUSAO">Exclusões de Cadastro (-)</option>
+                <option value="AJUSTE">Ajustes Manuais</option>
+              </select>
+            </div>
           </div>
 
-          <!-- Tabela de Estoque de Produtos -->
-          <div class="table-panel">
-            <h2>Produtos Prontos em Estoque</h2>
-            <div class="table-responsive">
-              <table class="data-table" id="tableEstoqueProdutos">
-                <thead>
-                  <tr>
-                    <th>Produto</th>
-                    <th>Qtd Disponível</th>
-                    <th>Custo Unitário (Ref)</th>
-                    <th>Preço de Venda</th>
-                    <th>Custo Total</th>
-                    <th>Ações</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <!-- Inserido dinamicamente via JS -->
-                </tbody>
-              </table>
-            </div>
+          <div class="table-responsive">
+            <table class="data-table" id="tableMovimentacoesEstoque">
+              <thead>
+                <tr>
+                  <th>Data / Hora</th>
+                  <th>IP / Origem</th>
+                  <th>Cód. Movimentação</th>
+                  <th>Item / Insumo</th>
+                  <th>Tipo</th>
+                  <th>Qtd Movimentada</th>
+                  <th>Custo Unit. (R$)</th>
+                  <th>Saldo (Anterior ➔ Posterior)</th>
+                  <th>Origem / Ref.</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyMovimentacoesEstoque">
+                <!-- Preenchido dinamicamente via JS -->
+              </tbody>
+            </table>
           </div>
         </div>
       </section>

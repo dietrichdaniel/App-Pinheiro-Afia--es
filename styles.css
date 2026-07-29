@@ -1079,4 +1079,101 @@ code.code-block {
   box-shadow: 0 0 0 3px rgba(234, 179, 8, 0.25) !important;
 }
 
+/* ACTION SHEETS PARA MOBILE (ADICIONAR & HISTÓRICO) */
+.action-sheet-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(11, 15, 25, 0.75);
+  backdrop-filter: blur(6px);
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  animation: actionSheetFade 0.2s ease-out;
+}
+
+@keyframes actionSheetFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.action-sheet-content {
+  background: var(--bg-card);
+  border-top-left-radius: 20px;
+  border-top-right-radius: 20px;
+  padding: 20px 20px 30px 20px;
+  border-top: 1px solid var(--border-glass);
+  box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.6);
+  animation: actionSheetSlide 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes actionSheetSlide {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.action-sheet-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-glass);
+}
+
+.action-sheet-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: var(--primary);
+  font-family: var(--font-heading);
+}
+
+.action-sheet-close {
+  background: transparent;
+  border: none;
+  font-size: 1.6rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0 6px;
+  line-height: 1;
+}
+
+.action-sheet-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.action-sheet-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-md);
+  color: var(--text-main);
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  text-align: left;
+}
+
+.action-sheet-btn:hover, .action-sheet-btn:active {
+  background: rgba(234, 179, 8, 0.15);
+  border-color: var(--primary);
+  color: var(--primary);
+  transform: translateX(4px);
+}
+
+.action-sheet-btn svg {
+  flex-shrink: 0;
+  stroke: var(--primary);
+}
+
 

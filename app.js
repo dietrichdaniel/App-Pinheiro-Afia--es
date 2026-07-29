@@ -11,7 +11,9 @@ import {
   updateRecord,
   deleteRecord,
   getConfig,
-  setConfig
+  setConfig,
+  generatePrefixedId,
+  registrarMovimentacaoEstoque
 } from './db.js';
 
 // --- ESTADO GLOBAL DA APLICAÇÃO ---
@@ -23,11 +25,31 @@ let chartFaturamento = null;
 let chartEstoque = null;
 let chartFaturamentoAnual = null;
 
+window.currentUserIp = '127.0.0.1';
+
+async function fetchUserIp() {
+  try {
+    const res = await fetch('https://api.ipify.org?format=json', { signal: AbortSignal.timeout(3000) });
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.ip) {
+        window.currentUserIp = data.ip;
+        return data.ip;
+      }
+    }
+  } catch (err) {
+    console.warn('Serviço de IP público offline/indisponível:', err);
+  }
+  window.currentUserIp = window.location.hostname || '127.0.0.1';
+  return window.currentUserIp;
+}
+
 // --- EVENTOS INICIAIS ---
 window.addEventListener('DOMContentLoaded', async () => {
   try {
     // Inicializa Banco de Dados
     await initDB();
+    fetchUserIp();
     console.log('Banco de dados inicializado com sucesso no app.js');
 
     // Carrega Configurações
@@ -188,7 +210,7 @@ function setupNavigation() {
   navItems.forEach(item => {
     item.addEventListener('click', () => {
       const tab = item.getAttribute('data-tab');
-      switchTab(tab);
+      if (tab) switchTab(tab);
     });
   });
 
@@ -201,6 +223,53 @@ function setupNavigation() {
         switchTab(tab);
       }
     }
+  });
+
+  // --- ACTION SHEETS PARA NAVEGAÇÃO MOBILE ---
+  const addTrigger = document.getElementById('mobileNavAddTrigger');
+  const historyTrigger = document.getElementById('mobileNavHistoryTrigger');
+  const sheetAdd = document.getElementById('actionSheetAdicionar');
+  const sheetHistory = document.getElementById('actionSheetHistorico');
+
+  const closeAllActionSheets = () => {
+    if (sheetAdd) sheetAdd.style.display = 'none';
+    if (sheetHistory) sheetHistory.style.display = 'none';
+  };
+
+  if (addTrigger && sheetAdd) {
+    addTrigger.addEventListener('click', (e) => {
+      e.stopPropagation();
+      closeAllActionSheets();
+      sheetAdd.style.display = 'flex';
+    });
+  }
+
+  if (historyTrigger && sheetHistory) {
+    historyTrigger.addEventListener('click', (e) => {
+      e.stopPropagation();
+      closeAllActionSheets();
+      sheetHistory.style.display = 'flex';
+    });
+  }
+
+  // Fechar botões 'x' e cliques no fundo escuro
+  document.querySelectorAll('.action-sheet-close, .action-sheet-overlay').forEach(el => {
+    el.addEventListener('click', (e) => {
+      if (e.target === el || e.target.classList.contains('action-sheet-close')) {
+        closeAllActionSheets();
+      }
+    });
+  });
+
+  // Clique em uma opção dentro dos Action Sheets
+  document.querySelectorAll('.action-sheet-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const targetTab = btn.getAttribute('data-action-tab');
+      closeAllActionSheets();
+      if (targetTab) {
+        switchTab(targetTab);
+      }
+    });
   });
 }
 
@@ -216,6 +285,12 @@ function switchTab(tabId) {
 function switchTabWithoutPush(tabId) {
   if (!tabId) return;
   activeTab = tabId;
+
+  // Fecha action sheets mobile ativas
+  const sheetAdd = document.getElementById('actionSheetAdicionar');
+  const sheetHistory = document.getElementById('actionSheetHistorico');
+  if (sheetAdd) sheetAdd.style.display = 'none';
+  if (sheetHistory) sheetHistory.style.display = 'none';
 
   // Atualiza classe active na navegação desktop e mobile
   document.querySelectorAll('.nav-item, .mobile-nav-item').forEach(item => {
@@ -582,7 +657,7 @@ function setupDynamicRows() {
       } else {
         customInput.style.display = 'none';
         customInput.removeAttribute('required');
-        const selectedOption = e.target.options[e.target.selectedIndex];
+        const selectedOption = (e.target.options && e.target.selectedIndex >= 0) ? e.target.options[e.target.selectedIndex] : null;
         const preco = selectedOption ? parseFloat(selectedOption.getAttribute('data-preco')) || 0 : 0;
         if (priceInput) {
           priceInput.value = selectedOption && e.target.value ? preco.toFixed(2) : '';
@@ -602,7 +677,7 @@ function setupDynamicRows() {
       } else {
         customInput.style.display = 'none';
         customInput.removeAttribute('required');
-        const selectedOption = e.target.options[e.target.selectedIndex];
+        const selectedOption = (e.target.options && e.target.selectedIndex >= 0) ? e.target.options[e.target.selectedIndex] : null;
         const preco = selectedOption ? parseFloat(selectedOption.getAttribute('data-preco')) || 0 : 0;
         if (priceInput) {
           priceInput.value = selectedOption && e.target.value ? preco.toFixed(2) : '';
@@ -613,20 +688,20 @@ function setupDynamicRows() {
 
     if (e.target.classList.contains('ped-item-select')) {
       const row = e.target.closest('.dynamic-item-row');
-      const selectedOption = e.target.options[e.target.selectedIndex];
+      const selectedOption = (e.target.options && e.target.selectedIndex >= 0) ? e.target.options[e.target.selectedIndex] : null;
       const type = selectedOption ? selectedOption.getAttribute('data-type') : '';
-      const priceInput = row.querySelector('.ped-item-price');
+      const priceInput = row ? row.querySelector('.ped-item-price') : null;
       
       if (type === 'receita') {
         const itemName = e.target.value;
         getAllRecords('receitas').then(receitas => {
-          const r = receitas.find(x => x.produtoFinal.toLowerCase() === itemName.toLowerCase());
+          const r = receitas.find(x => (x.produtoFinal || '').toLowerCase() === (itemName || '').toLowerCase());
           if (priceInput) {
             priceInput.value = (r && r.precoVenda !== undefined) ? r.precoVenda.toFixed(2) : '0.00';
           }
         });
       } else if (type === 'avulso') {
-        const precoInsumo = parseFloat(selectedOption.getAttribute('data-preco')) || 0;
+        const precoInsumo = selectedOption ? (parseFloat(selectedOption.getAttribute('data-preco')) || 0) : 0;
         if (priceInput) {
           priceInput.value = precoInsumo.toFixed(2);
         }
@@ -717,8 +792,8 @@ function recalculaCustoReceita() {
     const qtyInput = row.querySelector('.mp-qty');
 
     if (select && qtyInput) {
-      const selectedOption = select.options[select.selectedIndex];
-      const valUnit = selectedOption ? parseFloat(selectedOption.getAttribute('data-valor')) : 0;
+      const selectedOption = (select.options && select.selectedIndex >= 0) ? select.options[select.selectedIndex] : null;
+      const valUnit = selectedOption ? parseFloat(selectedOption.getAttribute('data-valor')) || 0 : 0;
       const qty = parseInt(qtyInput.value, 10) || 0;
       custoInsumos += valUnit * qty;
     }
@@ -812,7 +887,7 @@ function setupFormSubmissions() {
               adicionalText = select.value;
 
               // Verifica se este adicional cadastrado consome insumos
-              const ad = todosAdicionais.find(x => x.nome.toLowerCase() === adicionalText.toLowerCase());
+              const ad = todosAdicionais.find(x => (x.nome || '').toLowerCase() === (adicionalText || '').toLowerCase());
               if (ad && ad.insumoAtrelado) {
                 const totalDisponivel = estoqueInsumos
                   .filter(e => e.item.toLowerCase().trim() === ad.insumoAtrelado.toLowerCase().trim())
@@ -919,54 +994,411 @@ function setupFormSubmissions() {
 
 
 
-  // 2. FORMULÁRIO DE ESTOQUE
+  // --- COMPRAS MULTI-ITENS E RATEIO DE FRETE & DESPESAS ---
+  function recalcularRateioCompra() {
+    const freteTotal = parseFloat(document.getElementById('compraFrete')?.value) || 0;
+    const despesasTotais = parseFloat(document.getElementById('compraOutrasDespesas')?.value) || 0;
+    const despesasExtraSomadas = freteTotal + despesasTotais;
+
+    const rows = document.querySelectorAll('.compra-item-row');
+    let subtotalProdutos = 0;
+    const itensDados = [];
+
+    rows.forEach(tr => {
+      const qtd = parseFloat(tr.querySelector('.item-qtd')?.value) || 0;
+      const precoBase = parseFloat(tr.querySelector('.item-preco-base')?.value) || 0;
+      const subtotalItem = qtd * precoBase;
+      subtotalProdutos += subtotalItem;
+      itensDados.push({ tr, qtd, precoBase, subtotalItem });
+    });
+
+    itensDados.forEach(data => {
+      const peso = subtotalProdutos > 0 ? (data.subtotalItem / subtotalProdutos) : (rows.length > 0 ? 1 / rows.length : 0);
+      const extraRateadoItem = despesasExtraSomadas * peso;
+      const extraUnitario = data.qtd > 0 ? (extraRateadoItem / data.qtd) : 0;
+      const custoFinalUnitario = data.precoBase + extraUnitario;
+
+      const celulaRateio = data.tr.querySelector('.item-frete-rateado');
+      const celulaCustoFinal = data.tr.querySelector('.item-custo-final');
+
+      if (celulaRateio) celulaRateio.textContent = formatMoney(extraRateadoItem);
+      if (celulaCustoFinal) celulaCustoFinal.textContent = formatMoney(custoFinalUnitario);
+    });
+
+    const valorTotalCompra = subtotalProdutos + despesasExtraSomadas;
+
+    const elProdutos = document.getElementById('resumoValorProdutos');
+    const elFrete = document.getElementById('resumoValorFrete');
+    const elDespesas = document.getElementById('resumoOutrasDespesas');
+    const elTotal = document.getElementById('resumoValorTotal');
+
+    if (elProdutos) elProdutos.textContent = formatMoney(subtotalProdutos);
+    if (elFrete) elFrete.textContent = formatMoney(freteTotal);
+    if (elDespesas) elDespesas.textContent = formatMoney(despesasTotais);
+    if (elTotal) elTotal.textContent = formatMoney(valorTotalCompra);
+  }
+
+  function setupCompraFormLogic() {
+    const tableBody = document.getElementById('compraItensTableBody');
+    const btnAddItem = document.getElementById('btnAddItemCompra');
+    const btnToggleModo = document.getElementById('btnToggleModoEntrada');
+    const entradaSimplesWrapper = document.getElementById('entradaSimplesWrapper');
+    const compraMultiItemWrapper = document.getElementById('compraMultiItemWrapper');
+
+    let modoMultiItem = true;
+
+    const elDataCompra = document.getElementById('compraData');
+    if (elDataCompra && !elDataCompra.value) {
+      elDataCompra.value = new Date().toISOString().split('T')[0];
+    }
+
+    // Atualiza sugestões no datalist dlEstoqueItens
+    const atualizarDatalistSugestoes = async () => {
+      const dl = document.getElementById('dlEstoqueItens');
+      if (!dl) return;
+      try {
+        const estoque = await getAllRecords('estoque');
+        const nomesUnicos = Array.from(new Set(estoque.map(e => (e.nome || e.item || '').trim()).filter(Boolean)));
+        dl.innerHTML = nomesUnicos.map(n => `<option value="${escapeHTML(n)}"></option>`).join('');
+      } catch (err) {
+        console.warn('Erro ao atualizar datalist de sugestões:', err);
+      }
+    };
+    atualizarDatalistSugestoes();
+
+    // Adiciona uma linha de item na compra
+    const adicionarLinhaCompra = (itemData = {}) => {
+      if (!tableBody) return;
+      const tr = document.createElement('tr');
+      tr.className = 'compra-item-row';
+      tr.innerHTML = `
+        <td style="padding: 6px;">
+          <input type="text" class="form-control item-nome calc-compra-trigger" list="dlEstoqueItens" placeholder="Nome do Item / Insumo" value="${escapeHTML(itemData.nome || '')}">
+        </td>
+        <td style="padding: 6px;">
+          <select class="form-control item-tipo calc-compra-trigger">
+            <option value="MATERIA_PRIMA" ${itemData.tipo === 'MATERIA_PRIMA' ? 'selected' : ''}>Matéria-Prima</option>
+            <option value="PRODUTO_ACABADO" ${itemData.tipo === 'PRODUTO_ACABADO' ? 'selected' : ''}>Produto Acabado</option>
+            <option value="USO_INTERNO" ${itemData.tipo === 'USO_INTERNO' ? 'selected' : ''}>Uso Interno</option>
+            <option value="PESQUISA_DESENVOLVIMENTO" ${itemData.tipo === 'PESQUISA_DESENVOLVIMENTO' ? 'selected' : ''}>P&D</option>
+          </select>
+        </td>
+        <td style="padding: 6px;">
+          <select class="form-control item-unidade calc-compra-trigger">
+            <option value="UN" ${itemData.unidade === 'UN' ? 'selected' : ''}>UN</option>
+            <option value="KG" ${itemData.unidade === 'KG' ? 'selected' : ''}>KG</option>
+            <option value="L" ${itemData.unidade === 'L' ? 'selected' : ''}>L</option>
+            <option value="M" ${itemData.unidade === 'M' ? 'selected' : ''}>M</option>
+            <option value="CX" ${itemData.unidade === 'CX' ? 'selected' : ''}>CX</option>
+            <option value="PCT" ${itemData.unidade === 'PCT' ? 'selected' : ''}>PCT</option>
+          </select>
+        </td>
+        <td style="padding: 6px;">
+          <input type="number" class="form-control item-qtd calc-compra-trigger" step="0.01" min="0" placeholder="Qtd" value="${itemData.qtd || ''}">
+        </td>
+        <td style="padding: 6px;">
+          <input type="number" class="form-control item-preco-base calc-compra-trigger" step="0.01" min="0" placeholder="0.00" value="${itemData.preco || ''}">
+        </td>
+        <td style="padding: 6px; font-size: 0.85rem; color: var(--primary);" class="item-frete-rateado">R$ 0,00</td>
+        <td style="padding: 6px; font-size: 0.88rem; font-weight: bold;" class="item-custo-final">R$ 0,00</td>
+        <td style="padding: 6px; text-align: center;">
+          <button type="button" class="btn-icon-only danger btnRemoveCompraRow" title="Remover Item" style="padding: 4px;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          </button>
+        </td>
+      `;
+
+      tr.querySelectorAll('.calc-compra-trigger').forEach(input => {
+        input.addEventListener('input', recalcularRateioCompra);
+        input.addEventListener('change', recalcularRateioCompra);
+      });
+
+      tr.querySelector('.btnRemoveCompraRow').addEventListener('click', () => {
+        if (tableBody.querySelectorAll('.compra-item-row').length > 1) {
+          tr.remove();
+          recalcularRateioCompra();
+        } else {
+          showToast('A compra deve conter ao menos 1 item.', 'warning');
+        }
+      });
+
+      tableBody.appendChild(tr);
+      recalcularRateioCompra();
+    };
+
+    if (btnAddItem) {
+      btnAddItem.addEventListener('click', () => adicionarLinhaCompra());
+    }
+
+    document.querySelectorAll('.calc-compra-trigger').forEach(input => {
+      input.addEventListener('input', recalcularRateioCompra);
+      input.addEventListener('change', recalcularRateioCompra);
+    });
+
+    if (btnToggleModo) {
+      btnToggleModo.addEventListener('click', () => {
+        modoMultiItem = !modoMultiItem;
+        const groupJustificativa = document.getElementById('groupEstJustificativa');
+        if (groupJustificativa) groupJustificativa.style.display = 'none';
+
+        if (modoMultiItem) {
+          if (entradaSimplesWrapper) entradaSimplesWrapper.style.display = 'none';
+          if (compraMultiItemWrapper) compraMultiItemWrapper.style.display = 'block';
+          btnToggleModo.textContent = 'Alternar para Entrada Simples (1 Item)';
+          document.getElementById('estoqueFormTitle').textContent = 'Nova Entrada de Compra (Multi-Itens & Rateio)';
+          document.getElementById('btnEstoqueSubmit').textContent = 'Finalizar e Gravar Compra no Estoque';
+        } else {
+          if (entradaSimplesWrapper) entradaSimplesWrapper.style.display = 'block';
+          if (compraMultiItemWrapper) compraMultiItemWrapper.style.display = 'none';
+          btnToggleModo.textContent = 'Alternar para Compra Multi-Itens (Rateio)';
+          document.getElementById('estoqueFormTitle').textContent = 'Entrada Simples de Estoque';
+          document.getElementById('btnEstoqueSubmit').textContent = 'Adicionar Item ao Estoque';
+        }
+      });
+    }
+
+    if (tableBody && tableBody.querySelectorAll('.compra-item-row').length === 0) {
+      adicionarLinhaCompra();
+    }
+  }
+
+  // 2. FORMULÁRIO E LÓGICA DE ESTOQUE E COMPRAS
+  setupCompraFormLogic();
+
   const formEstoque = document.getElementById('formEstoque');
   if (formEstoque) {
     formEstoque.addEventListener('submit', async (e) => {
       e.preventDefault();
       try {
         const idVal = document.getElementById('estoqueId').value;
-        const item = document.getElementById('estItem').value.trim();
-        const quantidade = parseFloat(document.getElementById('estQtd').value) || 0;
-        const valor = parseFloat(document.getElementById('estValor').value) || 0;
+        const entradaSimplesWrapper = document.getElementById('entradaSimplesWrapper');
+        const isModoSimples = idVal || (entradaSimplesWrapper && entradaSimplesWrapper.style.display !== 'none');
 
-        const estoqueItens = await getAllRecords('estoque');
+        // SE FOR MODO DE ENTRADA SIMPLES OU EDIÇÃO DE ITEM
+        if (isModoSimples) {
+          const itemNome = (document.getElementById('estItem')?.value || '').trim();
+          const quantidade = parseFloat(document.getElementById('estQtd')?.value) || 0;
+          const valor = parseFloat(document.getElementById('estValor')?.value) || 0;
+          const tipoItem = document.getElementById('estTipoItem')?.value || 'MATERIA_PRIMA';
+          const unidade = document.getElementById('estUnidade')?.value || 'UN';
 
-        // Verifica se é Edição
-        if (idVal) {
-          const id = Number(idVal);
-          const registroExistente = await getRecordById('estoque', id);
-          if (registroExistente) {
-            registroExistente.item = item;
-            registroExistente.quantidade = quantidade;
-            registroExistente.valor = valor;
-            registroExistente.synced = 0;
-            await updateRecord('estoque', registroExistente);
-            showToast('Item atualizado com sucesso!');
+          if (!itemNome) {
+            showToast('Informe o nome do item.', 'warning');
+            return;
+          }
+
+          if (idVal) {
+            const justificativa = (document.getElementById('estJustificativa')?.value || '').trim();
+            if (!justificativa) {
+              showToast('Por favor, informe a justificativa para a alteração do estoque.', 'warning');
+              return;
+            }
+
+            const registroExistente = await getRecordById('estoque', idVal);
+            if (registroExistente) {
+              const qtdAnterior = Number(registroExistente.quantidade_atual !== undefined ? registroExistente.quantidade_atual : registroExistente.quantidade) || 0;
+              const qtdDiferenca = quantidade - qtdAnterior;
+
+              registroExistente.nome = itemNome;
+              registroExistente.item = itemNome;
+              registroExistente.tipo_item = tipoItem;
+              registroExistente.unidade_medida = unidade;
+              registroExistente.custo_medio = valor;
+              registroExistente.valor = valor;
+              registroExistente.synced = 0;
+
+              await updateRecord('estoque', registroExistente);
+
+              if (qtdDiferenca !== 0) {
+                await registrarMovimentacaoEstoque({
+                  id_item: registroExistente.id_item || registroExistente.id,
+                  nome_item: itemNome,
+                  tipo_movimentacao: qtdDiferenca > 0 ? 'ENTRADA' : 'SAIDA',
+                  quantidade: Math.abs(qtdDiferenca),
+                  custo_unitario: valor,
+                  origem_tipo: 'AJUSTE_MANUAL',
+                  justificativa: justificativa
+                });
+              }
+
+              showToast('Item de estoque atualizado com sucesso!');
+            }
+          } else {
+            // Novo item em Entrada Simples (Ajuste Manual)
+            const novoItem = {
+              nome: itemNome,
+              item: itemNome,
+              tipo_item: tipoItem,
+              unidade_medida: unidade,
+              custo_medio: valor,
+              quantidade_atual: 0,
+              quantidade: 0,
+              valor: valor,
+              data: new Date().toISOString(),
+              synced: 0
+            };
+            const newId = await addRecord('estoque', novoItem);
+
+            if (quantidade > 0) {
+              await registrarMovimentacaoEstoque({
+                id_item: newId,
+                nome_item: itemNome,
+                tipo_movimentacao: 'ENTRADA',
+                quantidade: quantidade,
+                custo_unitario: valor,
+                origem_tipo: 'AJUSTE_MANUAL'
+              });
+            }
+
+            showToast('Item adicionado ao estoque!');
           }
         } else {
-          // Novo lote (sempre cria um lote separado, conforme solicitação do usuário)
-          const novoItem = {
-            item,
-            quantidade,
-            valor,
-            data: new Date().toISOString(),
+          // SE FOR UMA NOVA COMPRA MULTI-ITENS
+          const rows = document.querySelectorAll('.compra-item-row');
+          const dataInput = document.getElementById('compraData')?.value;
+          const dataCompraIso = dataInput ? new Date(dataInput + 'T12:00:00').toISOString() : new Date().toISOString();
+
+          const valorFrete = parseFloat(document.getElementById('compraFrete')?.value) || 0;
+          const outrasDespesas = parseFloat(document.getElementById('compraOutrasDespesas')?.value) || 0;
+          const descricaoDespesas = (document.getElementById('compraDescricaoDespesas')?.value || '').trim();
+          const fornecedor = (document.getElementById('compraFornecedor')?.value || '').trim();
+
+          const despesasExtraSomadas = valorFrete + outrasDespesas;
+          const itensValidos = [];
+          let valorProdutosTotal = 0;
+
+          rows.forEach(tr => {
+            const nome = (tr.querySelector('.item-nome')?.value || '').trim();
+            const tipo_item = tr.querySelector('.item-tipo')?.value || 'MATERIA_PRIMA';
+            const unidade_medida = tr.querySelector('.item-unidade')?.value || 'UN';
+            const quantidade = parseFloat(tr.querySelector('.item-qtd')?.value) || 0;
+            const preco_unitario_base = parseFloat(tr.querySelector('.item-preco-base')?.value) || 0;
+
+            if (nome && quantidade > 0) {
+              const subtotal = quantidade * preco_unitario_base;
+              valorProdutosTotal += subtotal;
+              itensValidos.push({
+                nome,
+                tipo_item,
+                unidade_medida,
+                quantidade,
+                preco_unitario_base,
+                subtotal
+              });
+            }
+          });
+
+          if (itensValidos.length === 0) {
+            showToast('Informe ao menos 1 item válido com nome e quantidade maior que 0.', 'warning');
+            return;
+          }
+
+          // Executa o rateio proporcional de frete e outras despesas
+          const itensSnapshot = [];
+          for (const item of itensValidos) {
+            const peso = valorProdutosTotal > 0 ? (item.subtotal / valorProdutosTotal) : (1 / itensValidos.length);
+            const frete_rateado = valorFrete * peso;
+            const despesa_rateada = outrasDespesas * peso;
+            const extraRateadoItem = frete_rateado + despesa_rateada;
+            const extraUnitario = extraRateadoItem / item.quantidade;
+            const custo_unitario_final = Number((item.preco_unitario_base + extraUnitario).toFixed(2));
+
+            item.frete_rateado = Number(frete_rateado.toFixed(2));
+            item.despesa_rateada = Number(despesa_rateada.toFixed(2));
+            item.custo_unitario_final = custo_unitario_final;
+
+            itensSnapshot.push(item);
+          }
+
+          const valorTotalCompra = Number((valorProdutosTotal + despesasExtraSomadas).toFixed(2));
+
+          // 1. Grava a compra na tabela 'compras' com a data selecionada pelo usuário
+          const idCompra = generatePrefixedId('compras');
+          const registroCompra = {
+            id_compra: idCompra,
+            id: idCompra,
+            data: dataCompraIso,
+            fornecedor,
+            valor_produtos: Number(valorProdutosTotal.toFixed(2)),
+            valor_frete: Number(valorFrete.toFixed(2)),
+            outras_despesas: Number(outrasDespesas.toFixed(2)),
+            descricao_despesas: descricaoDespesas,
+            valor_total: valorTotalCompra,
+            itens: itensSnapshot,
             synced: 0
           };
-          await addRecord('estoque', novoItem);
-          showToast('Lote adicionado ao estoque local!');
+
+          await addRecord('compras', registroCompra);
+
+          // 2. Grava ou atualiza os itens no estoque unificado e dispara movimentações de auditoria
+          const estoqueExistente = await getAllRecords('estoque');
+
+          for (const itemSnap of itensSnapshot) {
+            const itemKeyNorm = itemSnap.nome.toLowerCase().trim();
+            const itemNoEstoque = estoqueExistente.find(e => (e.nome || e.item || '').toLowerCase().trim() === itemKeyNorm);
+
+            let targetId = null;
+            if (itemNoEstoque) {
+              targetId = itemNoEstoque.id_item || itemNoEstoque.id;
+            } else {
+              const novoItem = {
+                nome: itemSnap.nome,
+                item: itemSnap.nome,
+                tipo_item: itemSnap.tipo_item,
+                unidade_medida: itemSnap.unidade_medida,
+                custo_medio: itemSnap.custo_unitario_final,
+                quantidade_atual: 0,
+                quantidade: 0,
+                valor: itemSnap.custo_unitario_final,
+                data: dataCompraIso,
+                synced: 0
+              };
+              targetId = await addRecord('estoque', novoItem);
+            }
+
+            // Grava a movimentação de auditoria com a data da compra
+            await registrarMovimentacaoEstoque({
+              id_item: targetId,
+              tipo_movimentacao: 'ENTRADA',
+              quantidade: itemSnap.quantidade,
+              custo_unitario: itemSnap.custo_unitario_final,
+              origem_tipo: 'COMPRA',
+              origem_id: idCompra,
+              data: dataCompraIso
+            });
+          }
+
+          showToast('Compra gravada com sucesso! Itens e rateio de frete integrados ao estoque.');
         }
 
-        // Restaura formulário
+        // Restaura formulário de compras
         formEstoque.reset();
         document.getElementById('estoqueId').value = '';
-        document.getElementById('estoqueFormTitle').textContent = 'Nova Entrada';
-        document.getElementById('btnEstoqueSubmit').textContent = 'Adicionar ao Estoque';
+        document.getElementById('estoqueFormTitle').textContent = 'Nova Entrada de Compra (Multi-Itens & Rateio)';
+        document.getElementById('btnEstoqueSubmit').textContent = 'Finalizar e Gravar Compra no Estoque';
         document.getElementById('btnEstoqueCancel').style.display = 'none';
 
+        const groupJustificativaReset = document.getElementById('groupEstJustificativa');
+        if (groupJustificativaReset) groupJustificativaReset.style.display = 'none';
+        const inputJustificativaReset = document.getElementById('estJustificativa');
+        if (inputJustificativaReset) inputJustificativaReset.value = '';
+
+        // Garante que volta para o modo multi-item por padrão
+        const elSimplesWrapper = document.getElementById('entradaSimplesWrapper');
+        const elMultiWrapper = document.getElementById('compraMultiItemWrapper');
+        if (elSimplesWrapper) elSimplesWrapper.style.display = 'none';
+        if (elMultiWrapper) elMultiWrapper.style.display = 'block';
+
+        // Recria 1 linha limpa na tabela de compras
+        const tbodyCompra = document.getElementById('compraItensTableBody');
+        if (tbodyCompra) tbodyCompra.innerHTML = '';
+        const btnAddItem = document.getElementById('btnAddItemCompra');
+        if (btnAddItem) btnAddItem.click();
+
         await reloadAllViews();
+        switchTab('estoque');
       } catch (err) {
-        showToast('Erro ao salvar item no estoque: ' + err.message, 'error');
+        showToast('Erro ao salvar compra no estoque: ' + err.message, 'error');
       }
     });
 
@@ -974,9 +1406,21 @@ function setupFormSubmissions() {
     document.getElementById('btnEstoqueCancel').addEventListener('click', () => {
       formEstoque.reset();
       document.getElementById('estoqueId').value = '';
-      document.getElementById('estoqueFormTitle').textContent = 'Nova Entrada';
-      document.getElementById('btnEstoqueSubmit').textContent = 'Adicionar ao Estoque';
+      document.getElementById('estoqueFormTitle').textContent = 'Nova Entrada de Compra (Multi-Itens & Rateio)';
+      document.getElementById('btnEstoqueSubmit').textContent = 'Finalizar e Gravar Compra no Estoque';
       document.getElementById('btnEstoqueCancel').style.display = 'none';
+
+      const groupJustificativaCancel = document.getElementById('groupEstJustificativa');
+      if (groupJustificativaCancel) groupJustificativaCancel.style.display = 'none';
+      const inputJustificativaCancel = document.getElementById('estJustificativa');
+      if (inputJustificativaCancel) inputJustificativaCancel.value = '';
+
+      const elSimplesWrapper = document.getElementById('entradaSimplesWrapper');
+      const elMultiWrapper = document.getElementById('compraMultiItemWrapper');
+      if (elSimplesWrapper) elSimplesWrapper.style.display = 'none';
+      if (elMultiWrapper) elMultiWrapper.style.display = 'block';
+
+      switchTab('estoque');
     });
   }
 
@@ -998,8 +1442,8 @@ function setupFormSubmissions() {
 
         for (const row of rows) {
           const select = row.querySelector('.ped-item-select');
-          const selectedOption = select.options[select.selectedIndex];
-          const itemNome = select.value;
+          const selectedOption = (select && select.options && select.selectedIndex >= 0) ? select.options[select.selectedIndex] : null;
+          const itemNome = select ? select.value : '';
           const type = selectedOption ? selectedOption.getAttribute('data-type') : '';
           const quantidade = parseFloat(row.querySelector('.ped-item-qty').value) || 0;
           const valor = parseFloat(row.querySelector('.ped-item-price').value) || 0;
@@ -1025,10 +1469,10 @@ function setupFormSubmissions() {
 
             if (type === 'receita') {
               const receitas = await getAllRecords('receitas');
-              const receita = receitas.find(r => r.produtoFinal.toLowerCase() === itemNome.toLowerCase());
+              const receita = receitas.find(r => (r.produtoFinal || '').toLowerCase() === (itemNome || '').toLowerCase());
 
               const estoqueFinalizado = await getAllRecords('estoque_produtos');
-              const prodEstocado = estoqueFinalizado.find(p => p.produto.toLowerCase() === itemNome.toLowerCase());
+              const prodEstocado = estoqueFinalizado.find(p => (p.produto || p.nome || p.item || '').toLowerCase() === (itemNome || '').toLowerCase());
               const qtdDisponivelProd = prodEstocado ? prodEstocado.quantidade : 0;
 
               if (qtdDisponivelProd >= quantidade) {
@@ -1056,7 +1500,7 @@ function setupFormSubmissions() {
 
                   for (const mp of receita.materiaPrima) {
                     const totalDisponivel = estoqueInsumos
-                      .filter(e => e.item.toLowerCase().trim() === mp.item.toLowerCase().trim())
+                      .filter(e => (e.item || e.nome || '').toLowerCase().trim() === (mp.item || mp.nome || '').toLowerCase().trim())
                       .reduce((sum, e) => sum + e.quantidade, 0);
                     const qtdNecessaria = mp.quantidade * diferenca;
 
@@ -1090,7 +1534,7 @@ function setupFormSubmissions() {
               // Lógica para item avulso: consome direto do estoque (insumos)
               const estoqueInsumos = await getAllRecords('estoque');
               const totalDisponivel = estoqueInsumos
-                .filter(e => e.item.toLowerCase().trim() === itemNome.toLowerCase().trim())
+                .filter(e => (e.item || e.nome || '').toLowerCase().trim() === (itemNome || '').toLowerCase().trim())
                 .reduce((sum, e) => sum + e.quantidade, 0);
 
               if (totalDisponivel < quantidade) {
@@ -1187,7 +1631,7 @@ function setupFormSubmissions() {
 
         for (const mp of receita.materiaPrima) {
           const totalDisponivel = estoqueInsumos
-            .filter(e => e.item.toLowerCase().trim() === mp.item.toLowerCase().trim())
+            .filter(e => (e.item || e.nome || '').toLowerCase().trim() === (mp.item || mp.nome || '').toLowerCase().trim())
             .reduce((sum, e) => sum + e.quantidade, 0);
           const qtdNecessaria = mp.quantidade * quantidade;
 
@@ -1213,7 +1657,7 @@ function setupFormSubmissions() {
 
         // Adiciona ao estoque de produtos finalizados
         const estoqueProdutos = await getAllRecords('estoque_produtos');
-        const prodEstocado = estoqueProdutos.find(p => p.produto.toLowerCase() === produtoFinal.toLowerCase());
+        const prodEstocado = estoqueProdutos.find(p => (p.produto || p.nome || p.item || '').toLowerCase() === (produtoFinal || '').toLowerCase());
 
         if (prodEstocado) {
           prodEstocado.quantidade += quantidade;
@@ -1280,7 +1724,7 @@ function setupFormSubmissions() {
 
         // Sincroniza o preço de venda no estoque de produtos finalizados se já existir
         const estoqueProdutos = await getAllRecords('estoque_produtos');
-        const prodEstocado = estoqueProdutos.find(p => p.produto.toLowerCase() === produtoFinal.toLowerCase());
+        const prodEstocado = estoqueProdutos.find(p => (p.produto || p.nome || p.item || '').toLowerCase() === (produtoFinal || '').toLowerCase());
         if (prodEstocado) {
           prodEstocado.precoVenda = precoVenda;
           prodEstocado.synced = 0;
@@ -1403,13 +1847,13 @@ async function renderDashboard() {
   const estoqueProdutos = await getAllRecords('estoque_produtos');
   
   estoqueProdutos.forEach(p => {
-    const receita = receitas.find(r => r.produtoFinal.toLowerCase() === p.produto.toLowerCase());
+    const receita = receitas.find(r => (r.produtoFinal || '').toLowerCase() === (p.produto || p.nome || p.item || '').toLowerCase());
     let custoUnitario = 0;
     if (receita) {
       custoUnitario += receita.maoDeObra || 0;
       if (Array.isArray(receita.materiaPrima)) {
         receita.materiaPrima.forEach(mp => {
-          const insumo = estoqueInsumosAgrupado.find(i => i.item.toLowerCase() === mp.item.toLowerCase());
+          const insumo = estoqueInsumosAgrupado.find(i => (i.item || i.nome || '').toLowerCase() === (mp.item || mp.nome || '').toLowerCase());
           const precoUnitarioInsumo = insumo ? insumo.valor : 0;
           custoUnitario += precoUnitarioInsumo * mp.quantidade;
         });
@@ -1502,13 +1946,13 @@ async function renderDashboard() {
       }
     });
     estoqueProdutos.forEach(p => {
-      const receita = receitas.find(r => r.produtoFinal.toLowerCase() === p.produto.toLowerCase());
+      const receita = receitas.find(r => (r.produtoFinal || '').toLowerCase() === (p.produto || p.nome || p.item || '').toLowerCase());
       let custoUnitario = 0;
       if (receita) {
         custoUnitario += receita.maoDeObra || 0;
         if (Array.isArray(receita.materiaPrima)) {
           receita.materiaPrima.forEach(mp => {
-            const insumo = estoqueInsumosAgrupado.find(i => i.item.toLowerCase() === mp.item.toLowerCase());
+            const insumo = estoqueInsumosAgrupado.find(i => (i.item || i.nome || '').toLowerCase() === (mp.item || mp.nome || '').toLowerCase());
             const precoUnitarioInsumo = insumo ? insumo.valor : 0;
             custoUnitario += precoUnitarioInsumo * mp.quantidade;
           });
@@ -2010,60 +2454,78 @@ async function abrirModalConcluirAjustar(service) {
 // 2. ABA DE ESTOQUE
 async function renderEstoqueView() {
   const estoqueOriginal = await getAllRecords('estoque');
-  const estoque = estoqueOriginal.filter(e => e.quantidade !== 0);
+  const estoqueAtivo = estoqueOriginal.filter(e => {
+    const qtd = Number(e.quantidade_atual !== undefined ? e.quantidade_atual : e.quantidade) || 0;
+    return qtd !== 0;
+  });
   const tbody = document.getElementById('tableEstoque').querySelector('tbody');
 
-  if (estoque.length === 0) {
+  if (estoqueAtivo.length === 0) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="5" style="text-align: center; color: var(--text-muted);">Nenhum insumo cadastrado com estoque disponível.</td>
+        <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 20px;">Nenhum item cadastrado com estoque disponível no momento.</td>
       </tr>
     `;
   } else {
-    // Agrupa por nome de insumo (case-insensitive)
+    const formatTipoBadge = (tipo) => {
+      const t = String(tipo || 'MATERIA_PRIMA').toUpperCase();
+      if (t === 'PRODUTO_ACABADO') return '<span class="badge" style="background:#28a745; color:#fff; font-size:0.7rem; padding:2px 6px; border-radius:4px;">Produto Acabado</span>';
+      if (t === 'USO_INTERNO') return '<span class="badge" style="background:#17a2b8; color:#fff; font-size:0.7rem; padding:2px 6px; border-radius:4px;">Uso Interno</span>';
+      if (t === 'PESQUISA_DESENVOLVIMENTO' || t === 'PND') return '<span class="badge" style="background:#6f42c1; color:#fff; font-size:0.7rem; padding:2px 6px; border-radius:4px;">P&D</span>';
+      return '<span class="badge" style="background:#6c757d; color:#fff; font-size:0.7rem; padding:2px 6px; border-radius:4px;">Insumo/Mat. Prima</span>';
+    };
+
+    // Agrupa por nome de item (case-insensitive)
     const grouped = {};
-    estoque.forEach(e => {
-      const key = e.item.toLowerCase().trim();
+    estoqueAtivo.forEach(e => {
+      const nomeVal = (e.nome || e.item || e.produto || '').trim();
+      if (!nomeVal) return;
+      const key = nomeVal.toLowerCase();
+      const qtd = Number(e.quantidade_atual !== undefined ? e.quantidade_atual : e.quantidade) || 0;
+      const custo = Number(e.custo_medio !== undefined ? e.custo_medio : e.valor) || 0;
+
       if (!grouped[key]) {
         grouped[key] = {
-          item: e.item.trim(),
+          nome: nomeVal,
+          tipo_item: e.tipo_item || 'MATERIA_PRIMA',
+          unidade_medida: e.unidade_medida || e.unidade || 'UN',
           quantidadeTotal: 0,
           valorTotal: 0,
           lotes: []
         };
       }
-      grouped[key].quantidadeTotal += e.quantidade;
-      grouped[key].valorTotal += e.quantidade * e.valor;
+      grouped[key].quantidadeTotal += qtd;
+      grouped[key].valorTotal += qtd * custo;
       grouped[key].lotes.push(e);
     });
 
     tbody.innerHTML = Object.values(grouped).map(g => {
       const precoMedio = g.quantidadeTotal > 0 ? (g.valorTotal / g.quantidadeTotal) : 0;
       
-      // Ordena os lotes: mais antigos primeiro (FIFO) para conferência
       g.lotes.sort((a, b) => {
         const dataA = a.data ? new Date(a.data).getTime() : 0;
         const dataB = b.data ? new Date(b.data).getTime() : 0;
-        return dataA - dataB || a.id - b.id;
+        return dataA - dataB;
       });
 
+      const firstLote = g.lotes[0];
+      const mainId = firstLote.id_item || firstLote.id || '';
+      const itemKey = g.nome.toLowerCase().trim();
+
       return `
-        <tr class="estoque-row" data-item="${escapeHTML(g.item.toLowerCase().trim())}" style="cursor: pointer;">
+        <tr class="estoque-row" data-item="${escapeHTML(itemKey)}" data-id="${escapeHTML(String(mainId))}" style="cursor: pointer;" title="Clique para expandir e gerenciar os lotes do item">
           <td>
-            <strong>${escapeHTML(g.item)}</strong><br>
-            <small style="color: var(--primary); font-size: 0.75rem;">Ver ${g.lotes.length} lote(s)</small>
+            <code style="font-size:0.8rem; background:rgba(0,0,0,0.05); padding:2px 4px; border-radius:3px;">${escapeHTML(String(mainId))}</code><br>
+            <small style="color: var(--primary); font-size: 0.72rem;">${g.lotes.length} lote(s)</small>
           </td>
+          <td><strong>${escapeHTML(g.nome)}</strong></td>
+          <td>${formatTipoBadge(g.tipo_item)}</td>
           <td style="color:${g.quantidadeTotal <= 2 ? 'var(--error)' : 'var(--text-main)'}; font-weight:${g.quantidadeTotal <= 2 ? 'bold' : 'normal'};">
-            ${g.quantidadeTotal}
+            ${g.quantidadeTotal} ${escapeHTML(g.unidade_medida)}
             ${g.quantidadeTotal <= 2 ? '<br><small style="color:var(--error); font-weight:normal;">Estoque Baixo!</small>' : ''}
           </td>
           <td>${formatMoney(precoMedio)} <span style="font-size:0.75rem; color:var(--text-muted);">(médio)</span></td>
           <td><strong>${formatMoney(g.valorTotal)}</strong></td>
-          <td>
-            <button class="btn btn-secondary btnVerLotes" data-item="${escapeHTML(g.item.toLowerCase().trim())}" style="padding: 4px 8px; font-size: 0.75rem;">
-              Ver Lotes
-            </button>
-          </td>
         </tr>
       `;
     }).join('');
@@ -2071,7 +2533,100 @@ async function renderEstoqueView() {
 
   setupTableActions();
   setupEstoqueSelectOption();
-  await renderEstoqueProdutosView();
+  await renderMovimentacoesEstoqueView();
+}
+
+// Visualizador do Registro de Alterações no Estoque (Audit Log)
+async function renderMovimentacoesEstoqueView() {
+  const tbody = document.getElementById('tbodyMovimentacoesEstoque');
+  if (!tbody) return;
+
+  try {
+    const movimentacoes = await getAllRecords('estoque_movimentacoes');
+    const estoque = await getAllRecords('estoque');
+    const estoqueMap = new Map(estoque.map(e => [String(e.id_item || e.id), e]));
+
+    // Ordena da movimentação mais recente para a mais antiga
+    movimentacoes.sort((a, b) => new Date(b.data || 0).getTime() - new Date(a.data || 0).getTime());
+
+    const selectFiltro = document.getElementById('filtroTipoMovimentacao');
+    const filtroTipo = selectFiltro ? selectFiltro.value : 'TODOS';
+
+    if (selectFiltro && !selectFiltro.dataset.bound) {
+      selectFiltro.dataset.bound = 'true';
+      selectFiltro.addEventListener('change', () => renderMovimentacoesEstoqueView());
+    }
+
+    const filtradas = movimentacoes.filter(m => {
+      if (filtroTipo === 'TODOS') return true;
+      if (filtroTipo === 'ENTRADA') return m.tipo_movimentacao === 'ENTRADA';
+      if (filtroTipo === 'SAIDA') return m.tipo_movimentacao === 'SAIDA' && m.origem_tipo !== 'EXCLUSAO_ITEM';
+      if (filtroTipo === 'EXCLUSAO') return m.origem_tipo === 'EXCLUSAO_ITEM';
+      if (filtroTipo === 'AJUSTE') return m.origem_tipo === 'AJUSTE_MANUAL' || m.tipo_movimentacao === 'AJUSTE';
+      return true;
+    });
+
+    if (filtradas.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 20px;">Nenhuma alteração de estoque registrada.</td>
+        </tr>
+      `;
+      return;
+    }
+
+    tbody.innerHTML = filtradas.map(m => {
+      const itemObj = estoqueMap.get(String(m.id_item)) || {};
+      const nomeItem = m.nome_item || itemObj.nome || itemObj.item || m.nome || m.item || 'Item Removido do Estoque';
+      const dataObj = m.data ? new Date(m.data) : null;
+      const dataStr = dataObj && !isNaN(dataObj) ? formatDate(dataObj) + ' ' + dataObj.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '-';
+
+      const isExclusao = m.origem_tipo === 'EXCLUSAO_ITEM';
+      const isEntrada = m.tipo_movimentacao === 'ENTRADA';
+
+      let badgeStyle = 'background: rgba(255, 193, 7, 0.15); color: #ffc107; border: 1px solid rgba(255, 193, 7, 0.3);';
+      let badgeText = 'AJUSTE';
+
+      if (isExclusao) {
+        badgeStyle = 'background: rgba(108, 117, 125, 0.2); color: #adb5bd; border: 1px solid rgba(108, 117, 125, 0.4);';
+        badgeText = 'EXCLUSÃO (-)';
+      } else if (isEntrada) {
+        badgeStyle = 'background: rgba(40, 167, 69, 0.15); color: #28a745; border: 1px solid rgba(40, 167, 69, 0.3);';
+        badgeText = 'ENTRADA (+)';
+      } else if (m.tipo_movimentacao === 'SAIDA') {
+        badgeStyle = 'background: rgba(220, 53, 69, 0.15); color: #dc3545; border: 1px solid rgba(220, 53, 69, 0.3);';
+        badgeText = 'SAÍDA (-)';
+      }
+
+      const qtdPrefix = isEntrada ? '+' : '-';
+      let origemText = 'Ajuste Manual';
+      if (m.origem_tipo === 'COMPRA') {
+        origemText = `Compra (${escapeHTML(String(m.origem_id || ''))})`;
+      } else if (m.origem_tipo === 'VENDA') {
+        origemText = `Venda (${escapeHTML(String(m.origem_id || ''))})`;
+      } else if (m.origem_tipo === 'EXCLUSAO_ITEM') {
+        origemText = 'Exclusão de Cadastro / Lote';
+      } else if (m.origem_tipo === 'AJUSTE_MANUAL') {
+        origemText = m.justificativa ? `Ajuste Manual: "${escapeHTML(m.justificativa)}"` : 'Ajuste Manual';
+      }
+
+      return `
+        <tr>
+          <td><small style="color: var(--text-muted);">${dataStr}</small></td>
+          <td><code style="font-size:0.75rem; color:var(--text-muted);">${escapeHTML(m.ip_usuario || '127.0.0.1')}</code></td>
+          <td><code style="font-size:0.75rem; color:var(--primary);">${escapeHTML(String(m.id_movimentacao || m.id || ''))}</code></td>
+          <td><strong>${escapeHTML(nomeItem)}</strong></td>
+          <td><span class="badge" style="${badgeStyle} font-size:0.7rem; padding: 2px 6px; border-radius: 4px;">${badgeText}</span></td>
+          <td style="font-weight: bold; color: ${isEntrada ? 'var(--emerald)' : (isExclusao ? 'var(--text-muted)' : 'var(--danger)')};">${qtdPrefix}${m.quantidade}</td>
+          <td>${formatMoney(m.custo_unitario || 0)}</td>
+          <td>${m.saldo_anterior ?? '-'} ➔ <strong>${m.saldo_posterior ?? '-'}</strong></td>
+          <td><small style="color: var(--text-muted);">${origemText}</small></td>
+        </tr>
+      `;
+    }).join('');
+  } catch (err) {
+    console.error('Erro ao renderizar movimentações de estoque:', err);
+  }
 }
 
 // 3. ABA DE PEDIDOS (VENDAS)
@@ -2242,7 +2797,7 @@ async function renderPedidosView() {
   const btnPagarList = document.querySelectorAll('.btnPagarPedido');
   btnPagarList.forEach(btn => {
     btn.addEventListener('click', async () => {
-      const id = Number(btn.getAttribute('data-id'));
+      const id = btn.getAttribute('data-id');
       try {
         const order = await getRecordById('pedidos', id);
         if (order) {
@@ -2258,7 +2813,7 @@ async function renderPedidosView() {
   const btnConcluirList = document.querySelectorAll('.btnConcluirPedido');
   btnConcluirList.forEach(btn => {
     btn.addEventListener('click', async () => {
-      const id = Number(btn.getAttribute('data-id'));
+      const id = btn.getAttribute('data-id');
       try {
         const order = await getRecordById('pedidos', id);
         if (!order) return;
@@ -2327,14 +2882,16 @@ async function renderReceitasView() {
   const estoqueAgrupado = obterEstoqueAgrupado(estoque);
   const estoqueMap = {};
   estoqueAgrupado.forEach(e => {
-    estoqueMap[e.item.toLowerCase()] = e.valor;
+    const name = e.item || e.nome || '';
+    if (name) estoqueMap[name.toLowerCase()] = e.valor;
   });
 
   tbody.innerHTML = receitas.map(r => {
     // Calcula custo total estimado
     let custoMateriasPrimas = 0;
-    const mpTexto = r.materiaPrima.map(mp => {
-      const precoUnit = estoqueMap[mp.item.toLowerCase()] || 0;
+    const mpTexto = (r.materiaPrima || []).map(mp => {
+      const mpName = mp.item || mp.nome || '';
+      const precoUnit = estoqueMap[mpName.toLowerCase()] || 0;
       custoMateriasPrimas += precoUnit * mp.quantidade;
       return `${escapeHTML(mp.item)} (x${mp.quantidade})`;
     }).join(', ');
@@ -2385,23 +2942,80 @@ async function setupEstoqueSelectOption() {
 
 // Configura eventos para ações das tabelas (Editar/Excluir)
 function setupTableActions() {
-  // Ações de Deleção
+  // Ações de Deleção Genéricas
   document.querySelectorAll('.btnDelete').forEach(btn => {
     btn.removeEventListener('click', handleDeleteClick);
     btn.addEventListener('click', handleDeleteClick);
   });
 
-  // Ação de Edição (Estoque apenas por enquanto)
-  document.querySelectorAll('.btnEdit').forEach(btn => {
+  // Ações de Deleção de Estoque
+  document.querySelectorAll('.btnDeleteStock').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      const id = e.currentTarget.getAttribute('data-id');
+      if (confirm('Tem certeza que deseja excluir este item do estoque?')) {
+        try {
+          const itemObj = await getRecordById('estoque', id);
+          if (itemObj) {
+            const qtdRemovida = Number(itemObj.quantidade_atual !== undefined ? itemObj.quantidade_atual : itemObj.quantidade) || 0;
+            const custo = Number(itemObj.custo_medio !== undefined ? itemObj.custo_medio : itemObj.valor) || 0;
+            const nomeItem = itemObj.nome || itemObj.item || '';
+
+            const movimentacaoExclusao = {
+              id: generatePrefixedId('estoque_movimentacoes'),
+              id_item: id,
+              nome_item: nomeItem,
+              tipo_movimentacao: 'SAIDA',
+              quantidade: Math.abs(qtdRemovida),
+              custo_unitario: custo,
+              saldo_anterior: qtdRemovida,
+              saldo_posterior: 0,
+              origem_tipo: 'EXCLUSAO_ITEM',
+              origem_id: id,
+              ip_usuario: window.currentUserIp || '127.0.0.1',
+              data: new Date().toISOString()
+            };
+            await addRecord('estoque_movimentacoes', movimentacaoExclusao);
+          }
+
+          await deleteRecord('estoque', id);
+          showToast('Item excluído do estoque.');
+          await reloadAllViews();
+        } catch (err) {
+          showToast('Erro ao excluir item: ' + err.message, 'error');
+        }
+      }
+    });
+  });
+
+  // Ação de Edição de Estoque
+  document.querySelectorAll('.btnEdit, .btnEditStock').forEach(btn => {
     btn.removeEventListener('click', handleEditStockClick);
     btn.addEventListener('click', handleEditStockClick);
+  });
+
+  // Ação de Ver Lotes do Estoque
+  document.querySelectorAll('.btnVerLotes').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const itemKey = e.currentTarget.getAttribute('data-item');
+      if (itemKey) exibirLotesInsumo(itemKey);
+    });
+  });
+
+  // Clique na linha da tabela de estoque para abrir lotes
+  document.querySelectorAll('#tableEstoque tbody .estoque-row').forEach(row => {
+    row.addEventListener('click', (e) => {
+      if (e.target.closest('button')) return;
+      const itemKey = row.getAttribute('data-item');
+      if (itemKey) exibirLotesInsumo(itemKey);
+    });
   });
 }
 
 async function handleDeleteClick(e) {
   const btn = e.currentTarget;
   const store = btn.getAttribute('data-store');
-  const id = Number(btn.getAttribute('data-id'));
+  const id = btn.getAttribute('data-id');
 
   const confirmar = confirm('Tem certeza que deseja excluir este registro?');
   if (confirmar) {
@@ -2417,22 +3031,40 @@ async function handleDeleteClick(e) {
 
 async function handleEditStockClick(e) {
   const btn = e.currentTarget;
-  const id = Number(btn.getAttribute('data-id'));
+  const id = btn.getAttribute('data-id');
 
   try {
     const item = await getRecordById('estoque', id);
     if (item) {
-      // Carrega no formulário de estoque
-      document.getElementById('estoqueId').value = item.id;
-      document.getElementById('estItem').value = item.item;
-      document.getElementById('estQtd').value = item.quantidade;
-      document.getElementById('estValor').value = item.valor;
+      document.getElementById('estoqueId').value = item.id || item.id_item;
+      document.getElementById('estItem').value = item.nome || item.item || '';
+      document.getElementById('estQtd').value = item.quantidade_atual !== undefined ? item.quantidade_atual : item.quantidade;
+      document.getElementById('estValor').value = item.custo_medio !== undefined ? item.custo_medio : item.valor;
 
-      document.getElementById('estoqueFormTitle').textContent = 'Editar Item';
+      const estTipoSelect = document.getElementById('estTipoItem');
+      const estUnidadeSelect = document.getElementById('estUnidade');
+      if (estTipoSelect) estTipoSelect.value = item.tipo_item || 'MATERIA_PRIMA';
+      if (estUnidadeSelect) estUnidadeSelect.value = item.unidade_medida || 'UN';
+
+      const entradaSimplesWrapper = document.getElementById('entradaSimplesWrapper');
+      const compraMultiItemWrapper = document.getElementById('compraMultiItemWrapper');
+      if (entradaSimplesWrapper) entradaSimplesWrapper.style.display = 'block';
+      if (compraMultiItemWrapper) compraMultiItemWrapper.style.display = 'none';
+
+      // Exibe o campo de justificativa obrigatoriamente para edições
+      const groupJustificativa = document.getElementById('groupEstJustificativa');
+      if (groupJustificativa) groupJustificativa.style.display = 'block';
+      const inputJustificativa = document.getElementById('estJustificativa');
+      if (inputJustificativa) inputJustificativa.value = '';
+
+      const btnToggle = document.getElementById('btnToggleModoEntrada');
+      if (btnToggle) btnToggle.textContent = 'Alternar para Compra Multi-Itens (Rateio)';
+
+      document.getElementById('estoqueFormTitle').textContent = 'Editar Item de Estoque';
       document.getElementById('btnEstoqueSubmit').textContent = 'Salvar Alterações';
       document.getElementById('btnEstoqueCancel').style.display = 'block';
 
-      // Rola a página para o topo do formulário em telas mobile
+      switchTab('novo_estoque');
       document.getElementById('formEstoque').scrollIntoView({ behavior: 'smooth' });
     }
   } catch (err) {
@@ -2445,8 +3077,8 @@ function setupRecipeDetailsLinks(receitas, estoqueMap) {
   document.querySelectorAll('.view-recipe-details').forEach(link => {
     link.addEventListener('click', (e) => {
       e.preventDefault();
-      const id = Number(e.currentTarget.getAttribute('data-id'));
-      const receita = receitas.find(r => r.id === id);
+      const id = e.currentTarget.getAttribute('data-id');
+      const receita = receitas.find(r => String(r.id) === String(id));
 
       if (receita) {
         const modal = document.getElementById('recipeModal');
@@ -2459,7 +3091,7 @@ function setupRecipeDetailsLinks(receitas, estoqueMap) {
         let totalInsumos = 0;
 
         receita.materiaPrima.forEach(mp => {
-          const valUnit = estoqueMap[mp.item.toLowerCase()] || 0;
+          const valUnit = estoqueMap[(mp.item || mp.nome || '').toLowerCase()] || 0;
           const totalMp = valUnit * mp.quantidade;
           totalInsumos += totalMp;
           mpList += `
@@ -2909,7 +3541,7 @@ async function renderPecasView() {
 
   tbody.querySelectorAll('.edit-peca').forEach(btn => {
     btn.addEventListener('click', async () => {
-      const id = Number(btn.getAttribute('data-id'));
+      const id = btn.getAttribute('data-id');
       const p = await getRecordById('pecas', id);
       if (p) {
         document.getElementById('pecaId').value = p.id;
@@ -2923,7 +3555,7 @@ async function renderPecasView() {
 
   tbody.querySelectorAll('.delete-peca').forEach(btn => {
     btn.addEventListener('click', async () => {
-      const id = Number(btn.getAttribute('data-id'));
+      const id = btn.getAttribute('data-id');
       const p = await getRecordById('pecas', id);
       if (p && confirm(`Tem certeza que deseja excluir a peça "${p.nome}"?`)) {
         try {
@@ -2977,7 +3609,7 @@ async function renderAdicionaisView() {
 
   tbody.querySelectorAll('.edit-adicional').forEach(btn => {
     btn.addEventListener('click', async () => {
-      const id = Number(btn.getAttribute('data-id'));
+      const id = btn.getAttribute('data-id');
       const a = await getRecordById('adicionais', id);
       if (a) {
         document.getElementById('adicionalId').value = a.id;
@@ -2993,7 +3625,7 @@ async function renderAdicionaisView() {
 
   tbody.querySelectorAll('.delete-adicional').forEach(btn => {
     btn.addEventListener('click', async () => {
-      const id = Number(btn.getAttribute('data-id'));
+      const id = btn.getAttribute('data-id');
       const a = await getRecordById('adicionais', id);
       if (a && confirm(`Tem certeza que deseja excluir o adicional "${a.nome}"?`)) {
         try {
@@ -3198,14 +3830,14 @@ async function renderEstoqueProdutosView() {
 
   const rows = [];
   for (const p of produtos) {
-    const receita = receitas.find(r => r.produtoFinal.toLowerCase() === p.produto.toLowerCase());
+    const receita = receitas.find(r => (r.produtoFinal || '').toLowerCase() === (p.produto || p.nome || p.item || '').toLowerCase());
     let custoUnitario = 0;
 
     if (receita) {
       custoUnitario += receita.maoDeObra || 0;
       if (Array.isArray(receita.materiaPrima)) {
         receita.materiaPrima.forEach(mp => {
-          const insumo = estoqueInsumosAgrupado.find(i => i.item.toLowerCase() === mp.item.toLowerCase());
+          const insumo = estoqueInsumosAgrupado.find(i => (i.item || i.nome || '').toLowerCase() === (mp.item || mp.nome || '').toLowerCase());
           const precoUnitarioInsumo = insumo ? insumo.valor : 0;
           custoUnitario += precoUnitarioInsumo * mp.quantidade;
         });
@@ -3236,7 +3868,7 @@ async function renderEstoqueProdutosView() {
   // Evento para deletar o registro do estoque de produtos
   tbody.querySelectorAll('.btnDeleteProdutoEstoque').forEach(btn => {
     btn.addEventListener('click', async () => {
-      const id = Number(btn.getAttribute('data-id'));
+      const id = btn.getAttribute('data-id');
       const p = await getRecordById('estoque_produtos', id);
       if (p && confirm(`Deseja realmente remover o produto "${p.produto}" do estoque?`)) {
         try {
@@ -3256,25 +3888,29 @@ async function renderEstoqueProdutosView() {
 // Consolida os itens do estoque agrupando por nome, calculando a quantidade total e o preço médio ponderado
 function obterEstoqueAgrupado(estoqueItens) {
   const grouped = {};
-  estoqueItens.forEach(e => {
-    // Filtra lotes zerados para não afetar o cálculo, a menos que seja o único registro de estoque
-    if (e.quantidade === 0) return;
+  (estoqueItens || []).forEach(e => {
+    const itemNome = e.item || e.nome || e.produto || '';
+    if (!itemNome) return;
+    const qtd = e.quantidade !== undefined ? e.quantidade : (e.quantidade_atual !== undefined ? e.quantidade_atual : 0);
+    const val = e.valor !== undefined ? e.valor : (e.custo_medio !== undefined ? e.custo_medio : 0);
 
-    const key = e.item.toLowerCase().trim();
+    if (qtd === 0) return;
+
+    const key = itemNome.toLowerCase().trim();
     if (!grouped[key]) {
       grouped[key] = {
-        item: e.item.trim(),
+        item: itemNome.trim(),
         quantidade: 0,
         valorTotal: 0,
         latestId: 0,
-        latestValor: e.valor
+        latestValor: val
       };
     }
-    grouped[key].quantidade += e.quantidade;
-    grouped[key].valorTotal += e.quantidade * e.valor;
+    grouped[key].quantidade += qtd;
+    grouped[key].valorTotal += qtd * val;
     if (e.id > grouped[key].latestId) {
       grouped[key].latestId = e.id;
-      grouped[key].latestValor = e.valor;
+      grouped[key].latestValor = val;
     }
   });
 
@@ -3437,7 +4073,7 @@ function setupModalConcluir() {
 
         const adicionais = adicionaisArr.join(', ');
 
-        const service = await getRecordById('servicos', Number(id));
+        const service = await getRecordById('servicos', id);
         if (service) {
           const isComingFromFila = service.status === 'Agendado';
 
@@ -3536,7 +4172,7 @@ function setupModalConcluir() {
       } else {
         customInput.style.display = 'none';
         customInput.removeAttribute('required');
-        const selectedOption = e.target.options[e.target.selectedIndex];
+        const selectedOption = (e.target.options && e.target.selectedIndex >= 0) ? e.target.options[e.target.selectedIndex] : null;
         const preco = selectedOption ? parseFloat(selectedOption.getAttribute('data-preco')) || 0 : 0;
         if (priceInput) {
           priceInput.value = selectedOption && e.target.value ? preco.toFixed(2) : '';
@@ -3547,16 +4183,20 @@ function setupModalConcluir() {
 
     if (e.target.classList.contains('modal-adicional-select')) {
       const row = e.target.closest('.dynamic-item-row');
-      const customInput = row.querySelector('.modal-adicional-name-custom');
-      const priceInput = row.querySelector('.modal-adicional-price');
+      const customInput = row ? row.querySelector('.modal-adicional-name-custom') : null;
+      const priceInput = row ? row.querySelector('.modal-adicional-price') : null;
       if (e.target.value === 'custom') {
-        customInput.style.display = 'block';
-        customInput.setAttribute('required', 'required');
+        if (customInput) {
+          customInput.style.display = 'block';
+          customInput.setAttribute('required', 'required');
+        }
         if (priceInput) priceInput.value = '';
       } else {
-        customInput.style.display = 'none';
-        customInput.removeAttribute('required');
-        const selectedOption = e.target.options[e.target.selectedIndex];
+        if (customInput) {
+          customInput.style.display = 'none';
+          customInput.removeAttribute('required');
+        }
+        const selectedOption = (e.target.options && e.target.selectedIndex >= 0) ? e.target.options[e.target.selectedIndex] : null;
         const preco = selectedOption ? parseFloat(selectedOption.getAttribute('data-preco')) || 0 : 0;
         if (priceInput) {
           priceInput.value = selectedOption && e.target.value ? preco.toFixed(2) : '';
@@ -3759,7 +4399,7 @@ function setupModalDetalhes() {
 
 async function exibirDetalhesServico(id) {
   try {
-    const s = await getRecordById('servicos', Number(id));
+    const s = await getRecordById('servicos', id);
     if (!s) return;
 
     // Preenche cabeçalho
@@ -3911,7 +4551,7 @@ function setupModalLotes() {
     modalLotesBody.addEventListener('click', async (e) => {
       const editBtn = e.target.closest('.btnEditLote');
       if (editBtn) {
-        const id = Number(editBtn.getAttribute('data-id'));
+        const id = editBtn.getAttribute('data-id');
         fecharModal();
         const mockEvent = { currentTarget: editBtn };
         await handleEditStockClick(mockEvent);
@@ -3920,10 +4560,33 @@ function setupModalLotes() {
 
       const deleteBtn = e.target.closest('.btnDeleteLote');
       if (deleteBtn) {
-        const id = Number(deleteBtn.getAttribute('data-id'));
+        const id = deleteBtn.getAttribute('data-id');
         const confirmar = confirm('Tem certeza que deseja excluir este lote de estoque?');
         if (confirmar) {
           try {
+            const itemObj = await getRecordById('estoque', id);
+            if (itemObj) {
+              const qtdRemovida = Number(itemObj.quantidade_atual !== undefined ? itemObj.quantidade_atual : itemObj.quantidade) || 0;
+              const custo = Number(itemObj.custo_medio !== undefined ? itemObj.custo_medio : itemObj.valor) || 0;
+              const nomeItem = itemObj.nome || itemObj.item || '';
+
+              const movimentacaoExclusao = {
+                id: generatePrefixedId('estoque_movimentacoes'),
+                id_item: id,
+                nome_item: nomeItem,
+                tipo_movimentacao: 'SAIDA',
+                quantidade: Math.abs(qtdRemovida),
+                custo_unitario: custo,
+                saldo_anterior: qtdRemovida,
+                saldo_posterior: 0,
+                origem_tipo: 'EXCLUSAO_ITEM',
+                origem_id: id,
+                ip_usuario: window.currentUserIp || '127.0.0.1',
+                data: new Date().toISOString()
+              };
+              await addRecord('estoque_movimentacoes', movimentacaoExclusao);
+            }
+
             await deleteRecord('estoque', id);
             showToast('Lote de estoque excluído.');
             
@@ -3931,7 +4594,7 @@ function setupModalLotes() {
 
             const itemKey = document.getElementById('modalLotesItemNome').textContent.toLowerCase().trim();
             const estoque = await getAllRecords('estoque');
-            const lotesRestantes = estoque.filter(el => el.item.toLowerCase().trim() === itemKey && el.quantidade !== 0);
+            const lotesRestantes = estoque.filter(el => (el.nome || el.item || '').toLowerCase().trim() === itemKey && el.quantidade !== 0);
 
             if (lotesRestantes.length > 0) {
               exibirLotesInsumo(itemKey);
@@ -3949,8 +4612,13 @@ function setupModalLotes() {
 
 async function exibirLotesInsumo(itemKey) {
   try {
+    const itemKeyNorm = String(itemKey || '').toLowerCase().trim();
     const estoqueOriginal = await getAllRecords('estoque');
-    const lotes = estoqueOriginal.filter(e => e.item.toLowerCase().trim() === itemKey.toLowerCase().trim() && e.quantidade !== 0);
+    const lotes = estoqueOriginal.filter(e => {
+      const nomeVal = (e.nome || e.item || e.produto || '').toLowerCase().trim();
+      const qtd = Number(e.quantidade_atual !== undefined ? e.quantidade_atual : e.quantidade) || 0;
+      return nomeVal === itemKeyNorm && qtd !== 0;
+    });
 
     if (lotes.length === 0) {
       showToast('Nenhum lote ativo encontrado para este insumo.', 'warning');
@@ -3961,29 +4629,36 @@ async function exibirLotesInsumo(itemKey) {
     lotes.sort((a, b) => {
       const dataA = a.data ? new Date(a.data).getTime() : 0;
       const dataB = b.data ? new Date(b.data).getTime() : 0;
-      return dataA - dataB || a.id - b.id;
+      return dataA - dataB;
     });
 
-    document.getElementById('modalLotesItemNome').textContent = lotes[0].item;
+    const itemNomePrincipal = lotes[0].nome || lotes[0].item || lotes[0].produto || itemKey;
+    document.getElementById('modalLotesItemNome').textContent = itemNomePrincipal;
 
     const tbody = document.getElementById('modalLotesTableBody');
     tbody.innerHTML = lotes.map((l, index) => {
+      const id = l.id_item || l.id;
       const dataStr = l.data ? formatDate(new Date(l.data)) : 'Lote Inicial';
+      const qtd = Number(l.quantidade_atual !== undefined ? l.quantidade_atual : l.quantidade) || 0;
+      const custo = Number(l.custo_medio !== undefined ? l.custo_medio : l.valor) || 0;
+      const unidade = l.unidade_medida || l.unidade || 'UN';
+
       return `
         <tr>
           <td style="padding: 10px; border-bottom: 1px solid var(--border-glass);">
             <strong>Lote ${index + 1}</strong> <span style="font-size: 0.72rem; color: var(--primary); font-weight: normal;">(FIFO)</span><br>
+            <code style="font-size:0.75rem; color:var(--text-muted);">${escapeHTML(String(id))}</code><br>
             <small style="color: var(--text-muted);">${dataStr}</small>
           </td>
-          <td style="padding: 10px; border-bottom: 1px solid var(--border-glass);">${l.quantidade}</td>
-          <td style="padding: 10px; border-bottom: 1px solid var(--border-glass);">${formatMoney(l.valor)}</td>
-          <td style="padding: 10px; border-bottom: 1px solid var(--border-glass);"><strong>${formatMoney(l.quantidade * l.valor)}</strong></td>
+          <td style="padding: 10px; border-bottom: 1px solid var(--border-glass);">${qtd} ${escapeHTML(unidade)}</td>
+          <td style="padding: 10px; border-bottom: 1px solid var(--border-glass);">${formatMoney(custo)}</td>
+          <td style="padding: 10px; border-bottom: 1px solid var(--border-glass);"><strong>${formatMoney(qtd * custo)}</strong></td>
           <td style="padding: 10px; border-bottom: 1px solid var(--border-glass);">
             <div style="display: flex; gap: 8px;">
-              <button class="btn-icon-only btnEditLote" data-id="${l.id}" title="Editar Lote">
+              <button class="btn-icon-only btnEditLote" data-id="${escapeHTML(String(id))}" title="Editar Lote">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4z"/></svg>
               </button>
-              <button class="btn-icon-only danger btnDeleteLote" data-id="${l.id}" title="Excluir Lote">
+              <button class="btn-icon-only danger btnDeleteLote" data-id="${escapeHTML(String(id))}" title="Excluir Lote">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
               </button>
             </div>
@@ -4038,7 +4713,7 @@ function setupModalConcluirPedido() {
             showToast('Por favor, selecione todos os itens da venda.', 'error');
             return;
           }
-          const selectedOption = select.options[select.selectedIndex];
+          const selectedOption = (select.options && select.selectedIndex >= 0) ? select.options[select.selectedIndex] : null;
           const itemNome = select.value;
           const type = selectedOption ? selectedOption.getAttribute('data-type') : '';
           const qtyInput = row.querySelector('.modal-ped-qty');
@@ -4134,7 +4809,7 @@ function setupModalConcluirPedido() {
           }
         }
 
-        const service = await getRecordById('pedidos', Number(id));
+        const service = await getRecordById('pedidos', id);
         if (service) {
           const isComingFromFila = service.status === 'Agendado';
 
@@ -4174,8 +4849,8 @@ function setupModalConcluirPedido() {
   document.addEventListener('change', (e) => {
     if (e.target.classList.contains('modal-ped-select')) {
       const row = e.target.closest('.dynamic-item-row');
-      const selectedOption = e.target.options[e.target.selectedIndex];
-      const priceInput = row.querySelector('.modal-ped-price');
+      const selectedOption = (e.target.options && e.target.selectedIndex >= 0) ? e.target.options[e.target.selectedIndex] : null;
+      const priceInput = row ? row.querySelector('.modal-ped-price') : null;
       const price = selectedOption ? parseFloat(selectedOption.getAttribute('data-preco')) || 0 : 0;
       if (priceInput) {
         priceInput.value = price.toFixed(2);
@@ -4272,7 +4947,7 @@ function setupModalDetalhesPedido() {
 
 async function exibirDetalhesPedido(id) {
   try {
-    const p = await getRecordById('pedidos', Number(id));
+    const p = await getRecordById('pedidos', id);
     if (!p) return;
 
     document.getElementById('detalhePedCliente').textContent = p.nome || 'Cliente Avulso';
@@ -4557,7 +5232,7 @@ function setupModalConfirmarPagamento() {
         }
 
         const targetStore = storeName || 'servicos';
-        const itemToUpdate = await getRecordById(targetStore, Number(id));
+        const itemToUpdate = await getRecordById(targetStore, id);
         if (itemToUpdate) {
           itemToUpdate.meioPagamento = meioPagamento;
           itemToUpdate.status = 'Finalizado';
