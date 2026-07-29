@@ -1,5 +1,5 @@
 /**
- * ATENÇÃO AO ATUALIZAR O APLICATIVO / GITHUB PAGES:
+ * ATENÇÃO AO ATUALIZAR O APLICATIVO / GITHUB PAGES: 
  * Sempre que fizer alterações no código (index.html, app.js, styles.css, etc.),
  * você DEVE incrementar a versão da constante CACHE_NAME abaixo (ex: v48 -> v49).
  * É essa alteração no sw.js que faz os navegadores e celulares detectarem a nova versão
