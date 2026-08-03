@@ -13,11 +13,13 @@ import {
   getConfig,
   setConfig,
   generatePrefixedId,
-  registrarMovimentacaoEstoque
+  registrarMovimentacaoEstoque,
+  registrarMovimentacaoServico
 } from './db.js';
 
 // --- ESTADO GLOBAL DA APLICAÇÃO ---
 let activeTab = 'menu';
+let modoMultiItem = true;
 let discountConfig = { qtd1: 5, pct1: 5, qtd2: 10, pct2: 10 };
 let currentPecas = [];
 let currentAdicionais = [];
@@ -84,6 +86,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     setupModalDetalhes();
     setupModalDetalhesPedido();
     setupModalLotes();
+    setupModalAuditoria();
     setupAppUpdatedModal();
     setupBackButtonLock();
 
@@ -271,6 +274,31 @@ function setupNavigation() {
       }
     });
   });
+
+  // Listener para o botão de Nova Entrada no Estoque (dentro da consulta de estoque)
+  const btnNovaEntrada = document.getElementById('btnNovaEntradaEstoque');
+  if (btnNovaEntrada) {
+    btnNovaEntrada.addEventListener('click', () => {
+      setModoEntradaEstoque(false);
+      switchTab('novo_estoque');
+    });
+  }
+
+  // Listener para o filtro de mês no histórico de serviços
+  const filtroMes = document.getElementById('filtroMesServicos');
+  if (filtroMes) {
+    filtroMes.addEventListener('change', () => {
+      renderServicosView();
+    });
+  }
+
+  // Listener para o filtro de ordenação no histórico de serviços
+  const ordenarSelect = document.getElementById('ordenarServicos');
+  if (ordenarSelect) {
+    ordenarSelect.addEventListener('change', () => {
+      renderServicosView();
+    });
+  }
 }
 
 function switchTab(tabId) {
@@ -281,6 +309,7 @@ function switchTab(tabId) {
     window.history.pushState({ tab: tabId }, '', '#' + tabId);
   }
 }
+window.switchTab = switchTab;
 
 function switchTabWithoutPush(tabId) {
   if (!tabId) return;
@@ -945,7 +974,19 @@ function setupFormSubmissions() {
           synced: 0
         };
 
-        await addRecord('servicos', novoServico);
+        const servId = await addRecord('servicos', novoServico);
+        try {
+          await registrarMovimentacaoServico({
+            id_servico: servId || novoServico.id,
+            nome_cliente: novoServico.nome || 'Cliente Avulso',
+            tipo_acao: 'CRIACAO',
+            detalhes: `Status: ${novoServico.status}. Peças: ${novoServico.itens}. Adicionais: ${novoServico.adicionais}`,
+            valor_total: novoServico.valor + (novoServico.frete || 0),
+            justificativa: 'Cadastro inicial de serviço no sistema'
+          });
+        } catch (err) {
+          console.warn('Erro ao registrar auditoria de criação de serviço:', err);
+        }
         showToast('Serviço registrado com sucesso!', 'success', null, true, true);
         formServico.reset();
 
@@ -1038,6 +1079,49 @@ function setupFormSubmissions() {
     if (elTotal) elTotal.textContent = formatMoney(valorTotalCompra);
   }
 
+  // Helper para alternar entre modo Entrada Simples e Multi-Itens do Estoque
+  function setModoEntradaEstoque(isMultiItem) {
+    modoMultiItem = isMultiItem;
+    const entradaSimplesWrapper = document.getElementById('entradaSimplesWrapper');
+    const compraMultiItemWrapper = document.getElementById('compraMultiItemWrapper');
+    const btnToggleModo = document.getElementById('btnToggleModoEntrada');
+    const groupJustificativa = document.getElementById('groupEstJustificativa');
+    
+    if (groupJustificativa) groupJustificativa.style.display = 'none';
+
+    if (modoMultiItem) {
+      if (entradaSimplesWrapper) entradaSimplesWrapper.style.display = 'none';
+      if (compraMultiItemWrapper) compraMultiItemWrapper.style.display = 'block';
+      if (btnToggleModo) btnToggleModo.textContent = 'Alternar para Entrada Simples (1 Item)';
+      const title = document.getElementById('estoqueFormTitle');
+      if (title) title.textContent = 'Nova Entrada de Compra (Multi-Itens & Rateio)';
+      const submit = document.getElementById('btnEstoqueSubmit');
+      if (submit) submit.textContent = 'Finalizar e Gravar Compra no Estoque';
+    } else {
+      if (entradaSimplesWrapper) entradaSimplesWrapper.style.display = 'block';
+      if (compraMultiItemWrapper) compraMultiItemWrapper.style.display = 'none';
+      if (btnToggleModo) btnToggleModo.textContent = 'Alternar para Compra Multi-Itens (Rateio)';
+      const title = document.getElementById('estoqueFormTitle');
+      if (title) title.textContent = 'Entrada Simples de Estoque';
+      const submit = document.getElementById('btnEstoqueSubmit');
+      if (submit) submit.textContent = 'Adicionar Item ao Estoque';
+    }
+  }
+  window.setModoEntradaEstoque = setModoEntradaEstoque;
+
+  async function atualizarDatalistSugestoes() {
+    const dl = document.getElementById('dlEstoqueItens');
+    if (!dl) return;
+    try {
+      const estoque = await getAllRecords('estoque');
+      const nomesUnicos = Array.from(new Set(estoque.map(e => (e.nome || e.item || '').trim()).filter(Boolean)));
+      dl.innerHTML = nomesUnicos.map(n => `<option value="${escapeHTML(n)}"></option>`).join('');
+    } catch (err) {
+      console.warn('Erro ao atualizar datalist de sugestões:', err);
+    }
+  }
+  window.atualizarDatalistSugestoes = atualizarDatalistSugestoes;
+
   function setupCompraFormLogic() {
     const tableBody = document.getElementById('compraItensTableBody');
     const btnAddItem = document.getElementById('btnAddItemCompra');
@@ -1045,25 +1129,12 @@ function setupFormSubmissions() {
     const entradaSimplesWrapper = document.getElementById('entradaSimplesWrapper');
     const compraMultiItemWrapper = document.getElementById('compraMultiItemWrapper');
 
-    let modoMultiItem = true;
-
     const elDataCompra = document.getElementById('compraData');
     if (elDataCompra && !elDataCompra.value) {
       elDataCompra.value = new Date().toISOString().split('T')[0];
     }
 
     // Atualiza sugestões no datalist dlEstoqueItens
-    const atualizarDatalistSugestoes = async () => {
-      const dl = document.getElementById('dlEstoqueItens');
-      if (!dl) return;
-      try {
-        const estoque = await getAllRecords('estoque');
-        const nomesUnicos = Array.from(new Set(estoque.map(e => (e.nome || e.item || '').trim()).filter(Boolean)));
-        dl.innerHTML = nomesUnicos.map(n => `<option value="${escapeHTML(n)}"></option>`).join('');
-      } catch (err) {
-        console.warn('Erro ao atualizar datalist de sugestões:', err);
-      }
-    };
     atualizarDatalistSugestoes();
 
     // Adiciona uma linha de item na compra
@@ -1113,6 +1184,27 @@ function setupFormSubmissions() {
         input.addEventListener('change', recalcularRateioCompra);
       });
 
+      // Ouvinte para auto-completar tipo/unidade ao selecionar/digitar item
+      const inputNome = tr.querySelector('.item-nome');
+      if (inputNome) {
+        inputNome.addEventListener('change', async (e) => {
+          const val = e.target.value.trim();
+          if (!val) return;
+          try {
+            const estoque = await getAllRecords('estoque');
+            const match = estoque.find(item => (item.nome || item.item || '').trim().toLowerCase() === val.toLowerCase());
+            if (match) {
+              const selectTipo = tr.querySelector('.item-tipo');
+              const selectUnidade = tr.querySelector('.item-unidade');
+              if (selectTipo && match.tipo_item) selectTipo.value = match.tipo_item;
+              if (selectUnidade && match.unidade_medida) selectUnidade.value = match.unidade_medida;
+            }
+          } catch (err) {
+            console.warn('Erro ao auto-completar campos de compra multi-itens:', err);
+          }
+        });
+      }
+
       tr.querySelector('.btnRemoveCompraRow').addEventListener('click', () => {
         if (tableBody.querySelectorAll('.compra-item-row').length > 1) {
           tr.remove();
@@ -1137,28 +1229,33 @@ function setupFormSubmissions() {
 
     if (btnToggleModo) {
       btnToggleModo.addEventListener('click', () => {
-        modoMultiItem = !modoMultiItem;
-        const groupJustificativa = document.getElementById('groupEstJustificativa');
-        if (groupJustificativa) groupJustificativa.style.display = 'none';
-
-        if (modoMultiItem) {
-          if (entradaSimplesWrapper) entradaSimplesWrapper.style.display = 'none';
-          if (compraMultiItemWrapper) compraMultiItemWrapper.style.display = 'block';
-          btnToggleModo.textContent = 'Alternar para Entrada Simples (1 Item)';
-          document.getElementById('estoqueFormTitle').textContent = 'Nova Entrada de Compra (Multi-Itens & Rateio)';
-          document.getElementById('btnEstoqueSubmit').textContent = 'Finalizar e Gravar Compra no Estoque';
-        } else {
-          if (entradaSimplesWrapper) entradaSimplesWrapper.style.display = 'block';
-          if (compraMultiItemWrapper) compraMultiItemWrapper.style.display = 'none';
-          btnToggleModo.textContent = 'Alternar para Compra Multi-Itens (Rateio)';
-          document.getElementById('estoqueFormTitle').textContent = 'Entrada Simples de Estoque';
-          document.getElementById('btnEstoqueSubmit').textContent = 'Adicionar Item ao Estoque';
-        }
+        setModoEntradaEstoque(!modoMultiItem);
       });
     }
 
     if (tableBody && tableBody.querySelectorAll('.compra-item-row').length === 0) {
       adicionarLinhaCompra();
+    }
+
+    // Ouvinte para auto-completar tipo/unidade na Entrada Simples
+    const inputEstItem = document.getElementById('estItem');
+    if (inputEstItem) {
+      inputEstItem.addEventListener('change', async (e) => {
+        const val = e.target.value.trim();
+        if (!val) return;
+        try {
+          const estoque = await getAllRecords('estoque');
+          const match = estoque.find(item => (item.nome || item.item || '').trim().toLowerCase() === val.toLowerCase());
+          if (match) {
+            const estTipoSelect = document.getElementById('estTipoItem');
+            const estUnidadeSelect = document.getElementById('estUnidade');
+            if (estTipoSelect && match.tipo_item) estTipoSelect.value = match.tipo_item;
+            if (estUnidadeSelect && match.unidade_medida) estUnidadeSelect.value = match.unidade_medida;
+          }
+        } catch (err) {
+          console.warn('Erro ao auto-completar campos de entrada simples:', err);
+        }
+      });
     }
   }
 
@@ -2151,30 +2248,61 @@ async function renderServicosView() {
   const tbody = document.getElementById('tableServicos').querySelector('tbody');
 
   const now = new Date();
-  const currentMonth = now.getMonth();
-  const currentYear = now.getFullYear();
+  let selectedMonth = now.getMonth();
+  let selectedYear = now.getFullYear();
+
+  const inputFiltroMes = document.getElementById('filtroMesServicos');
+  if (inputFiltroMes) {
+    if (!inputFiltroMes.value) {
+      const yyyy = now.getFullYear();
+      const mm = String(now.getMonth() + 1).padStart(2, '0');
+      inputFiltroMes.value = `${yyyy}-${mm}`;
+    }
+    const [yearStr, monthStr] = inputFiltroMes.value.split('-');
+    selectedYear = parseInt(yearStr);
+    selectedMonth = parseInt(monthStr) - 1;
+  }
 
   const meses = [
     'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
     'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
   ];
-  const nomeMesAtual = meses[currentMonth];
-  const anoAtual = now.getFullYear();
+  const nomeMesSelecionado = meses[selectedMonth];
 
   // Atualiza o título do histórico dinamicamente para mostrar o mês correspondente
-  const tituloHistorico = document.querySelector('#servicos .table-panel h2');
+  const tituloHistorico = document.getElementById('tituloHistoricoServicos') || document.querySelector('#servicos .table-panel h2');
   if (tituloHistorico) {
-    tituloHistorico.textContent = `Histórico de Serviços (${nomeMesAtual}/${anoAtual})`;
+    tituloHistorico.textContent = `Histórico de Serviços (${nomeMesSelecionado}/${selectedYear})`;
   }
 
-  // Filtra os serviços agendados (fila), aguardando pagamento e os já finalizados (histórico do mês atual)
+  // Filtra os serviços agendados (fila), aguardando pagamento e os já finalizados (histórico do mês selecionado)
   const servicosFila = servicos.filter(s => s.status === 'Agendado');
   const servicosAguardando = servicos.filter(s => s.status === 'Aguardando Pagamento');
   const servicosHistorico = servicos.filter(s => {
     if (s.status !== 'Finalizado') return false;
     if (!s.data) return false;
     const sDate = new Date(s.data);
-    return sDate.getMonth() === currentMonth && sDate.getFullYear() === currentYear;
+    return sDate.getMonth() === selectedMonth && sDate.getFullYear() === selectedYear;
+  });
+
+  // Ordena o histórico de serviços conforme a opção selecionada
+  const ordenarSelect = document.getElementById('ordenarServicos');
+  const ordem = ordenarSelect ? ordenarSelect.value : 'mais_novo';
+  servicosHistorico.sort((a, b) => {
+    const dataA = new Date(a.data || 0);
+    const dataB = new Date(b.data || 0);
+    const totalA = (a.valor || 0) + (a.frete || 0);
+    const totalB = (b.valor || 0) + (b.frete || 0);
+
+    if (ordem === 'mais_antigo') {
+      return dataA - dataB;
+    } else if (ordem === 'maior_preco') {
+      return totalB - totalA;
+    } else if (ordem === 'menor_preco') {
+      return totalA - totalB;
+    }
+    // padrão: mais_novo
+    return dataB - dataA;
   });
 
   // --- RENDERIZA O MURAL DA FILA DE ESPERA ---
@@ -2385,6 +2513,9 @@ async function renderServicosView() {
       }
     });
   });
+
+  // Renderiza o registro de auditoria de alterações de serviços
+  await renderMovimentacoesServicosView();
 }
 
 // Helper para abrir o modal de conclusão/ajuste de peças do serviço
@@ -2407,6 +2538,11 @@ async function abrirModalConcluirAjustar(service) {
   if (modalTelefoneInput) modalTelefoneInput.value = service.telefone || '';
   if (modalFreteInput) modalFreteInput.value = service.frete || 0;
   if (modalValorInput) modalValorInput.value = service.valor.toFixed(2);
+
+  const modalMeioPagamentoSelect = document.getElementById('modalServMeioPagamento');
+  if (modalMeioPagamentoSelect) {
+    modalMeioPagamentoSelect.value = service.meioPagamento || 'Pendente';
+  }
 
   // Limpa os containers
   if (modalItensContainer) modalItensContainer.innerHTML = '';
@@ -2445,6 +2581,22 @@ async function abrirModalConcluirAjustar(service) {
   // Exibe o modal
   const modal = document.getElementById('modalConcluirServico');
   if (modal) {
+    const groupJustificativa = document.getElementById('groupServJustificativa');
+    const inputJustificativa = document.getElementById('modalServJustificativa');
+    if (service.status !== 'Agendado') {
+      if (groupJustificativa) groupJustificativa.style.display = 'block';
+      if (inputJustificativa) {
+        inputJustificativa.setAttribute('required', 'required');
+        inputJustificativa.value = '';
+      }
+    } else {
+      if (groupJustificativa) groupJustificativa.style.display = 'none';
+      if (inputJustificativa) {
+        inputJustificativa.removeAttribute('required');
+        inputJustificativa.value = '';
+      }
+    }
+
     modal.style.display = 'flex';
     recalculaValorModal();
   }
@@ -2611,7 +2763,7 @@ async function renderMovimentacoesEstoqueView() {
       }
 
       return `
-        <tr>
+        <tr class="mov-estoque-row" data-id="${m.id}" style="cursor: pointer;">
           <td><small style="color: var(--text-muted);">${dataStr}</small></td>
           <td><code style="font-size:0.75rem; color:var(--text-muted);">${escapeHTML(m.ip_usuario || '127.0.0.1')}</code></td>
           <td><code style="font-size:0.75rem; color:var(--primary);">${escapeHTML(String(m.id_movimentacao || m.id || ''))}</code></td>
@@ -2627,6 +2779,261 @@ async function renderMovimentacoesEstoqueView() {
   } catch (err) {
     console.error('Erro ao renderizar movimentações de estoque:', err);
   }
+}
+
+// Visualizador do Registro de Alterações de Serviços (Audit Log)
+async function renderMovimentacoesServicosView() {
+  const tbody = document.getElementById('tbodyMovimentacoesServicos');
+  if (!tbody) return;
+
+  try {
+    const movimentacoes = await getAllRecords('servicos_movimentacoes');
+
+    // Ordena da movimentação mais recente para a mais antiga
+    movimentacoes.sort((a, b) => new Date(b.data || 0).getTime() - new Date(a.data || 0).getTime());
+
+    const selectFiltro = document.getElementById('filtroTipoMovimentacaoServico');
+    const filtroTipo = selectFiltro ? selectFiltro.value : 'TODOS';
+
+    if (selectFiltro && !selectFiltro.dataset.bound) {
+      selectFiltro.dataset.bound = 'true';
+      selectFiltro.addEventListener('change', () => renderMovimentacoesServicosView());
+    }
+
+    const filtradas = movimentacoes.filter(m => {
+      if (filtroTipo === 'TODOS') return true;
+      return m.tipo_acao === filtroTipo;
+    });
+
+    if (filtradas.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 20px;">Nenhuma alteração de serviço registrada.</td>
+        </tr>
+      `;
+      return;
+    }
+
+    tbody.innerHTML = filtradas.map(m => {
+      const dataObj = m.data ? new Date(m.data) : null;
+      const dataStr = dataObj && !isNaN(dataObj) ? formatDate(dataObj) + ' ' + dataObj.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '-';
+
+      let badgeStyle = 'background: rgba(255, 193, 7, 0.15); color: #ffc107; border: 1px solid rgba(255, 193, 7, 0.3);';
+      let badgeText = m.tipo_acao;
+
+      if (m.tipo_acao === 'CRIACAO') {
+        badgeStyle = 'background: rgba(40, 167, 69, 0.15); color: #28a745; border: 1px solid rgba(40, 167, 69, 0.3);';
+        badgeText = 'CADASTRO';
+      } else if (m.tipo_acao === 'CONCLUSAO') {
+        badgeStyle = 'background: rgba(255, 193, 7, 0.15); color: #ffc107; border: 1px solid rgba(255, 193, 7, 0.3);';
+        badgeText = 'CONCLUSÃO';
+      } else if (m.tipo_acao === 'PAGAMENTO') {
+        badgeStyle = 'background: rgba(0, 123, 255, 0.15); color: #007bff; border: 1px solid rgba(0, 123, 255, 0.3);';
+        badgeText = 'PAGAMENTO';
+      } else if (m.tipo_acao === 'EDICAO') {
+        badgeStyle = 'background: rgba(23, 162, 184, 0.15); color: #17a2b8; border: 1px solid rgba(23, 162, 184, 0.3);';
+        badgeText = 'AJUSTE';
+      } else if (m.tipo_acao === 'EXCLUSAO') {
+        badgeStyle = 'background: rgba(220, 53, 69, 0.15); color: #dc3545; border: 1px solid rgba(220, 53, 69, 0.3);';
+        badgeText = 'EXCLUSÃO';
+      }
+
+      return `
+        <tr class="mov-servico-row" data-id="${m.id}" style="cursor: pointer;">
+          <td style="white-space: nowrap;">${dataStr}</td>
+          <td><code style="font-size:0.75rem; color:var(--text-muted);">${escapeHTML(m.ip_usuario || '127.0.0.1')}</code></td>
+          <td><code style="font-size:0.75rem; color:var(--primary); font-weight:bold;">${escapeHTML(m.id || '-')}</code></td>
+          <td><strong>${escapeHTML(m.nome_cliente || 'Cliente Avulso')}</strong></td>
+          <td><span class="badge" style="padding:4px 8px; border-radius:4px; font-size:0.75rem; font-weight:bold; ${badgeStyle}">${badgeText}</span></td>
+          <td><strong>${formatMoney(m.valor_total || 0)}</strong></td>
+          <td style="font-size:0.82rem; color:var(--text-muted); max-width:300px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${escapeHTML(m.detalhes || '')}">${escapeHTML(m.detalhes || '-')}</td>
+          <td><span style="font-size:0.85rem; font-style:italic;">${escapeHTML(m.justificativa || '-')}</span></td>
+        </tr>
+      `;
+    }).join('');
+  } catch (err) {
+    console.error('Erro ao renderizar auditoria de serviços:', err);
+  }
+}
+window.renderMovimentacoesServicosView = renderMovimentacoesServicosView;
+
+// --- FUNÇÕES DO MODAL DE DETALHES DE AUDITORIA ---
+function setupModalAuditoria() {
+  const fecharModal = () => {
+    const modal = document.getElementById('modalDetalhesAuditoria');
+    if (modal) modal.style.display = 'none';
+  };
+
+  const btnFechar = document.getElementById('btnFecharModalAuditoria');
+  const btnFecharAcoes = document.getElementById('btnFecharModalAuditoriaAcoes');
+  if (btnFechar) btnFechar.addEventListener('click', fecharModal);
+  if (btnFecharAcoes) btnFecharAcoes.addEventListener('click', fecharModal);
+
+  // Clique em uma linha da tabela de auditoria de estoque
+  const tbodyEstoque = document.getElementById('tbodyMovimentacoesEstoque');
+  if (tbodyEstoque) {
+    tbodyEstoque.addEventListener('click', async (e) => {
+      const row = e.target.closest('.mov-estoque-row');
+      if (row) {
+        const id = row.getAttribute('data-id');
+        if (id) {
+          const mov = await getRecordById('estoque_movimentacoes', id);
+          if (mov) exibirDetalhesAuditoriaEstoque(mov);
+        }
+      }
+    });
+  }
+
+  // Clique em uma linha da tabela de auditoria de serviços
+  const tbodyServicos = document.getElementById('tbodyMovimentacoesServicos');
+  if (tbodyServicos) {
+    tbodyServicos.addEventListener('click', async (e) => {
+      const row = e.target.closest('.mov-servico-row');
+      if (row) {
+        const id = row.getAttribute('data-id');
+        if (id) {
+          const mov = await getRecordById('servicos_movimentacoes', id);
+          if (mov) exibirDetalhesAuditoriaServico(mov);
+        }
+      }
+    });
+  }
+}
+window.setupModalAuditoria = setupModalAuditoria;
+
+function exibirDetalhesAuditoriaEstoque(mov) {
+  document.getElementById('auditoriaDetalheTitulo').textContent = 'Auditoria: Alteração de Estoque';
+  const corpo = document.getElementById('auditoriaDetalheCorpo');
+  if (!corpo) return;
+
+  const dataObj = mov.data ? new Date(mov.data) : null;
+  const dataStr = dataObj && !isNaN(dataObj) ? formatDate(dataObj) + ' ' + dataObj.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '-';
+
+  corpo.innerHTML = `
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+      <div>
+        <div style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; font-weight: bold; margin-bottom: 4px;">Data / Hora</div>
+        <div style="font-size: 0.95rem; color: var(--text-main); font-weight: 500;">${dataStr}</div>
+      </div>
+      <div>
+        <div style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; font-weight: bold; margin-bottom: 4px;">IP / Origem</div>
+        <div style="font-size: 0.95rem; color: var(--text-main); font-family: monospace;">${escapeHTML(mov.ip_usuario || '127.0.0.1')}</div>
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; border-top: 1px solid var(--border-glass); padding-top: 16px;">
+      <div>
+        <div style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; font-weight: bold; margin-bottom: 4px;">Cód. Registro</div>
+        <div style="font-size: 0.95rem; color: var(--primary); font-family: monospace; font-weight: bold;">${escapeHTML(mov.id || '-')}</div>
+      </div>
+      <div>
+        <div style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; font-weight: bold; margin-bottom: 4px;">Ação</div>
+        <div style="font-size: 0.95rem; color: var(--text-main); font-weight: 600;">${escapeHTML(mov.tipo_movimentacao || '-')}</div>
+      </div>
+    </div>
+
+    <div style="border-top: 1px solid var(--border-glass); padding-top: 16px;">
+      <div style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; font-weight: bold; margin-bottom: 4px;">Item / Insumo</div>
+      <div style="font-size: 1.1rem; color: var(--text-main); font-weight: bold;">${escapeHTML(mov.nome_item || 'Item Removido')}</div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; border-top: 1px solid var(--border-glass); padding-top: 16px;">
+      <div>
+        <div style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; font-weight: bold; margin-bottom: 4px;">Quantidade</div>
+        <div style="font-size: 0.95rem; color: var(--text-main); font-weight: bold;">${mov.quantidade || 0}</div>
+      </div>
+      <div>
+        <div style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; font-weight: bold; margin-bottom: 4px;">Custo Unitário</div>
+        <div style="font-size: 0.95rem; color: var(--text-main); font-weight: bold;">${formatMoney(mov.custo_unitario || 0)}</div>
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; border-top: 1px solid var(--border-glass); padding-top: 16px;">
+      <div>
+        <div style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; font-weight: bold; margin-bottom: 4px;">Saldo Anterior</div>
+        <div style="font-size: 0.95rem; color: var(--text-muted);">${mov.saldo_anterior ?? 0}</div>
+      </div>
+      <div>
+        <div style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; font-weight: bold; margin-bottom: 4px;">Saldo Posterior</div>
+        <div style="font-size: 0.95rem; color: var(--success); font-weight: bold;">${mov.saldo_posterior ?? 0}</div>
+      </div>
+    </div>
+
+    <div style="border-top: 1px solid var(--border-glass); padding-top: 16px;">
+      <div style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; font-weight: bold; margin-bottom: 4px;">Origem / Referência</div>
+      <div style="font-size: 0.95rem; color: var(--text-main);">${escapeHTML(mov.origem_tipo || 'AJUSTE_MANUAL')} ${mov.origem_id ? `(${escapeHTML(String(mov.origem_id))})` : ''}</div>
+    </div>
+
+    <div style="border-top: 1px solid var(--border-glass); padding-top: 16px;">
+      <div style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; font-weight: bold; margin-bottom: 4px;">Justificativa</div>
+      <div style="font-size: 0.95rem; color: var(--text-main); font-style: italic;">${escapeHTML(mov.justificativa || 'Não informada')}</div>
+    </div>
+  `;
+
+  document.getElementById('modalDetalhesAuditoria').style.display = 'flex';
+}
+
+function exibirDetalhesAuditoriaServico(mov) {
+  document.getElementById('auditoriaDetalheTitulo').textContent = 'Auditoria: Alteração de Serviço';
+  const corpo = document.getElementById('auditoriaDetalheCorpo');
+  if (!corpo) return;
+
+  const dataObj = mov.data ? new Date(mov.data) : null;
+  const dataStr = dataObj && !isNaN(dataObj) ? formatDate(dataObj) + ' ' + dataObj.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '-';
+
+  let acaoText = mov.tipo_acao;
+  if (mov.tipo_acao === 'CRIACAO') acaoText = 'Cadastro de Serviço';
+  else if (mov.tipo_acao === 'CONCLUSAO') acaoText = 'Conclusão de Serviço';
+  else if (mov.tipo_acao === 'PAGAMENTO') acaoText = 'Confirmação de Pagamento';
+  else if (mov.tipo_acao === 'EDICAO') acaoText = 'Edição / Ajuste';
+  else if (mov.tipo_acao === 'EXCLUSAO') acaoText = 'Exclusão de Registro';
+
+  corpo.innerHTML = `
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+      <div>
+        <div style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; font-weight: bold; margin-bottom: 4px;">Data / Hora</div>
+        <div style="font-size: 0.95rem; color: var(--text-main); font-weight: 500;">${dataStr}</div>
+      </div>
+      <div>
+        <div style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; font-weight: bold; margin-bottom: 4px;">IP / Origem</div>
+        <div style="font-size: 0.95rem; color: var(--text-main); font-family: monospace;">${escapeHTML(mov.ip_usuario || '127.0.0.1')}</div>
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; border-top: 1px solid var(--border-glass); padding-top: 16px;">
+      <div>
+        <div style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; font-weight: bold; margin-bottom: 4px;">Cód. Registro</div>
+        <div style="font-size: 0.95rem; color: var(--primary); font-family: monospace; font-weight: bold;">${escapeHTML(mov.id || '-')}</div>
+      </div>
+      <div>
+        <div style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; font-weight: bold; margin-bottom: 4px;">Ação Realizada</div>
+        <div style="font-size: 0.95rem; color: var(--text-main); font-weight: 600;">${escapeHTML(acaoText)}</div>
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; border-top: 1px solid var(--border-glass); padding-top: 16px;">
+      <div>
+        <div style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; font-weight: bold; margin-bottom: 4px;">Cliente</div>
+        <div style="font-size: 0.95rem; color: var(--text-main); font-weight: bold;">${escapeHTML(mov.nome_cliente || 'Cliente Avulso')}</div>
+      </div>
+      <div>
+        <div style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; font-weight: bold; margin-bottom: 4px;">Valor Total</div>
+        <div style="font-size: 0.95rem; color: var(--success); font-weight: bold;">${formatMoney(mov.valor_total || 0)}</div>
+      </div>
+    </div>
+
+    <div style="border-top: 1px solid var(--border-glass); padding-top: 16px;">
+      <div style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; font-weight: bold; margin-bottom: 4px;">Detalhamento</div>
+      <div style="font-size: 0.9rem; color: var(--text-main); line-height: 1.4; max-height: 120px; overflow-y: auto; background: rgba(255,255,255,0.02); padding: 8px; border-radius: var(--radius-sm); border: 1px solid var(--border-glass);">${escapeHTML(mov.detalhes || '-')}</div>
+    </div>
+
+    <div style="border-top: 1px solid var(--border-glass); padding-top: 16px;">
+      <div style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; font-weight: bold; margin-bottom: 4px;">Justificativa da Alteração</div>
+      <div style="font-size: 0.95rem; color: var(--text-main); font-style: italic;">${escapeHTML(mov.justificativa || 'Não informada')}</div>
+    </div>
+  `;
+
+  document.getElementById('modalDetalhesAuditoria').style.display = 'flex';
 }
 
 // 3. ABA DE PEDIDOS (VENDAS)
@@ -3020,7 +3427,25 @@ async function handleDeleteClick(e) {
   const confirmar = confirm('Tem certeza que deseja excluir este registro?');
   if (confirmar) {
     try {
+      let recordToDelete = null;
+      if (store === 'servicos') {
+        recordToDelete = await getRecordById('servicos', id);
+      }
       await deleteRecord(store, id);
+      if (store === 'servicos' && recordToDelete) {
+        try {
+          await registrarMovimentacaoServico({
+            id_servico: id,
+            nome_cliente: recordToDelete.nome || 'Cliente Avulso',
+            tipo_acao: 'EXCLUSAO',
+            detalhes: `Status anterior: ${recordToDelete.status}. Peças: ${recordToDelete.itens}. Adicionais: ${recordToDelete.adicionais}`,
+            valor_total: recordToDelete.valor + (recordToDelete.frete || 0),
+            justificativa: 'Exclusão manual do registro de serviço'
+          });
+        } catch (err) {
+          console.warn('Erro ao registrar auditoria de exclusão de serviço:', err);
+        }
+      }
       showToast('Registro excluído.');
       await reloadAllViews();
     } catch (err) {
@@ -3046,19 +3471,13 @@ async function handleEditStockClick(e) {
       if (estTipoSelect) estTipoSelect.value = item.tipo_item || 'MATERIA_PRIMA';
       if (estUnidadeSelect) estUnidadeSelect.value = item.unidade_medida || 'UN';
 
-      const entradaSimplesWrapper = document.getElementById('entradaSimplesWrapper');
-      const compraMultiItemWrapper = document.getElementById('compraMultiItemWrapper');
-      if (entradaSimplesWrapper) entradaSimplesWrapper.style.display = 'block';
-      if (compraMultiItemWrapper) compraMultiItemWrapper.style.display = 'none';
+      setModoEntradaEstoque(false);
 
       // Exibe o campo de justificativa obrigatoriamente para edições
       const groupJustificativa = document.getElementById('groupEstJustificativa');
       if (groupJustificativa) groupJustificativa.style.display = 'block';
       const inputJustificativa = document.getElementById('estJustificativa');
       if (inputJustificativa) inputJustificativa.value = '';
-
-      const btnToggle = document.getElementById('btnToggleModoEntrada');
-      if (btnToggle) btnToggle.textContent = 'Alternar para Compra Multi-Itens (Rateio)';
 
       document.getElementById('estoqueFormTitle').textContent = 'Editar Item de Estoque';
       document.getElementById('btnEstoqueSubmit').textContent = 'Salvar Alterações';
@@ -3737,6 +4156,9 @@ async function updateAllSelectors() {
       prodRecipeSelect.value = currentValue;
     }
   }
+
+  // Atualiza datalist de itens de estoque
+  await atualizarDatalistSugestoes();
 }
 
 function recalculaValorServico() {
@@ -4141,14 +4563,43 @@ function setupModalConcluir() {
           service.valor = valor;
           service.frete = frete;
           
+          const meioPagamentoInput = document.getElementById('modalServMeioPagamento');
+          const meioPagamento = meioPagamentoInput ? meioPagamentoInput.value : 'Pendente';
+          service.meioPagamento = meioPagamento;
+
           if (isComingFromFila) {
-            service.status = 'Aguardando Pagamento';
-            service.meioPagamento = 'Pendente';
+            if (meioPagamento && meioPagamento !== 'Pendente') {
+              service.status = 'Finalizado';
+            } else {
+              service.status = 'Aguardando Pagamento';
+              service.meioPagamento = 'Pendente';
+            }
+          } else {
+            if (meioPagamento && meioPagamento !== 'Pendente') {
+              service.status = 'Finalizado';
+            } else {
+              service.status = 'Aguardando Pagamento';
+            }
           }
           
           service.synced = 0;
 
+          const inputJustificativa = document.getElementById('modalServJustificativa');
+          const justificativaStr = (inputJustificativa && inputJustificativa.value) ? inputJustificativa.value.trim() : '';
+
           await updateRecord('servicos', service);
+          try {
+            await registrarMovimentacaoServico({
+              id_servico: service.id,
+              nome_cliente: service.nome || 'Cliente Avulso',
+              tipo_acao: isComingFromFila ? 'CONCLUSAO' : 'EDICAO',
+              detalhes: `Status: ${service.status}. Peças: ${service.itens}. Adicionais: ${service.adicionais}`,
+              valor_total: service.valor + (service.frete || 0),
+              justificativa: justificativaStr || (isComingFromFila ? 'Conclusão do trabalho, aguardando pagamento' : 'Ajuste manual de dados/valores do serviço')
+            });
+          } catch (err) {
+            console.warn('Erro ao registrar auditoria de atualização de serviço:', err);
+          }
           showToast(isComingFromFila ? 'Trabalho concluído! Aguardando pagamento.' : 'Serviço atualizado com sucesso!');
           fecharModal();
           await reloadAllViews();
@@ -4387,6 +4838,20 @@ function setupModalDetalhes() {
   const btnFecharModalDetalhesAcoes = document.getElementById('btnFecharModalDetalhesAcoes');
   if (btnFecharModalDetalhesAcoes) btnFecharModalDetalhesAcoes.addEventListener('click', fecharModal);
 
+  const btnEditarServicoDetalhe = document.getElementById('btnEditarServicoDetalhe');
+  if (btnEditarServicoDetalhe) {
+    btnEditarServicoDetalhe.addEventListener('click', async () => {
+      const id = btnEditarServicoDetalhe.getAttribute('data-id');
+      if (id) {
+        fecharModal();
+        const service = await getRecordById('servicos', id);
+        if (service) {
+          await abrirModalConcluirAjustar(service);
+        }
+      }
+    });
+  }
+
   // Delegação global para abrir os detalhes de um serviço ao clicar na linha
   document.addEventListener('click', (e) => {
     const row = e.target.closest('.servico-row');
@@ -4503,6 +4968,11 @@ async function exibirDetalhesServico(id) {
     }
 
     document.getElementById('detalheTotal').textContent = formatMoney(s.valor + (s.frete || 0));
+
+    const btnEditar = document.getElementById('btnEditarServicoDetalhe');
+    if (btnEditar) {
+      btnEditar.setAttribute('data-id', s.id);
+    }
 
     // Exibe o modal
     document.getElementById('modalDetalhesServico').style.display = 'flex';
@@ -5240,6 +5710,20 @@ function setupModalConfirmarPagamento() {
           itemToUpdate.synced = 0;
 
           await updateRecord(targetStore, itemToUpdate);
+          if (targetStore === 'servicos') {
+            try {
+              await registrarMovimentacaoServico({
+                id_servico: itemToUpdate.id,
+                nome_cliente: itemToUpdate.nome || 'Cliente Avulso',
+                tipo_acao: 'PAGAMENTO',
+                detalhes: `Meio de Pagamento: ${meioPagamento}. Status: Finalizado.`,
+                valor_total: itemToUpdate.valor + (itemToUpdate.frete || 0),
+                justificativa: 'Confirmação de pagamento e finalização do serviço'
+              });
+            } catch (err) {
+              console.warn('Erro ao registrar auditoria de pagamento de serviço:', err);
+            }
+          }
           showToast(targetStore === 'pedidos' ? 'Pagamento da venda confirmado com sucesso!' : 'Pagamento confirmado e serviço finalizado!');
           fecharModal();
           await reloadAllViews();

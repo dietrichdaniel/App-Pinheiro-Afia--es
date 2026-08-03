@@ -558,9 +558,25 @@
             </div>
           </div>
 
-          <!-- Histórico de Serviços -->
           <div class="table-panel">
-            <h2>Histórico de Serviços</h2>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+              <h2 id="tituloHistoricoServicos" style="margin: 0;">Histórico de Serviços</h2>
+              <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <label for="filtroMesServicos" style="font-size: 0.85rem; color: var(--text-muted); font-weight: 500;">Mês:</label>
+                  <input type="month" id="filtroMesServicos" class="form-control" style="width: auto; padding: 6px 12px; font-size: 0.88rem; height: auto;">
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <label for="ordenarServicos" style="font-size: 0.85rem; color: var(--text-muted); font-weight: 500;">Ordenar:</label>
+                  <select id="ordenarServicos" class="form-control" style="width: auto; padding: 6px 12px; font-size: 0.88rem; height: auto; cursor: pointer;">
+                    <option value="mais_novo">Mais Novo</option>
+                    <option value="mais_antigo">Mais Antigo</option>
+                    <option value="maior_preco">Maior Preço</option>
+                    <option value="menor_preco">Menor Preço</option>
+                  </select>
+                </div>
+              </div>
+            </div>
             <div class="table-responsive">
               <table class="data-table" id="tableServicos">
                 <thead>
@@ -574,6 +590,46 @@
                 </thead>
                 <tbody>
                   <!-- Inserido dinamicamente via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- REGISTRO DE ALTERAÇÕES EM SERVIÇOS (AUDITORIA) -->
+          <div class="table-panel" style="margin-top: 35px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+              <div>
+                <h2 style="margin: 0; font-family: var(--font-heading); font-size: 1.5rem; color: var(--primary);">Registro de Alterações de Serviços</h2>
+                <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Histórico detalhado de criações, conclusões, pagamentos, edições e exclusões de serviços</p>
+              </div>
+              <div style="display: flex; gap: 10px; align-items: center;">
+                <select id="filtroTipoMovimentacaoServico" class="form-control" style="width: auto; padding: 6px 12px; font-size: 0.85rem;">
+                  <option value="TODOS">Todas as Ações</option>
+                  <option value="CRIACAO">Criação / Cadastro</option>
+                  <option value="CONCLUSAO">Conclusão de Trabalho</option>
+                  <option value="PAGAMENTO">Confirmação de Pagamento</option>
+                  <option value="EDICAO">Edições / Ajustes</option>
+                  <option value="EXCLUSAO">Exclusões</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="table-responsive">
+              <table class="data-table" id="tableMovimentacoesServicos">
+                <thead>
+                  <tr>
+                    <th>Data / Hora</th>
+                    <th>IP / Origem</th>
+                    <th>Cód. Registro</th>
+                    <th>Cliente</th>
+                    <th>Tipo Ação</th>
+                    <th>Valor Total (R$)</th>
+                    <th>Detalhamento</th>
+                    <th>Justificativa</th>
+                  </tr>
+                </thead>
+                <tbody id="tbodyMovimentacoesServicos">
+                  <!-- Preenchido dinamicamente via JS -->
                 </tbody>
               </table>
             </div>
@@ -740,7 +796,7 @@
             <h1>Estoque Unificado</h1>
             <p>Consulta de saldos disponíveis, custos médios e detalhamento de lotes por item</p>
           </div>
-          <button class="btn btn-primary" onclick="switchTab('novo_estoque')" style="display: inline-flex; align-items: center; gap: 8px;">
+          <button class="btn btn-primary" id="btnNovaEntradaEstoque" style="display: inline-flex; align-items: center; gap: 8px;">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
             Nova Entrada no Estoque
           </button>
@@ -1248,6 +1304,25 @@
           </div>
         </div>
 
+        <!-- Forma de Pagamento (Editar/Concluir) -->
+        <div class="form-group" id="groupServMeioPagamento" style="margin-top: 15px;">
+          <label for="modalServMeioPagamento">Forma de Pagamento</label>
+          <select id="modalServMeioPagamento" class="form-control">
+            <option value="Pendente">Pendente</option>
+            <option value="Pix">Pix</option>
+            <option value="Dinheiro">Dinheiro</option>
+            <option value="Cartão de Crédito">Cartão de Crédito</option>
+            <option value="Cartão de Débito">Cartão de Débito</option>
+            <option value="Boleto">Boleto / Faturado</option>
+          </select>
+        </div>
+
+        <!-- Justificativa da Alteração -->
+        <div class="form-group" id="groupServJustificativa" style="margin-top: 15px; display: none;">
+          <label for="modalServJustificativa" style="color: var(--primary); font-weight: bold;">Justificativa da Alteração <span style="color: var(--danger);">*</span></label>
+          <textarea id="modalServJustificativa" class="form-control" placeholder="Informe o motivo da alteração deste serviço" style="resize: vertical; min-height: 60px; font-size: 0.88rem; padding: 8px 12px;"></textarea>
+        </div>
+
         <div style="display: flex; gap: 12px; margin-top: 20px;">
           <button type="button" class="btn btn-secondary" id="btnModalCancelar" style="flex: 1; justify-content: center;">Cancelar</button>
           <button type="submit" class="btn btn-primary" style="flex: 1; justify-content: center;">Confirmar e Avançar</button>
@@ -1387,8 +1462,29 @@
         </div>
       </div>
 
-      <div style="margin-top: 24px; display: flex; justify-content: flex-end;">
+      <div style="margin-top: 24px; display: flex; justify-content: flex-end; gap: 12px;">
+        <button type="button" class="btn btn-secondary" id="btnEditarServicoDetalhe" style="padding: 10px 24px; background: var(--primary); border-color: var(--primary); color: #000; font-weight: 600;">Editar Serviço</button>
         <button type="button" class="btn btn-secondary" id="btnFecharModalDetalhesAcoes" style="padding: 10px 24px;">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para Detalhes de Auditoria (Estoque e Serviços) -->
+  <div class="modal" id="modalDetalhesAuditoria" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 15, 25, 0.85); backdrop-filter: blur(8px); z-index: 1000; align-items: center; justify-content: center; padding: 20px;">
+    <div class="form-panel" style="width: 100%; max-width: 500px; box-shadow: var(--shadow-lg); border: 1px solid var(--border-glass); animation: fadeIn 0.3s ease-out; max-height: 90vh; overflow-y: auto; padding: 24px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-glass); padding-bottom: 12px; margin-bottom: 20px;">
+        <h2 style="margin: 0; border: none; padding: 0; font-size: 1.3rem; color: var(--primary);" id="auditoriaDetalheTitulo">Detalhes do Registro</h2>
+        <button type="button" class="btn-icon-only" id="btnFecharModalAuditoria" style="padding: 4px;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <div id="auditoriaDetalheCorpo" style="display: flex; flex-direction: column; gap: 16px;">
+        <!-- Preenchido via JS -->
+      </div>
+
+      <div style="margin-top: 24px; display: flex; justify-content: flex-end;">
+        <button type="button" class="btn btn-secondary" id="btnFecharModalAuditoriaAcoes" style="padding: 10px 24px;">Fechar</button>
       </div>
     </div>
   </div>

@@ -119,7 +119,7 @@ export function initDB() {
     } else {
       console.log('Firebase não configurado. Usando IndexedDB local como fallback.');
       const DB_NAME = 'PinheiroAfiacoesDB';
-      const DB_VERSION = 6; // Versão 6 inclui a store de compras de matérias-primas e estoque
+      const DB_VERSION = 7; // Versão 7 inclui a store de auditoria de serviços (servicos_movimentacoes)
 
       const request = indexedDB.open(DB_NAME, DB_VERSION);
 
@@ -212,7 +212,15 @@ function setupIndexedDBStructure(db, event) {
     db.createObjectStore('configuracoes', { keyPath: 'chave' });
   }
 
-  console.log('Estrutura do IndexedDB v5 configurada/atualizada.');
+  // Object Store: Movimentações/Auditoria de Serviços (Audit Log)
+  if (!db.objectStoreNames.contains('servicos_movimentacoes')) {
+    const movServStore = db.createObjectStore('servicos_movimentacoes', { keyPath: 'id' });
+    movServStore.createIndex('id_servico', 'id_servico', { unique: false });
+    movServStore.createIndex('tipo_acao', 'tipo_acao', { unique: false });
+    movServStore.createIndex('data', 'data', { unique: false });
+  }
+
+  console.log('Estrutura do IndexedDB v7 configurada/atualizada.');
 }
 
 // Executa uma transação genérica no IndexedDB (fallback)
@@ -729,4 +737,37 @@ export function setConfig(chave, valor) {
       reject(error);
     }
   });
+}
+
+// --- REGISTRO DE MOVIMENTAÇÕES DE SERVIÇOS (AUDIT LOG) ---
+export async function registrarMovimentacaoServico({
+  id_servico,
+  nome_cliente = '',
+  tipo_acao, // 'CRIACAO' | 'CONCLUSAO' | 'PAGAMENTO' | 'EDICAO' | 'EXCLUSAO'
+  detalhes = '',
+  valor_total = 0,
+  justificativa = '',
+  ip_usuario = ''
+}) {
+  try {
+    const userIp = ip_usuario || (typeof window !== 'undefined' ? (window.currentUserIp || '') : '') || '127.0.0.1';
+
+    const logEntry = {
+      id: generatePrefixedId('servicos_movimentacoes'),
+      id_servico,
+      nome_cliente: nome_cliente || 'Cliente Avulso',
+      tipo_acao,
+      detalhes,
+      valor_total: Number(valor_total) || 0,
+      justificativa,
+      ip_usuario: userIp,
+      data: new Date().toISOString()
+    };
+
+    const logId = await addRecord('servicos_movimentacoes', logEntry);
+    return logId;
+  } catch (error) {
+    console.error('Erro ao registrar movimentação de serviço:', error);
+    throw error;
+  }
 }
