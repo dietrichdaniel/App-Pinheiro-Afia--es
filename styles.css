@@ -640,7 +640,12 @@ table.data-table td .tag.unsynced {
   gap: 16px !important;
 }
 
-.toast.toast-card.success { border-top: 4px solid var(--success) !important; border-left: none !important; }
+.toast.toast-card.success {
+  background: var(--success) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-top: none !important;
+  border-left: none !important;
+}
 .toast.toast-card.error { border-top: 4px solid var(--error) !important; border-left: none !important; }
 .toast.toast-card.warning { border-top: 4px solid var(--warning) !important; border-left: none !important; }
 .toast.toast-card.info { border-top: 4px solid var(--info) !important; border-left: none !important; }

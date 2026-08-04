@@ -46,6 +46,62 @@ async function fetchUserIp() {
   return window.currentUserIp;
 }
 
+// --- FUNÇÃO UNIFICADA PARA PARSE DE QUANTIDADE ---
+/**
+ * Obtém o valor numérico (quantidade) de um elemento input de forma higienizada.
+ * @param {HTMLInputElement|string} element - Elemento input ou seletor CSS do elemento.
+ * @returns {number} Quantidade formatada (float) ou 0 se for inválido/negativo.
+ */
+function obterQuantidadeElemento(element) {
+  const el = typeof element === 'string' ? document.querySelector(element) : element;
+  if (!el) return 0;
+  const valor = parseFloat(el.value);
+  return isNaN(valor) || valor < 0 ? 0 : valor;
+}
+
+// --- FUNÇÃO UNIFICADA PARA PARSE DE PREÇO/VALOR ---
+/**
+ * Obtém o valor numérico (monetário) de um elemento input de forma higienizada.
+ * @param {HTMLInputElement|string} element - Elemento input ou seletor CSS do elemento.
+ * @returns {number} Valor monetário formatado (float) ou 0 se for inválido/negativo.
+ */
+function obterPrecoElemento(element) {
+  const el = typeof element === 'string' ? document.querySelector(element) : element;
+  if (!el) return 0;
+  const valor = parseFloat(el.value);
+  return isNaN(valor) || valor < 0 ? 0 : valor;
+}
+
+// --- MÁSCARA MONETÁRIA DE DIGITAÇÃO RESPONSIVA ---
+document.addEventListener('input', (e) => {
+  const el = e.target;
+  if (!el || el.tagName !== 'INPUT' || el.type !== 'number') return;
+
+  const isMonetary = 
+    el.classList.contains('item-price') ||
+    el.classList.contains('adicional-price') ||
+    el.classList.contains('item-preco-base') ||
+    el.classList.contains('ped-item-price') ||
+    el.classList.contains('modal-pag-amount-input') ||
+    el.classList.contains('modal-item-price') ||
+    el.classList.contains('modal-adicional-price') ||
+    el.classList.contains('modal-ped-price') ||
+    ['servValor', 'servFrete', 'estValor', 'compraFrete', 'compraOutrasDespesas', 'pedFrete', 'recMaoObra', 'recPrecoVenda', 'pecaPreco', 'adicionalPreco', 'modalServValor', 'modalServFrete', 'modalPedFrete'].includes(el.id);
+
+  if (!isMonetary) return;
+
+  // Se o campo for esvaziado manualmente, permite deixá-lo vazio
+  if (el.value === '') return;
+
+  // Extrai apenas dígitos
+  let cleanValue = el.value.replace(/\D/g, '');
+  if (!cleanValue) cleanValue = '0';
+
+  // Divide por 100 para deslocar a vírgula para a esquerda (ex: 9 -> 0.09)
+  const numericValue = parseInt(cleanValue, 10) / 100;
+  el.value = numericValue.toFixed(2);
+});
+
 // --- EVENTOS INICIAIS ---
 window.addEventListener('DOMContentLoaded', async () => {
   try {
@@ -315,6 +371,10 @@ function switchTabWithoutPush(tabId) {
   if (!tabId) return;
   activeTab = tabId;
 
+  // Remove qualquer toast centrado ao mudar de aba
+  const centeredToasts = document.querySelectorAll('#toastCenteredContainer .toast');
+  centeredToasts.forEach(t => t.remove());
+
   // Fecha action sheets mobile ativas
   const sheetAdd = document.getElementById('actionSheetAdicionar');
   const sheetHistory = document.getElementById('actionSheetHistorico');
@@ -466,7 +526,7 @@ function showToast(message, type = 'success', action = null, autoDismiss = true,
   if (centered) {
     // Layout empilhado (Card de Sucesso / Alerta)
     toast.innerHTML = `
-      <div style="width: 56px; height: 56px; border-radius: 50%; background: ${type === 'success' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(234, 179, 8, 0.1)'}; color: ${type === 'success' ? 'var(--success)' : 'var(--primary)'}; display: flex; align-items: center; justify-content: center; margin-bottom: 4px;">
+      <div style="width: 56px; height: 56px; border-radius: 50%; background: ${type === 'success' ? 'rgba(255, 255, 255, 0.2)' : 'rgba(234, 179, 8, 0.1)'}; color: ${type === 'success' ? '#ffffff' : 'var(--primary)'}; display: flex; align-items: center; justify-content: center; margin-bottom: 4px;">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2.5">
           ${type === 'success' 
             ? '<polyline points="20 6 9 17 4 12"/>' 
@@ -474,12 +534,27 @@ function showToast(message, type = 'success', action = null, autoDismiss = true,
         </svg>
       </div>
       <div style="display: flex; flex-direction: column; gap: 6px;">
-        <h4 style="font-family: var(--font-heading); font-size: 1.25rem; font-weight: bold; color: var(--text-main); margin: 0;">${type === 'success' ? 'Sucesso!' : 'Aviso!'}</h4>
-        <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.4; margin: 0;">${message}</p>
+        <h4 style="font-family: var(--font-heading); font-size: 1.25rem; font-weight: bold; color: ${type === 'success' ? '#ffffff' : 'var(--text-main)'}; margin: 0;">${type === 'success' ? 'Sucesso!' : 'Aviso!'}</h4>
+        <p style="font-size: 0.85rem; color: ${type === 'success' ? '#f3f4f6' : 'var(--text-muted)'}; line-height: 1.4; margin: 0;">${message}</p>
       </div>
       ${actionHtml}
-      <button class="toast-close" style="position: absolute; top: 12px; right: 12px; background: transparent; border: none; color: var(--text-muted); cursor: pointer; font-size: 1.2rem; line-height: 1;">&times;</button>
+      <button class="toast-close" style="position: absolute; top: 12px; right: 12px; background: transparent; border: none; color: ${type === 'success' ? 'rgba(255, 255, 255, 0.7)' : 'var(--text-muted)'}; cursor: pointer; font-size: 1.2rem; line-height: 1;">&times;</button>
     `;
+
+    // Fecha ao clicar fora do toast
+    setTimeout(() => {
+      const closeOnOutsideClick = (e) => {
+        if (!toast.parentNode) {
+          document.removeEventListener('click', closeOnOutsideClick);
+          return;
+        }
+        if (!toast.contains(e.target)) {
+          toast.remove();
+          document.removeEventListener('click', closeOnOutsideClick);
+        }
+      };
+      document.addEventListener('click', closeOnOutsideClick);
+    }, 100);
   } else {
     // Layout padrão em linha
     toast.innerHTML = `
@@ -746,7 +821,8 @@ function setupDynamicRows() {
       e.target.classList.contains('item-qty') ||
       e.target.classList.contains('adicional-qty') ||
       e.target.classList.contains('item-price') ||
-      e.target.classList.contains('adicional-price')
+      e.target.classList.contains('adicional-price') ||
+      e.target.id === 'servFrete'
     ) {
       recalculaValorServico();
     }
@@ -823,12 +899,12 @@ function recalculaCustoReceita() {
     if (select && qtyInput) {
       const selectedOption = (select.options && select.selectedIndex >= 0) ? select.options[select.selectedIndex] : null;
       const valUnit = selectedOption ? parseFloat(selectedOption.getAttribute('data-valor')) || 0 : 0;
-      const qty = parseInt(qtyInput.value, 10) || 0;
+      const qty = obterQuantidadeElemento(qtyInput);
       custoInsumos += valUnit * qty;
     }
   });
 
-  const maoObraVal = parseFloat(document.getElementById('recMaoObra').value) || 0;
+  const maoObraVal = obterPrecoElemento('#recMaoObra');
   const custoTotal = custoInsumos + maoObraVal;
 
   const box = document.getElementById('custoTotalCalculado');
@@ -866,8 +942,8 @@ function setupFormSubmissions() {
       try {
         const nome = document.getElementById('servNome').value.trim() || 'Cliente Avulso';
         const telefone = document.getElementById('servTelefone') ? document.getElementById('servTelefone').value.trim() : '';
-        const valor = parseFloat(document.getElementById('servValor').value) || 0;
-        const frete = parseFloat(document.getElementById('servFrete').value) || 0;
+        const valor = obterPrecoElemento('#servValor');
+        const frete = obterPrecoElemento('#servFrete');
         const status = document.getElementById('servStatus').value || 'Finalizado';
         const meioPagamento = status === 'Finalizado' ? document.getElementById('servPagamento').value : 'Pendente';
 
@@ -876,9 +952,9 @@ function setupFormSubmissions() {
         const rows = document.querySelectorAll('#servItensContainer .dynamic-item-row');
         rows.forEach(row => {
           const select = row.querySelector('.item-select');
-          const qtyText = row.querySelector('.item-qty').value;
+          const qtyVal = obterQuantidadeElemento(row.querySelector('.item-qty'));
           const priceInput = row.querySelector('.item-price');
-          const priceVal = priceInput ? parseFloat(priceInput.value) || 0 : 0;
+          const priceVal = obterPrecoElemento(priceInput);
           let itemText = '';
           if (select) {
             if (select.value === 'custom') {
@@ -888,7 +964,7 @@ function setupFormSubmissions() {
             }
           }
           if (itemText) {
-            itens.push(`${itemText} (x${qtyText} - R$ ${priceVal.toFixed(2)})`);
+            itens.push(`${itemText} (x${qtyVal} - R$ ${priceVal.toFixed(2)})`);
           }
         });
 
@@ -904,10 +980,9 @@ function setupFormSubmissions() {
 
         for (const row of adicionalRows) {
           const select = row.querySelector('.adicional-select');
-          const qtyText = row.querySelector('.adicional-qty').value;
-          const qtyVal = parseFloat(qtyText) || 0;
+          const qtyVal = obterQuantidadeElemento(row.querySelector('.adicional-qty'));
           const priceInput = row.querySelector('.adicional-price');
-          const priceVal = priceInput ? parseFloat(priceInput.value) || 0 : 0;
+          const priceVal = obterPrecoElemento(priceInput);
           let adicionalText = '';
           if (select) {
             if (select.value === 'custom') {
@@ -1037,8 +1112,8 @@ function setupFormSubmissions() {
 
   // --- COMPRAS MULTI-ITENS E RATEIO DE FRETE & DESPESAS ---
   function recalcularRateioCompra() {
-    const freteTotal = parseFloat(document.getElementById('compraFrete')?.value) || 0;
-    const despesasTotais = parseFloat(document.getElementById('compraOutrasDespesas')?.value) || 0;
+    const freteTotal = obterPrecoElemento('#compraFrete');
+    const despesasTotais = obterPrecoElemento('#compraOutrasDespesas');
     const despesasExtraSomadas = freteTotal + despesasTotais;
 
     const rows = document.querySelectorAll('.compra-item-row');
@@ -1046,8 +1121,8 @@ function setupFormSubmissions() {
     const itensDados = [];
 
     rows.forEach(tr => {
-      const qtd = parseFloat(tr.querySelector('.item-qtd')?.value) || 0;
-      const precoBase = parseFloat(tr.querySelector('.item-preco-base')?.value) || 0;
+      const qtd = obterQuantidadeElemento(tr.querySelector('.item-qtd'));
+      const precoBase = obterPrecoElemento(tr.querySelector('.item-preco-base'));
       const subtotalItem = qtd * precoBase;
       subtotalProdutos += subtotalItem;
       itensDados.push({ tr, qtd, precoBase, subtotalItem });
@@ -1274,8 +1349,8 @@ function setupFormSubmissions() {
         // SE FOR MODO DE ENTRADA SIMPLES OU EDIÇÃO DE ITEM
         if (isModoSimples) {
           const itemNome = (document.getElementById('estItem')?.value || '').trim();
-          const quantidade = parseFloat(document.getElementById('estQtd')?.value) || 0;
-          const valor = parseFloat(document.getElementById('estValor')?.value) || 0;
+          const quantidade = obterQuantidadeElemento('#estQtd');
+          const valor = obterPrecoElemento('#estValor');
           const tipoItem = document.getElementById('estTipoItem')?.value || 'MATERIA_PRIMA';
           const unidade = document.getElementById('estUnidade')?.value || 'UN';
 
@@ -1355,8 +1430,8 @@ function setupFormSubmissions() {
           const dataInput = document.getElementById('compraData')?.value;
           const dataCompraIso = dataInput ? new Date(dataInput + 'T12:00:00').toISOString() : new Date().toISOString();
 
-          const valorFrete = parseFloat(document.getElementById('compraFrete')?.value) || 0;
-          const outrasDespesas = parseFloat(document.getElementById('compraOutrasDespesas')?.value) || 0;
+          const valorFrete = obterPrecoElemento('#compraFrete');
+          const outrasDespesas = obterPrecoElemento('#compraOutrasDespesas');
           const descricaoDespesas = (document.getElementById('compraDescricaoDespesas')?.value || '').trim();
           const fornecedor = (document.getElementById('compraFornecedor')?.value || '').trim();
 
@@ -1368,8 +1443,8 @@ function setupFormSubmissions() {
             const nome = (tr.querySelector('.item-nome')?.value || '').trim();
             const tipo_item = tr.querySelector('.item-tipo')?.value || 'MATERIA_PRIMA';
             const unidade_medida = tr.querySelector('.item-unidade')?.value || 'UN';
-            const quantidade = parseFloat(tr.querySelector('.item-qtd')?.value) || 0;
-            const preco_unitario_base = parseFloat(tr.querySelector('.item-preco-base')?.value) || 0;
+            const quantidade = obterQuantidadeElemento(tr.querySelector('.item-qtd'));
+            const preco_unitario_base = obterPrecoElemento(tr.querySelector('.item-preco-base'));
 
             if (nome && quantidade > 0) {
               const subtotal = quantidade * preco_unitario_base;
@@ -1530,7 +1605,7 @@ function setupFormSubmissions() {
       try {
         const nome = document.getElementById('pedNome') ? document.getElementById('pedNome').value.trim() : '';
         const telefone = document.getElementById('pedTelefone') ? document.getElementById('pedTelefone').value.trim() : '';
-        const frete = parseFloat(document.getElementById('pedFrete').value) || 0;
+        const frete = obterPrecoElemento('#pedFrete');
         const meioPagamento = document.getElementById('pedPagamento').value;
         const status = document.getElementById('pedStatus') ? document.getElementById('pedStatus').value : 'Finalizado';
 
@@ -1542,8 +1617,8 @@ function setupFormSubmissions() {
           const selectedOption = (select && select.options && select.selectedIndex >= 0) ? select.options[select.selectedIndex] : null;
           const itemNome = select ? select.value : '';
           const type = selectedOption ? selectedOption.getAttribute('data-type') : '';
-          const quantidade = parseFloat(row.querySelector('.ped-item-qty').value) || 0;
-          const valor = parseFloat(row.querySelector('.ped-item-price').value) || 0;
+          const quantidade = obterQuantidadeElemento(row.querySelector('.ped-item-qty'));
+          const valor = obterPrecoElemento(row.querySelector('.ped-item-price'));
 
           if (!itemNome) {
             showToast('Por favor, selecione todos os itens da venda.', 'error');
@@ -1787,15 +1862,15 @@ function setupFormSubmissions() {
       e.preventDefault();
       try {
         const produtoFinal = document.getElementById('recProdFinal').value.trim();
-        const maoDeObra = parseFloat(document.getElementById('recMaoObra').value) || 0;
-        const precoVenda = parseFloat(document.getElementById('recPrecoVenda').value) || 0;
+        const maoDeObra = obterPrecoElemento('#recMaoObra');
+        const precoVenda = obterPrecoElemento('#recPrecoVenda');
 
         // Coleta matérias-primas dinâmicas
         const materiaPrima = [];
         const rows = document.querySelectorAll('#recMateriaPrimaContainer .dynamic-item-row');
         rows.forEach(row => {
           const select = row.querySelector('.mp-select');
-          const qty = parseInt(row.querySelector('.mp-qty').value, 10) || 0;
+          const qty = obterQuantidadeElemento(row.querySelector('.mp-qty'));
           if (select.value) {
             materiaPrima.push({
               item: select.value,
@@ -2461,7 +2536,7 @@ async function renderServicosView() {
           <td>${contentHtml}</td>
           <td>
             Subtotal: ${formatMoney(s.valor)}
-            ${s.frete > 0 ? `<br><small style="color:var(--text-muted);">Frete: ${formatMoney(s.frete)}</small>` : ''}
+            ${s.frete > 0 ? `<br><small style="color:var(--text-muted);">Taxa de entrega: ${formatMoney(s.frete)}</small>` : ''}
             <br><strong>Total: ${formatMoney(s.valor + (s.frete || 0))}</strong>
           </td>
           <td>${s.meioPagamento}</td>
@@ -3785,7 +3860,7 @@ function setupPricingEvents() {
       try {
         const idVal = document.getElementById('pecaId').value;
         const nome = document.getElementById('pecaNome').value.trim();
-        const precoPadrao = parseFloat(document.getElementById('pecaPreco').value) || 0;
+        const precoPadrao = obterPrecoElemento('#pecaPreco');
 
         if (idVal) {
           const id = Number(idVal);
@@ -3841,7 +3916,7 @@ function setupPricingEvents() {
       try {
         const idVal = document.getElementById('adicionalId').value;
         const nome = document.getElementById('adicionalNome').value.trim();
-        const precoPadrao = parseFloat(document.getElementById('adicionalPreco').value) || 0;
+        const precoPadrao = obterPrecoElemento('#adicionalPreco');
         const insumoAtrelado = document.getElementById('adicionalInsumo').value;
         const qtdConsumida = parseFloat(document.getElementById('adicionalQtdInsumo').value) || 0;
 
@@ -4172,8 +4247,8 @@ function recalculaValorServico() {
     const qtyInput = row.querySelector('.item-qty');
     const priceInput = row.querySelector('.item-price');
     if (select && qtyInput && priceInput) {
-      const precoUnitario = parseFloat(priceInput.value) || 0;
-      const qty = parseFloat(qtyInput.value) || 0;
+      const precoUnitario = obterPrecoElemento(priceInput);
+      const qty = obterQuantidadeElemento(qtyInput);
       totalPecas += qty;
       subtotalPecas += precoUnitario * qty;
     }
@@ -4197,13 +4272,16 @@ function recalculaValorServico() {
     const qtyInput = row.querySelector('.adicional-qty');
     const priceInput = row.querySelector('.adicional-price');
     if (select && qtyInput && priceInput) {
-      const precoUnitario = parseFloat(priceInput.value) || 0;
-      const qty = parseFloat(qtyInput.value) || 0;
+      const precoUnitario = obterPrecoElemento(priceInput);
+      const qty = obterQuantidadeElemento(qtyInput);
       subtotalAdicionais += precoUnitario * qty;
     }
   });
 
-  const valorTotalSugerido = subtotalPecasComDesconto + subtotalAdicionais;
+  // Pega a taxa de entrega (frete)
+  const frete = obterPrecoElemento('#servFrete');
+
+  const valorTotalSugerido = subtotalPecasComDesconto + subtotalAdicionais + frete;
 
   // Preenche o campo
   const inputValor = document.getElementById('servValor');
@@ -4214,13 +4292,16 @@ function recalculaValorServico() {
   // Atualiza label sugerida com o detalhamento
   const labelSugerido = document.getElementById('servValorSugerido');
   if (labelSugerido) {
-    if (subtotalPecas > 0 || subtotalAdicionais > 0) {
+    if (subtotalPecas > 0 || subtotalAdicionais > 0 || frete > 0) {
       let breakdown = `Subtotal Peças: ${formatMoney(subtotalPecas)}`;
       if (valorDesconto > 0) {
         breakdown += ` | Desconto Progressivo (${descontoPercentual}%): -${formatMoney(valorDesconto)}`;
       }
       if (subtotalAdicionais > 0) {
         breakdown += ` | Adicionais: ${formatMoney(subtotalAdicionais)}`;
+      }
+      if (frete > 0) {
+        breakdown += ` | Taxa de Entrega: ${formatMoney(frete)}`;
       }
       breakdown += ` | <strong>Preço Sugerido: ${formatMoney(valorTotalSugerido)}</strong>`;
       labelSugerido.innerHTML = breakdown;
@@ -4435,8 +4516,8 @@ function setupModalConcluir() {
         const id = document.getElementById('modalServId').value;
         const nome = document.getElementById('modalServNome').value.trim();
         const telefone = document.getElementById('modalServTelefone') ? document.getElementById('modalServTelefone').value.trim() : '';
-        const valor = parseFloat(document.getElementById('modalServValor').value) || 0;
-        const frete = parseFloat(document.getElementById('modalServFrete').value) || 0;
+        const valor = obterPrecoElemento('#modalServValor');
+        const frete = obterPrecoElemento('#modalServFrete');
 
         // Coleta itens do modal
         const itens = [];
@@ -4458,7 +4539,7 @@ function setupModalConcluir() {
 
           if (name) {
             const qty = qtyInput ? qtyInput.value : 1;
-            const price = priceInput ? parseFloat(priceInput.value) || 0 : 0;
+            const price = obterPrecoElemento(priceInput);
             itens.push(`${name} (x${qty} - R$ ${price.toFixed(2)})`);
           }
         });
@@ -4483,7 +4564,7 @@ function setupModalConcluir() {
 
           if (name) {
             const qty = qtyInput ? qtyInput.value : 1;
-            const price = priceInput ? parseFloat(priceInput.value) || 0 : 0;
+            const price = obterPrecoElemento(priceInput);
             adicionaisArr.push(`${name} (x${qty} - R$ ${price.toFixed(2)})`);
           }
         });
@@ -4769,7 +4850,7 @@ function recalculaValorModal() {
     const priceInput = row.querySelector('.modal-item-price');
     if (qtyInput && priceInput) {
       const qty = parseFloat(qtyInput.value) || 0;
-      const price = parseFloat(priceInput.value) || 0;
+      const price = obterPrecoElemento(priceInput);
       totalPecas += qty;
       subtotalPecas += price * qty;
     }
@@ -4793,7 +4874,7 @@ function recalculaValorModal() {
     const priceInput = row.querySelector('.modal-adicional-price');
     if (qtyInput && priceInput) {
       const qty = parseFloat(qtyInput.value) || 0;
-      const price = parseFloat(priceInput.value) || 0;
+      const price = obterPrecoElemento(priceInput);
       subtotalAdicionais += price * qty;
     }
   });
@@ -5169,7 +5250,7 @@ function setupModalConcluirPedido() {
         const id = document.getElementById('modalPedId').value;
         const nome = document.getElementById('modalPedNome').value.trim() || 'Cliente Avulso';
         const telefone = document.getElementById('modalPedTelefone') ? document.getElementById('modalPedTelefone').value.trim() : '';
-        const frete = parseFloat(document.getElementById('modalPedFrete').value) || 0;
+        const frete = obterPrecoElemento('#modalPedFrete');
         const meioPagamento = document.getElementById('modalPedPagamento').value;
 
         const itemsToSell = [];
@@ -5189,7 +5270,7 @@ function setupModalConcluirPedido() {
           const qtyInput = row.querySelector('.modal-ped-qty');
           const priceInput = row.querySelector('.modal-ped-price');
           const quantidade = parseFloat(qtyInput.value) || 0;
-          const preco = parseFloat(priceInput.value) || 0;
+          const preco = obterPrecoElemento(priceInput);
 
           itemsToSell.push({ itemNome, type, quantidade, valor: preco });
           itens.push(`${itemNome} (x${quantidade} - R$ ${preco.toFixed(2)})`);
@@ -5596,7 +5677,7 @@ function recalcularSaldoRestante() {
   // Soma o valor de todas as parcelas exceto a última
   let sumExceptLast = 0;
   for (let i = 0; i < rows.length - 1; i++) {
-    const val = parseFloat(rows[i].querySelector('.modal-pag-amount-input').value) || 0;
+    const val = obterPrecoElemento(rows[i].querySelector('.modal-pag-amount-input'));
     sumExceptLast += val;
   }
 
@@ -5618,7 +5699,7 @@ function validarSomaValoresMultiplos() {
 
   let totalDigitado = 0;
   rows.forEach(row => {
-    const val = parseFloat(row.querySelector('.modal-pag-amount-input').value) || 0;
+    const val = obterPrecoElemento(row.querySelector('.modal-pag-amount-input'));
     totalDigitado += val;
   });
 
@@ -5693,7 +5774,7 @@ function setupModalConfirmarPagamento() {
           const partes = [];
           rows.forEach(row => {
             const method = row.querySelector('.modal-pag-method-select').value;
-            const val = parseFloat(row.querySelector('.modal-pag-amount-input').value) || 0;
+            const val = obterPrecoElemento(row.querySelector('.modal-pag-amount-input'));
             partes.push(`${method} (${formatMoney(val)})`);
           });
           meioPagamento = partes.join(' + ');
