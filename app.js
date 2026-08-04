@@ -72,6 +72,31 @@ function obterPrecoElemento(element) {
   return isNaN(valor) || valor < 0 ? 0 : valor;
 }
 
+// --- FUNÇÃO UNIFICADA PARA EXTRAIR A QUANTIDADE DE PEÇAS DE UM REGISTRO ---
+/**
+ * Extrai a quantidade total de peças a partir de um array de strings ou texto.
+ * @param {Array|string} itens - Array de itens ou texto formatado.
+ * @returns {number} Quantidade total de peças.
+ */
+function extrairQuantidadeDeItens(itens) {
+  let total = 0;
+  const arr = Array.isArray(itens) ? itens : (typeof itens === 'string' ? itens.split(',') : []);
+  for (const it of arr) {
+    const match = it.match(/\(x(\d+)/i);
+    if (match) {
+      total += parseInt(match[1], 10);
+    } else {
+      const fallbackMatch = it.match(/\((\d+)\)/);
+      if (fallbackMatch) {
+        total += parseInt(fallbackMatch[1], 10);
+      } else {
+        total += 1;
+      }
+    }
+  }
+  return total;
+}
+
 // --- MÁSCARA MONETÁRIA DE DIGITAÇÃO RESPONSIVA ---
 document.addEventListener('input', (e) => {
   const el = e.target;
@@ -100,6 +125,28 @@ document.addEventListener('input', (e) => {
   // Divide por 100 para deslocar a vírgula para a esquerda (ex: 9 -> 0.09)
   const numericValue = parseInt(cleanValue, 10) / 100;
   el.value = numericValue.toFixed(2);
+});
+
+// --- CONTROLE DE PASTAS (FOLDERS) DO MENU LATERAL ---
+document.addEventListener('click', (e) => {
+  const navHeader = e.target.closest('.nav-folder-header');
+  if (navHeader) {
+    const folder = navHeader.closest('.nav-folder');
+    const chevron = e.target.closest('svg.chevron');
+    
+    if (chevron) {
+      // Clique no chevron de expansão: apenas expande/recolhe a pasta
+      if (folder) {
+        folder.classList.toggle('expanded');
+      }
+    } else {
+      // Clique no corpo: apenas abre a aba correspondente
+      const tab = navHeader.getAttribute('data-tab');
+      if (tab) {
+        switchTab(tab);
+      }
+    }
+  }
 });
 
 // --- EVENTOS INICIAIS ---
@@ -145,6 +192,8 @@ window.addEventListener('DOMContentLoaded', async () => {
     setupModalAuditoria();
     setupAppUpdatedModal();
     setupBackButtonLock();
+    setupDailyIndicators();
+    setupMonthlyVendasIndicators();
 
     // Renderiza dados iniciais
     await reloadAllViews();
@@ -260,6 +309,239 @@ function setupInputAutoSelect() {
       selectAllPending = false;
     }
   }, true);
+}
+
+// --- CONFIGURAÇÃO E RENDIMENTO DOS INDICADORES DIÁRIOS ---
+function setupDailyIndicators() {
+  const inputDia = document.getElementById('filtroDiaServicos');
+  if (inputDia) {
+    // Define o dia atual como padrão se vazio
+    if (!inputDia.value) {
+      inputDia.value = new Date().toLocaleDateString('sv-SE');
+    }
+    inputDia.addEventListener('change', async () => {
+      await renderDailyIndicators();
+    });
+  }
+
+  const btnVer = document.getElementById('btnVerResumoDia');
+  const modal = document.getElementById('modalResumoDia');
+  const btnFechar = document.getElementById('btnFecharModalResumoDia');
+  const btnFecharOk = document.getElementById('btnFecharModalResumoDiaOk');
+
+  if (btnVer && modal) {
+    btnVer.addEventListener('click', () => {
+      modal.style.display = 'flex';
+    });
+  }
+
+  const fechar = () => {
+    if (modal) modal.style.display = 'none';
+  };
+
+  if (btnFechar) btnFechar.addEventListener('click', fechar);
+  if (btnFecharOk) btnFecharOk.addEventListener('click', fechar);
+
+  if (modal) {
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) fechar();
+    });
+  }
+}
+
+function setupMonthlyVendasIndicators() {
+  const inputMes = document.getElementById('filtroMesVendas');
+  if (inputMes) {
+    if (!inputMes.value) {
+      inputMes.value = new Date().toLocaleDateString('sv-SE').slice(0, 7);
+    }
+    inputMes.addEventListener('change', async () => {
+      await renderMonthlyVendasIndicators();
+    });
+  }
+
+  const btnVer = document.getElementById('btnVerResumoMesVendas');
+  const modal = document.getElementById('modalResumoMesVendas');
+  const btnFechar = document.getElementById('btnFecharModalResumoMesVendas');
+  const btnFecharOk = document.getElementById('btnFecharModalResumoMesVendasOk');
+
+  if (btnVer && modal) {
+    btnVer.addEventListener('click', () => {
+      modal.style.display = 'flex';
+    });
+  }
+
+  const fechar = () => {
+    if (modal) modal.style.display = 'none';
+  };
+
+  if (btnFechar) btnFechar.addEventListener('click', fechar);
+  if (btnFecharOk) btnFecharOk.addEventListener('click', fechar);
+
+  if (modal) {
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) fechar();
+    });
+  }
+}
+
+async function renderMonthlyVendasIndicators() {
+  const inputMes = document.getElementById('filtroMesVendas');
+  if (!inputMes) return;
+
+  if (!inputMes.value) {
+    inputMes.value = new Date().toLocaleDateString('sv-SE').slice(0, 7);
+  }
+
+  const selectedMonthStr = inputMes.value;
+  const [yearStr, monthStr] = selectedMonthStr.split('-');
+  const selectedYear = parseInt(yearStr);
+  const selectedMonth = parseInt(monthStr) - 1;
+
+  const pedidos = await getAllRecords('pedidos');
+
+  const pedidosDoMes = pedidos.filter(p => {
+    if (!p.data) return false;
+    const d = new Date(p.data);
+    return d.getMonth() === selectedMonth && d.getFullYear() === selectedYear;
+  });
+
+  const pedidosFinalizadosDoMes = pedidosDoMes.filter(p => p.status === 'Finalizado');
+
+  // 1. Vendas Realizadas
+  const vendasRealizadas = pedidosFinalizadosDoMes.length;
+  const elVendas = document.getElementById('indicadorVendasMes');
+  if (elVendas) elVendas.textContent = vendasRealizadas;
+
+  // 2. Produtos Vendidos
+  let totalProdutos = 0;
+  pedidosFinalizadosDoMes.forEach(p => {
+    totalProdutos += p.quantidade || extrairQuantidadeDeItens(p.itens);
+  });
+  const elProdutos = document.getElementById('indicadorProdutosMes');
+  if (elProdutos) elProdutos.textContent = totalProdutos;
+
+  // 3. Faturamento do Mês
+  const totalFaturamento = pedidosFinalizadosDoMes.reduce((acc, curr) => {
+    const totalPedido = (curr.itens ? curr.valor : (curr.quantidade * curr.valor)) + (curr.frete || 0);
+    return acc + (totalPedido || 0);
+  }, 0);
+  const elFaturamento = document.getElementById('indicadorFaturamentoMesVendas');
+  if (elFaturamento) elFaturamento.textContent = formatMoney(totalFaturamento);
+
+  // 4. Resumo do Mês Lista no Popup Modal
+  const grid = document.getElementById('listaPedidosMesGrid');
+  if (grid) {
+    if (pedidosDoMes.length > 0) {
+      grid.innerHTML = pedidosDoMes.map(p => {
+        const itensStr = p.itens 
+          ? (Array.isArray(p.itens) 
+              ? p.itens.map(it => typeof it === 'string' ? it.replace(/\s*-\s*R\$\s*[\d.]+/i, '') : it).join(', ') 
+              : p.itens) 
+          : `${p.quantidade}x ${p.item}`;
+        const total = (p.itens ? p.valor : (p.quantidade * p.valor)) + (p.frete || 0);
+        const statusBadge = p.status === 'Finalizado' 
+          ? `<span style="background: rgba(16, 185, 129, 0.1); color: var(--success); padding: 2px 6px; border-radius: var(--radius-sm); font-size: 0.7rem; font-weight: bold; border: 1px solid rgba(16, 185, 129, 0.2);">Pago</span>`
+          : p.status === 'Aguardando Pagamento'
+            ? `<span style="background: rgba(59, 130, 246, 0.1); color: var(--info); padding: 2px 6px; border-radius: var(--radius-sm); font-size: 0.7rem; font-weight: bold; border: 1px solid rgba(59, 130, 246, 0.2);">Aguardando Pagamento</span>`
+            : `<span style="background: rgba(245, 158, 11, 0.1); color: var(--warning); padding: 2px 6px; border-radius: var(--radius-sm); font-size: 0.7rem; font-weight: bold; border: 1px solid rgba(245, 158, 11, 0.2);">Produção</span>`;
+
+        return `
+          <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-glass); border-radius: var(--radius-md); padding: 12px; display: flex; flex-direction: column; gap: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
+              <strong style="color: var(--text-main); font-size: 0.88rem;">${escapeHTML(p.nome || 'Cliente Avulso')}</strong>
+              ${statusBadge}
+            </div>
+            <div style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.3;">
+              <strong>Itens:</strong> ${escapeHTML(itensStr || 'Nenhum item')}
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 8px; margin-top: 4px; font-size: 0.82rem;">
+              <span style="color: var(--text-muted); font-size: 0.75rem;">${p.telefone ? `📞 ${escapeHTML(p.telefone)}` : formatDate(new Date(p.data))}</span>
+              <strong style="color: var(--success);">${formatMoney(total)}</strong>
+            </div>
+          </div>
+        `;
+      }).join('');
+    } else {
+      grid.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 20px; font-size: 0.9rem;">Nenhum pedido de venda registrado para o mês selecionado.</div>`;
+    }
+  }
+}
+
+async function renderDailyIndicators() {
+  const inputDia = document.getElementById('filtroDiaServicos');
+  if (!inputDia) return;
+
+  if (!inputDia.value) {
+    inputDia.value = new Date().toLocaleDateString('sv-SE');
+  }
+
+  const selectedDate = inputDia.value;
+  const servicos = await getAllRecords('servicos');
+
+  // Filtra os serviços do dia selecionado
+  const servicosDoDia = servicos.filter(s => {
+    if (!s.data) return false;
+    return new Date(s.data).toLocaleDateString('sv-SE') === selectedDate;
+  });
+
+  const servicosFinalizadosDoDia = servicosDoDia.filter(s => s.status === 'Finalizado');
+
+  // 1. Clientes Atendidos
+  const clientesAtendidos = servicosFinalizadosDoDia.length;
+  const elClientes = document.getElementById('indicadorClientesDia');
+  if (elClientes) elClientes.textContent = clientesAtendidos;
+
+  // 2. Peças Afiadas
+  let totalPecas = 0;
+  servicosFinalizadosDoDia.forEach(s => {
+    totalPecas += extrairQuantidadeDeItens(s.itens);
+  });
+  const elPecas = document.getElementById('indicadorPecasDia');
+  if (elPecas) elPecas.textContent = totalPecas;
+
+  // 3. Faturamento do Dia
+  const totalFaturamento = servicosFinalizadosDoDia.reduce((acc, curr) => acc + (curr.valor || 0) + (curr.frete || 0), 0);
+  const elFaturamento = document.getElementById('indicadorFaturamentoDia');
+  if (elFaturamento) elFaturamento.textContent = formatMoney(totalFaturamento);
+
+  // 4. Resumo do Dia Lista
+  const grid = document.getElementById('listaServicosDiaGrid');
+  if (grid) {
+    if (servicosDoDia.length > 0) {
+      grid.innerHTML = servicosDoDia.map(s => {
+        const itensStr = Array.isArray(s.itens) ? s.itens.join(', ') : s.itens;
+        const statusBadge = s.status === 'Finalizado' 
+          ? `<span style="background: rgba(16, 185, 129, 0.1); color: var(--success); padding: 2px 6px; border-radius: var(--radius-sm); font-size: 0.7rem; font-weight: bold; border: 1px solid rgba(16, 185, 129, 0.2);">Pago</span>`
+          : s.status === 'Aguardando Pagamento'
+            ? `<span style="background: rgba(59, 130, 246, 0.1); color: var(--info); padding: 2px 6px; border-radius: var(--radius-sm); font-size: 0.7rem; font-weight: bold; border: 1px solid rgba(59, 130, 246, 0.2);">Aguardando Pagamento</span>`
+            : `<span style="background: rgba(245, 158, 11, 0.1); color: var(--warning); padding: 2px 6px; border-radius: var(--radius-sm); font-size: 0.7rem; font-weight: bold; border: 1px solid rgba(245, 158, 11, 0.2);">Fila</span>`;
+
+        return `
+          <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-glass); border-radius: var(--radius-md); padding: 12px; display: flex; flex-direction: column; gap: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
+              <strong style="color: var(--text-main); font-size: 0.88rem;">${escapeHTML(s.nome || 'Cliente Avulso')}</strong>
+              ${statusBadge}
+            </div>
+            <div style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.3;">
+              <strong>Itens:</strong> ${escapeHTML(itensStr || 'Nenhum item')}
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 8px; margin-top: 4px; font-size: 0.82rem;">
+              <span style="color: var(--text-muted); font-size: 0.75rem;">${s.telefone ? `📞 ${escapeHTML(s.telefone)}` : ''}</span>
+              <strong style="color: var(--success);">${formatMoney((s.valor || 0) + (s.frete || 0))}</strong>
+            </div>
+          </div>
+        `;
+      }).join('');
+    } else {
+      grid.innerHTML = `
+        <div style="grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; padding: 10px 14px; border: 1px dashed var(--border-glass); border-radius: var(--radius-sm); color: var(--text-muted); background: rgba(255,255,255,0.01); font-size: 0.82rem;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.5; color: var(--text-muted);"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <span>Nenhum serviço registrado para este dia.</span>
+        </div>
+      `;
+    }
+  }
 }
 
 // --- ROTEAMENTO E NAVEGAÇÃO DE ABAS ---
@@ -381,12 +663,30 @@ function switchTabWithoutPush(tabId) {
   if (sheetAdd) sheetAdd.style.display = 'none';
   if (sheetHistory) sheetHistory.style.display = 'none';
 
+  const modalResumo = document.getElementById('modalResumoDia');
+  if (modalResumo) modalResumo.style.display = 'none';
+  const modalResumoVendas = document.getElementById('modalResumoMesVendas');
+  if (modalResumoVendas) modalResumoVendas.style.display = 'none';
+
   // Atualiza classe active na navegação desktop e mobile
   document.querySelectorAll('.nav-item, .mobile-nav-item').forEach(item => {
     if (item.getAttribute('data-tab') === tabId) {
       item.classList.add('active');
     } else {
       item.classList.remove('active');
+    }
+  });
+
+  // Atualiza as pastas (folders) na sidebar para expandir a pasta ativa e adicionar classe de destaque
+  document.querySelectorAll('.nav-folder').forEach(folder => {
+    const hasActiveChild = folder.querySelector(`.nav-item[data-tab="${tabId}"]`);
+    const isFolderHeaderActive = folder.querySelector(`.nav-folder-header[data-tab="${tabId}"]`);
+    if (hasActiveChild) {
+      folder.classList.add('expanded', 'has-active');
+    } else if (isFolderHeaderActive) {
+      folder.classList.add('has-active');
+    } else {
+      folder.classList.remove('has-active');
     }
   });
 
@@ -1937,15 +2237,17 @@ async function reloadAllViews() {
   await updateAllSelectors();
 
   // Renderiza Views de abas baseadas no estado ativo
-  if (activeTab === 'servicos') {
+  if (activeTab === 'servicos' || activeTab === 'folder_servicos') {
     await renderServicosView();
-  } else if (activeTab === 'estoque') {
+    await renderDailyIndicators();
+  } else if (activeTab === 'estoque' || activeTab === 'folder_estoque') {
     await renderEstoqueView();
-  } else if (activeTab === 'pedidos') {
+  } else if (activeTab === 'pedidos' || activeTab === 'folder_vendas') {
     await renderPedidosView();
+    await renderMonthlyVendasIndicators();
   } else if (activeTab === 'receitas') {
     await renderReceitasView();
-  } else if (activeTab === 'configuracoes') {
+  } else if (activeTab === 'config_servicos') {
     await renderPecasView();
     await renderAdicionaisView();
   }
@@ -2385,7 +2687,9 @@ async function renderServicosView() {
   const muralGrid = document.getElementById('muralFilaGrid');
 
   if (muralPanel && muralGrid) {
+    const desc = muralPanel.querySelector('p');
     if (servicosFila.length > 0) {
+      if (desc) desc.style.display = 'block';
       muralPanel.style.display = 'block';
       muralGrid.innerHTML = servicosFila.map(s => {
         const itensStr = Array.isArray(s.itens) ? s.itens.join(', ') : s.itens;
@@ -2432,8 +2736,14 @@ async function renderServicosView() {
         `;
       }).join('');
     } else {
-      muralPanel.style.display = 'none';
-      muralGrid.innerHTML = '';
+      if (desc) desc.style.display = 'none';
+      muralPanel.style.display = 'block';
+      muralGrid.innerHTML = `
+        <div style="grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; padding: 10px 14px; border: 1px dashed var(--border-glass); border-radius: var(--radius-sm); color: var(--text-muted); background: rgba(255,255,255,0.01); font-size: 0.82rem;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.5; color: var(--text-muted);"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <span>Nenhum serviço agendado na fila de espera.</span>
+        </div>
+      `;
     }
   }
 
@@ -2442,7 +2752,9 @@ async function renderServicosView() {
   const muralAguardandoGrid = document.getElementById('muralAguardandoPagamentoGrid');
 
   if (muralAguardandoPanel && muralAguardandoGrid) {
+    const desc = muralAguardandoPanel.querySelector('p');
     if (servicosAguardando.length > 0) {
+      if (desc) desc.style.display = 'block';
       muralAguardandoPanel.style.display = 'block';
       muralAguardandoGrid.innerHTML = servicosAguardando.map(s => {
         const itensStr = Array.isArray(s.itens) ? s.itens.join(', ') : s.itens;
@@ -2492,8 +2804,14 @@ async function renderServicosView() {
         `;
       }).join('');
     } else {
-      muralAguardandoPanel.style.display = 'none';
-      muralAguardandoGrid.innerHTML = '';
+      if (desc) desc.style.display = 'none';
+      muralAguardandoPanel.style.display = 'block';
+      muralAguardandoGrid.innerHTML = `
+        <div style="grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; padding: 10px 14px; border: 1px dashed var(--border-glass); border-radius: var(--radius-sm); color: var(--text-muted); background: rgba(255,255,255,0.01); font-size: 0.82rem;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.5; color: var(--text-muted);"><rect x="2" y="4" width="20" height="16" rx="2" ry="2"/><line x1="12" y1="18" x2="12" y2="18"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+          <span>Nenhum serviço aguardando pagamento no momento.</span>
+        </div>
+      `;
     }
   }
 
@@ -3148,7 +3466,9 @@ async function renderPedidosView() {
   const muralProducaoGrid = document.getElementById('muralPedidosGrid');
 
   if (muralProducaoPanel && muralProducaoGrid) {
+    const desc = muralProducaoPanel.querySelector('p');
     if (pedidosProducao.length > 0) {
+      if (desc) desc.style.display = 'block';
       muralProducaoPanel.style.display = 'block';
       muralProducaoGrid.innerHTML = pedidosProducao.map(p => {
         const itensStr = p.itens ? (Array.isArray(p.itens) ? p.itens.join(', ') : p.itens) : `${p.quantidade}x ${p.item}`;
@@ -3181,8 +3501,14 @@ async function renderPedidosView() {
         `;
       }).join('');
     } else {
-      muralProducaoPanel.style.display = 'none';
-      muralProducaoGrid.innerHTML = '';
+      if (desc) desc.style.display = 'none';
+      muralProducaoPanel.style.display = 'block';
+      muralProducaoGrid.innerHTML = `
+        <div style="grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; padding: 10px 14px; border: 1px dashed var(--border-glass); border-radius: var(--radius-sm); color: var(--text-muted); background: rgba(255,255,255,0.01); font-size: 0.82rem;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.5; color: var(--text-muted);"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <span>Nenhum pedido agendado na fila de produção.</span>
+        </div>
+      `;
     }
   }
 
@@ -3191,7 +3517,9 @@ async function renderPedidosView() {
   const muralPagamentoGrid = document.getElementById('muralPedidosPagamentoGrid');
 
   if (muralPagamentoPanel && muralPagamentoGrid) {
+    const desc = muralPagamentoPanel.querySelector('p');
     if (pedidosPagamento.length > 0) {
+      if (desc) desc.style.display = 'block';
       muralPagamentoPanel.style.display = 'block';
       muralPagamentoGrid.innerHTML = pedidosPagamento.map(p => {
         const itensStr = p.itens ? (Array.isArray(p.itens) ? p.itens.join(', ') : p.itens) : `${p.quantidade}x ${p.item}`;
@@ -3227,8 +3555,14 @@ async function renderPedidosView() {
         `;
       }).join('');
     } else {
-      muralPagamentoPanel.style.display = 'none';
-      muralPagamentoGrid.innerHTML = '';
+      if (desc) desc.style.display = 'none';
+      muralPagamentoPanel.style.display = 'block';
+      muralPagamentoGrid.innerHTML = `
+        <div style="grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; padding: 10px 14px; border: 1px dashed var(--border-glass); border-radius: var(--radius-sm); color: var(--text-muted); background: rgba(255,255,255,0.01); font-size: 0.82rem;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.5; color: var(--text-muted);"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <span>Nenhum pedido aguardando pagamento no momento.</span>
+        </div>
+      `;
     }
   }
 

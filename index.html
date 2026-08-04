@@ -43,48 +43,107 @@
             Dashboard
           </button>
         </li>
-        <li class="nav-item" data-tab="novo_servico">
-          <button>
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
-            Novo Serviço
+        <!-- Pasta Serviços -->
+        <li class="nav-folder">
+          <button class="nav-folder-header" data-tab="folder_servicos">
+            <div>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="9" r="1" fill="currentColor"/>
+                <path d="M10 4l2 5M14 4l-2 5"/>
+                <path d="M11 2.5l1 1.5 1-1.5"/>
+                <path d="M12 9c-1 2-4 5-4 10a1 1 0 0 0 2 0c0-3 2-5 2-5"/>
+                <path d="M12 9c1 2 4 5 4 10a1 1 0 0 0 -2 0c0-3-2-5-2-5"/>
+              </svg>
+              <span>Serviços</span>
+            </div>
+            <svg class="chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
+          <ul class="nav-folder-items">
+            <li class="nav-item" data-tab="novo_servico">
+              <button>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+                Registrar Novo Serviço
+              </button>
+            </li>
+            <li class="nav-item" data-tab="servicos">
+              <button>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+                Histórico de Serviços
+              </button>
+            </li>
+            <li class="nav-item" data-tab="config_servicos">
+              <button>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                Configurações de Serviços
+              </button>
+            </li>
+          </ul>
         </li>
-        <li class="nav-item" data-tab="servicos">
-          <button>
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
-            Fila & Histórico
+
+        <!-- Pasta Estoque -->
+        <li class="nav-folder">
+          <button class="nav-folder-header" data-tab="folder_estoque">
+            <div>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
+                <path d="M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2"/>
+                <path d="M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2"/>
+                <path d="M9 14l2 2 4-4"/>
+              </svg>
+              <span>Estoque</span>
+            </div>
+            <svg class="chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
+          <ul class="nav-folder-items">
+            <li class="nav-item" data-tab="novo_estoque">
+              <button>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                Entrada no Estoque
+              </button>
+            </li>
+            <li class="nav-item" data-tab="estoque">
+              <button>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-5 12H4V8h11v8zm5 0h-3V8h3v8z"/></svg>
+                Consulta de Estoque
+              </button>
+            </li>
+            <li class="nav-item" data-tab="receitas">
+              <button>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8.12 19.38c1.91 0 3.7-.74 5.05-2.09l7.07-7.07c.78-.78.78-2.05 0-2.83l-3.54-3.54c-.78-.78-2.05-.78-2.83 0l-7.07 7.07c-1.35 1.35-2.09 3.14-2.09 5.05v3.54h3.42zM18.66 6.04l2.12 2.12-1.41 1.41-2.12-2.12 1.41-1.41zM6.92 14.92L14.4 7.45l2.12 2.12-7.48 7.48H6.92v-2.13zM3 20h18v2H3v-2z"/></svg>
+                Receitas
+              </button>
+            </li>
+          </ul>
         </li>
-        <li class="nav-item" data-tab="novo_estoque">
-          <button>
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
-            Entrada no Estoque
+
+        <!-- Pasta Vendas -->
+        <li class="nav-folder">
+          <button class="nav-folder-header" data-tab="folder_vendas">
+            <div>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="9" cy="21" r="1"/>
+                <circle cx="20" cy="21" r="1"/>
+                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+              </svg>
+              <span>Vendas</span>
+            </div>
+            <svg class="chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
-        </li>
-        <li class="nav-item" data-tab="estoque">
-          <button>
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-5 12H4V8h11v8zm5 0h-3V8h3v8z"/></svg>
-            Consulta de Estoque
-          </button>
-        </li>
-        <li class="nav-item" data-tab="novo_pedido">
-          <button>
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 9h2V6h3V4h-3V1h-2v3H8v2h3v3zm-4 9c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zm10 0c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2zM7.17 14.75l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H6.21l-.94-2H1v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.13 0-.25-.11-.25-.25z"/></svg>
-            Novo Pedido
-          </button>
-        </li>
-        <li class="nav-item" data-tab="pedidos">
-          <button>
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>
-            Fila & Hist. Pedidos
-          </button>
-        </li>
-        <li class="nav-item" data-tab="receitas">
-          <button>
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8.12 19.38c1.91 0 3.7-.74 5.05-2.09l7.07-7.07c.78-.78.78-2.05 0-2.83l-3.54-3.54c-.78-.78-2.05-.78-2.83 0l-7.07 7.07c-1.35 1.35-2.09 3.14-2.09 5.05v3.54h3.42zM18.66 6.04l2.12 2.12-1.41 1.41-2.12-2.12 1.41-1.41zM6.92 14.92L14.4 7.45l2.12 2.12-7.48 7.48H6.92v-2.13zM3 20h18v2H3v-2z"/></svg>
-            Receitas
-          </button>
-        </li>
+          <ul class="nav-folder-items">
+            <li class="nav-item" data-tab="novo_pedido">
+              <button>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 9h2V6h3V4h-3V1h-2v3H8v2h3v3zm-4 9c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zm10 0c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2zM7.17 14.75l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H6.21l-.94-2H1v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.13 0-.25-.11-.25-.25z"/></svg>
+                Nova Venda
+              </button>
+            </li>
+            <li class="nav-item" data-tab="pedidos">
+              <button>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>
+                Histórico de Pedidos
+              </button>
+            </li>
+          </ul>
+
         <li class="nav-item" data-tab="configuracoes">
           <button>
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
@@ -101,25 +160,19 @@
       </div>
     </aside>
 
-    <!-- Barra de Navegação Inferior (Mobile Only: 4 Opções) -->
+    <!-- Barra de Navegação Inferior (Mobile Only: 3 Opções) -->
     <nav class="mobile-nav">
       <ul class="mobile-nav-list">
         <li class="mobile-nav-item active" data-tab="menu">
           <button type="button">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-            Menu
+            Início
           </button>
         </li>
         <li class="mobile-nav-item" id="mobileNavAddTrigger">
           <button type="button">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
             Adicionar
-          </button>
-        </li>
-        <li class="mobile-nav-item" id="mobileNavHistoryTrigger">
-          <button type="button">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
-            Histórico
           </button>
         </li>
         <li class="mobile-nav-item" data-tab="configuracoes">
@@ -131,7 +184,7 @@
       </ul>
     </nav>
 
-    <!-- ACTION SHEETS MOBILE FOR MENU ADICIONAR & HISTÓRICO -->
+    <!-- ACTION SHEET MOBILE PARA ADICIONAR -->
     <div id="actionSheetAdicionar" class="action-sheet-overlay" style="display: none;">
       <div class="action-sheet-content">
         <div class="action-sheet-header">
@@ -145,34 +198,11 @@
           </button>
           <button type="button" class="action-sheet-btn" data-action-tab="novo_estoque">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
-            Entrada no Estoque
+            Item no Estoque
           </button>
           <button type="button" class="action-sheet-btn" data-action-tab="novo_pedido">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
             Nova Venda
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <div id="actionSheetHistorico" class="action-sheet-overlay" style="display: none;">
-      <div class="action-sheet-content">
-        <div class="action-sheet-header">
-          <h3>Consultas e Históricos</h3>
-          <button type="button" class="action-sheet-close" id="btnCloseSheetHistory">&times;</button>
-        </div>
-        <div class="action-sheet-menu">
-          <button type="button" class="action-sheet-btn" data-action-tab="servicos">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="12 8 12 12 14 14"/><path d="M3.05 11a9 9 0 1 1 .5 4m-.5 5v-5h5"/></svg>
-            Fila e Histórico de Serviços
-          </button>
-          <button type="button" class="action-sheet-btn" data-action-tab="estoque">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
-            Consulta de Estoque
-          </button>
-          <button type="button" class="action-sheet-btn" data-action-tab="pedidos">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-            Fila e Histórico de Vendas
           </button>
         </div>
       </div>
@@ -191,98 +221,57 @@
         </div>
 
         <div class="menu-grid">
-          <!-- Card 1: Registrar Serviço -->
-          <div class="menu-card" data-tab="novo_servico">
+          <!-- Card Serviços -->
+          <div class="menu-card" data-tab="folder_servicos">
             <div class="menu-card-icon cyan">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="9" r="1" fill="currentColor"/>
+                <path d="M10 4l2 5M14 4l-2 5"/>
+                <path d="M11 2.5l1 1.5 1-1.5"/>
+                <path d="M12 9c-1 2-4 5-4 10a1 1 0 0 0 2 0c0-3 2-5 2-5"/>
+                <path d="M12 9c1 2 4 5 4 10a1 1 0 0 0 -2 0c0-3-2-5-2-5"/>
+              </svg>
             </div>
             <div class="menu-card-content">
-              <h2>Registrar Novo Serviço</h2>
-              <p>Abra o formulário para cadastrar um novo cliente, peças de afiação e serviços adicionais.</p>
+              <h2>Serviços</h2>
+              <p>Gerencie ordens de serviço, peças afiadas, fila de trabalho e histórico.</p>
             </div>
             <div class="menu-card-arrow">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
             </div>
           </div>
 
-          <!-- Card 1B: Fila & Histórico de Serviços -->
-          <div class="menu-card" data-tab="servicos">
-            <div class="menu-card-icon info">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2m-6 9l2 2 4-4"/></svg>
-            </div>
-            <div class="menu-card-content">
-              <h2>Fila & Histórico de Serviços</h2>
-              <p>Monitore a fila de espera dos serviços agendados e consulte os faturamentos concluídos.</p>
-            </div>
-            <div class="menu-card-arrow">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
-            </div>
-          </div>
-
-          <!-- Card 2: Nova Entrada no Estoque -->
-          <div class="menu-card" data-tab="novo_estoque">
+          <!-- Card Estoque -->
+          <div class="menu-card" data-tab="folder_estoque">
             <div class="menu-card-icon warning">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
+                <path d="M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2"/>
+                <path d="M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2"/>
+                <path d="M9 14l2 2 4-4"/>
+              </svg>
             </div>
             <div class="menu-card-content">
-              <h2>Entrada no Estoque</h2>
-              <p>Cadastre novos itens, insumos, produtos acabados, cotações e movimentações de estoque.</p>
+              <h2>Estoque</h2>
+              <p>Controle saldo de matérias-primas e insumos, faça entradas simples ou notas de compra e rateios.</p>
             </div>
             <div class="menu-card-arrow">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
             </div>
           </div>
 
-          <!-- Card 2B: Consulta de Estoque -->
-          <div class="menu-card" data-tab="estoque">
-            <div class="menu-card-icon warning">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-5 12H4V8h11v8zm5 0h-3V8h3v8z"/></svg>
-            </div>
-            <div class="menu-card-content">
-              <h2>Consulta de Estoque</h2>
-              <p>Monitore os saldos disponíveis, custos médios e o detalhamento de lotes por item.</p>
-            </div>
-            <div class="menu-card-arrow">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
-            </div>
-          </div>
-
-          <!-- Card 3A: Novo Pedido -->
-          <div class="menu-card" data-tab="novo_pedido">
+          <!-- Card Vendas -->
+          <div class="menu-card" data-tab="folder_vendas">
             <div class="menu-card-icon emerald">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 9h2V6h3V4h-3V1h-2v3H8v2h3v3zm-4 9c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zm10 0c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2zM7.17 14.75l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H6.21l-.94-2H1v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.13 0-.25-.11-.25-.25z"/></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="9" cy="21" r="1"/>
+                <circle cx="20" cy="21" r="1"/>
+                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+              </svg>
             </div>
             <div class="menu-card-content">
-              <h2>Novo Pedido (Venda)</h2>
-              <p>Registre saídas e vendas de produtos acabados ou insumos para seus clientes.</p>
-            </div>
-            <div class="menu-card-arrow">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
-            </div>
-          </div>
-
-          <!-- Card 3B: Fila e Histórico de Pedidos -->
-          <div class="menu-card" data-tab="pedidos">
-            <div class="menu-card-icon emerald">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>
-            </div>
-            <div class="menu-card-content">
-              <h2>Fila & Histórico de Pedidos</h2>
-              <p>Acompanhe a fila de produção, a fila de pagamento e consulte as vendas realizadas.</p>
-            </div>
-            <div class="menu-card-arrow">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
-            </div>
-          </div>
-
-          <!-- Card 4: Receitas -->
-          <div class="menu-card" data-tab="receitas">
-            <div class="menu-card-icon info">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8.12 19.38c1.91 0 3.7-.74 5.05-2.09l7.07-7.07c.78-.78.78-2.05 0-2.83l-3.54-3.54c-.78-.78-2.05-.78-2.83 0l-7.07 7.07c-1.35 1.35-2.09 3.14-2.09 5.05v3.54h3.42zM18.66 6.04l2.12 2.12-1.41 1.41-2.12-2.12 1.41-1.41zM6.92 14.92L14.4 7.45l2.12 2.12-7.48 7.48H6.92v-2.13zM3 20h18v2H3v-2z"/></svg>
-            </div>
-            <div class="menu-card-content">
-              <h2>Receitas de Produtos</h2>
-              <p>Defina as matérias-primas, custos de mão de obra e composição de fabricação dos seus produtos.</p>
+              <h2>Vendas</h2>
+              <p>Gerencie pedidos de venda de produtos ou insumos, a fila de fabricação e o fluxo de caixa.</p>
             </div>
             <div class="menu-card-arrow">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
@@ -311,6 +300,305 @@
             <div class="menu-card-content">
               <h2>Configurações</h2>
               <p>Configure preços padrões de peças e adicionais, faixas de desconto progressivo e realize backups de dados.</p>
+            </div>
+            <div class="menu-card-arrow">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ABA PASTA: SERVIÇOS -->
+      <section id="folder_servicos" class="tab-panel">
+        <div class="page-header">
+          <div class="page-title">
+            <h1>Núcleo de Serviços</h1>
+            <p>Selecione um dos módulos de serviços abaixo</p>
+          </div>
+        </div>
+
+        <!-- Resumo Diário de Serviços -->
+        <div class="table-panel" style="margin-bottom: 24px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+            <h2 style="margin: 0; font-size: 1.2rem;">Indicadores Diários</h2>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <label for="filtroDiaServicos" style="font-size: 0.85rem; color: var(--text-muted); font-weight: 500;">Dia:</label>
+              <input type="date" id="filtroDiaServicos" class="form-control" style="width: auto; padding: 6px 12px; font-size: 0.88rem; height: auto; cursor: pointer;">
+            </div>
+          </div>
+          
+          <!-- Cards de Indicadores -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px;">
+            <!-- Card 1: Clientes Atendidos -->
+            <div class="stat-card-mini" style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-glass); border-radius: var(--radius-md); padding: 12px 16px; display: flex; align-items: center; gap: 12px;">
+              <div style="background: rgba(6, 182, 212, 0.1); color: var(--primary); padding: 8px; border-radius: var(--radius-sm); display: flex; align-items: center;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              </div>
+              <div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); line-height: 1.2;">Clientes Atendidos</div>
+                <div id="indicadorClientesDia" style="font-size: 1.25rem; font-weight: bold; color: var(--text-main);">0</div>
+              </div>
+            </div>
+            
+            <!-- Card 2: Peças Afiadas -->
+            <div class="stat-card-mini" style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-glass); border-radius: var(--radius-md); padding: 12px 16px; display: flex; align-items: center; gap: 12px;">
+              <div style="background: rgba(245, 158, 11, 0.1); color: var(--warning); padding: 8px; border-radius: var(--radius-sm); display: flex; align-items: center;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 2 18 2 18 6 6 6 6 2"/><rect x="3" y="6" width="18" height="16" rx="2"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+              </div>
+              <div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); line-height: 1.2;">Peças Afiadas</div>
+                <div id="indicadorPecasDia" style="font-size: 1.25rem; font-weight: bold; color: var(--text-main);">0</div>
+              </div>
+            </div>
+            
+            <!-- Card 3: Faturamento do Dia -->
+            <div class="stat-card-mini" style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-glass); border-radius: var(--radius-md); padding: 12px 16px; display: flex; align-items: center; gap: 12px;">
+              <div style="background: rgba(16, 185, 129, 0.1); color: var(--success); padding: 8px; border-radius: var(--radius-sm); display: flex; align-items: center;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              </div>
+              <div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); line-height: 1.2;">Faturamento do Dia</div>
+                <div id="indicadorFaturamentoDia" style="font-size: 1.25rem; font-weight: bold; color: var(--success);">R$ 0,00</div>
+              </div>
+            </div>
+
+            <!-- Card 4: Botão Resumo do Dia -->
+            <button type="button" id="btnVerResumoDia" class="stat-card-mini" style="background: rgba(99, 102, 241, 0.06); border: 1px solid var(--border-glass); border-radius: var(--radius-md); padding: 12px 16px; display: flex; align-items: center; gap: 12px; cursor: pointer; color: var(--text-main); text-align: left; transition: all var(--transition-smooth); width: 100%; font-family: inherit;" onmouseover="this.style.background='rgba(99, 102, 241, 0.15)'; this.style.borderColor='var(--primary)';" onmouseout="this.style.background='rgba(99, 102, 241, 0.06)'; this.style.borderColor='var(--border-glass)';">
+              <div style="background: rgba(99, 102, 241, 0.12); color: var(--primary); padding: 8px; border-radius: var(--radius-sm); display: flex; align-items: center; transition: background 0.2s;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+              </div>
+              <div style="flex-grow: 1;">
+                <div style="font-size: 0.75rem; color: var(--text-muted); line-height: 1.2;">Visualizar Lista</div>
+                <div style="font-size: 1.05rem; font-weight: bold; color: var(--primary);">Resumo do Dia</div>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 24px; width: 100%; margin-bottom: 24px;">
+          <!-- Mural de Serviços em Fila (Agendados) -->
+          <div class="table-panel" id="muralFilaPanel">
+            <h2 style="margin-bottom: 8px;">Fila de Espera (Serviços Agendados)</h2>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 16px;">Serviços pendentes de realização. Clique em "Concluir" para finalizá-los.</p>
+            <div id="muralFilaGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;">
+              <!-- Preenchido dinamicamente via JS -->
+            </div>
+          </div>
+
+          <!-- Mural de Serviços Aguardando Pagamento -->
+          <div class="table-panel" id="muralAguardandoPagamentoPanel">
+            <h2 style="margin-bottom: 8px;">Aguardando Pagamento</h2>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 16px;">Serviços finalizados pendentes de pagamento. Clique em "Pagar" para confirmar a forma de pagamento.</p>
+            <div id="muralAguardandoPagamentoGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;">
+              <!-- Preenchido dinamicamente via JS -->
+            </div>
+          </div>
+        </div>
+
+        <div class="menu-grid">
+          <!-- Card 1: Registrar Serviço -->
+          <div class="menu-card" data-tab="novo_servico">
+            <div class="menu-card-icon cyan">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+            </div>
+            <div class="menu-card-content">
+              <h2>Registrar Novo Serviço</h2>
+              <p>Abra o formulário para cadastrar um novo cliente, peças de afiação e serviços adicionais.</p>
+            </div>
+            <div class="menu-card-arrow">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+            </div>
+          </div>
+          <!-- Card 1B: Histórico de Serviços -->
+          <div class="menu-card" data-tab="servicos">
+            <div class="menu-card-icon info">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2m-6 9l2 2 4-4"/></svg>
+            </div>
+            <div class="menu-card-content">
+              <h2>Histórico de Serviços</h2>
+              <p>Consulte os faturamentos e registros de serviços concluídos na plataforma.</p>
+            </div>
+            <div class="menu-card-arrow">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+            </div>
+          </div>
+          <!-- Card 1C: Configurações de Serviços -->
+          <div class="menu-card" data-tab="config_servicos">
+            <div class="menu-card-icon info">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            </div>
+            <div class="menu-card-content">
+              <h2>Configurações de Serviços</h2>
+              <p>Gerencie o cadastro de peças, serviços adicionais e as faixas de desconto progressivo.</p>
+            </div>
+            <div class="menu-card-arrow">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ABA PASTA: ESTOQUE -->
+      <section id="folder_estoque" class="tab-panel">
+        <div class="page-header">
+          <div class="page-title">
+            <h1>Núcleo de Estoque</h1>
+            <p>Selecione um dos módulos de estoque abaixo</p>
+          </div>
+        </div>
+        <div class="menu-grid">
+          <!-- Card 2: Entrada no Estoque -->
+          <div class="menu-card" data-tab="novo_estoque">
+            <div class="menu-card-icon warning">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+            </div>
+            <div class="menu-card-content">
+              <h2>Entrada no Estoque</h2>
+              <p>Cadastre novos itens, insumos, produtos acabados, cotações e movimentações de estoque.</p>
+            </div>
+            <div class="menu-card-arrow">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+            </div>
+          </div>
+          <!-- Card 2B: Consulta de Estoque -->
+          <div class="menu-card" data-tab="estoque">
+            <div class="menu-card-icon warning">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-5 12H4V8h11v8zm5 0h-3V8h3v8z"/></svg>
+            </div>
+            <div class="menu-card-content">
+              <h2>Consulta de Estoque</h2>
+              <p>Monitore os saldos disponíveis, custos médios e o detalhamento de lotes por item.</p>
+            </div>
+            <div class="menu-card-arrow">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+            </div>
+          </div>
+
+          <!-- Card 4: Receitas -->
+          <div class="menu-card" data-tab="receitas">
+            <div class="menu-card-icon info">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8.12 19.38c1.91 0 3.7-.74 5.05-2.09l7.07-7.07c.78-.78.78-2.05 0-2.83l-3.54-3.54c-.78-.78-2.05-.78-2.83 0l-7.07 7.07c-1.35 1.35-2.09 3.14-2.09 5.05v3.54h3.42zM18.66 6.04l2.12 2.12-1.41 1.41-2.12-2.12 1.41-1.41zM6.92 14.92L14.4 7.45l2.12 2.12-7.48 7.48H6.92v-2.13zM3 20h18v2H3v-2z"/></svg>
+            </div>
+            <div class="menu-card-content">
+              <h2>Receitas de Produtos</h2>
+              <p>Defina as matérias-primas, custos de mão de obra e composição de fabricação dos seus produtos.</p>
+            </div>
+            <div class="menu-card-arrow">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ABA PASTA: VENDAS -->
+      <section id="folder_vendas" class="tab-panel">
+        <div class="page-header">
+          <div class="page-title">
+            <h1>Núcleo de Vendas</h1>
+            <p>Selecione um dos módulos de vendas abaixo</p>
+          </div>
+        </div>
+
+        <!-- Resumo Mensal de Vendas -->
+        <div class="table-panel" style="margin-bottom: 24px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+            <h2 style="margin: 0; font-size: 1.2rem;">Indicadores Mensais</h2>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <label for="filtroMesVendas" style="font-size: 0.85rem; color: var(--text-muted); font-weight: 500;">Mês:</label>
+              <input type="month" id="filtroMesVendas" class="form-control" style="width: auto; padding: 6px 12px; font-size: 0.88rem; height: auto; cursor: pointer;">
+            </div>
+          </div>
+          
+          <!-- Cards de Indicadores -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px;">
+            <!-- Card 1: Vendas Realizadas -->
+            <div class="stat-card-mini" style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-glass); border-radius: var(--radius-md); padding: 12px 16px; display: flex; align-items: center; gap: 12px;">
+              <div style="background: rgba(16, 185, 129, 0.1); color: var(--success); padding: 8px; border-radius: var(--radius-sm); display: flex; align-items: center;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+              </div>
+              <div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); line-height: 1.2;">Vendas Realizadas</div>
+                <div id="indicadorVendasMes" style="font-size: 1.25rem; font-weight: bold; color: var(--text-main);">0</div>
+              </div>
+            </div>
+            
+            <!-- Card 2: Produtos Vendidos -->
+            <div class="stat-card-mini" style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-glass); border-radius: var(--radius-md); padding: 12px 16px; display: flex; align-items: center; gap: 12px;">
+              <div style="background: rgba(245, 158, 11, 0.1); color: var(--warning); padding: 8px; border-radius: var(--radius-sm); display: flex; align-items: center;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+              </div>
+              <div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); line-height: 1.2;">Produtos Vendidos</div>
+                <div id="indicadorProdutosMes" style="font-size: 1.25rem; font-weight: bold; color: var(--text-main);">0</div>
+              </div>
+            </div>
+            
+            <!-- Card 3: Faturamento do Mês -->
+            <div class="stat-card-mini" style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-glass); border-radius: var(--radius-md); padding: 12px 16px; display: flex; align-items: center; gap: 12px;">
+              <div style="background: rgba(6, 182, 212, 0.1); color: var(--primary); padding: 8px; border-radius: var(--radius-sm); display: flex; align-items: center;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              </div>
+              <div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); line-height: 1.2;">Faturamento do Mês</div>
+                <div id="indicadorFaturamentoMesVendas" style="font-size: 1.25rem; font-weight: bold; color: var(--success);">R$ 0,00</div>
+              </div>
+            </div>
+
+            <!-- Card 4: Botão Resumo do Mês -->
+            <button type="button" id="btnVerResumoMesVendas" class="stat-card-mini" style="background: rgba(99, 102, 241, 0.06); border: 1px solid var(--border-glass); border-radius: var(--radius-md); padding: 12px 16px; display: flex; align-items: center; gap: 12px; cursor: pointer; color: var(--text-main); text-align: left; transition: all var(--transition-smooth); width: 100%; font-family: inherit;" onmouseover="this.style.background='rgba(99, 102, 241, 0.15)'; this.style.borderColor='var(--primary)';" onmouseout="this.style.background='rgba(99, 102, 241, 0.06)'; this.style.borderColor='var(--border-glass)';">
+              <div style="background: rgba(99, 102, 241, 0.12); color: var(--primary); padding: 8px; border-radius: var(--radius-sm); display: flex; align-items: center; transition: background 0.2s;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+              </div>
+              <div style="flex-grow: 1;">
+                <div style="font-size: 0.75rem; color: var(--text-muted); line-height: 1.2;">Visualizar Lista</div>
+                <div style="font-size: 1.05rem; font-weight: bold; color: var(--primary);">Resumo do Mês</div>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 24px; width: 100%; margin-bottom: 24px;">
+          <!-- Mural de Pedidos em Fila de Produção (Agendados) -->
+          <div class="table-panel" id="muralPedidosPanel">
+            <h2 style="margin-bottom: 8px;">Fila de Produção (Pedidos Agendados)</h2>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 16px;">Pedidos pendentes de fabricação/produção. Clique em "Concluir" para avançar.</p>
+            <div id="muralPedidosGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;">
+              <!-- Preenchido dinamicamente via JS -->
+            </div>
+          </div>
+
+          <!-- Mural de Pedidos Aguardando Pagamento -->
+          <div class="table-panel" id="muralPedidosPagamentoPanel">
+            <h2 style="margin-bottom: 8px;">Fila de Pagamento (Aguardando Pagamento)</h2>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 16px;">Pedidos concluídos pendentes de pagamento. Clique em "Pagar" para confirmar a quitação.</p>
+            <div id="muralPedidosPagamentoGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;">
+              <!-- Preenchido dinamicamente via JS -->
+            </div>
+          </div>
+        </div>
+
+        <div class="menu-grid">
+          <!-- Card 3A: Nova Venda -->
+          <div class="menu-card" data-tab="novo_pedido">
+            <div class="menu-card-icon emerald">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 9h2V6h3V4h-3V1h-2v3H8v2h3v3zm-4 9c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zm10 0c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2zM7.17 14.75l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H6.21l-.94-2H1v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.13 0-.25-.11-.25-.25z"/></svg>
+            </div>
+            <div class="menu-card-content">
+              <h2>Nova Venda</h2>
+              <p>Registre saídas e vendas de produtos acabados ou insumos para seus clientes.</p>
+            </div>
+            <div class="menu-card-arrow">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+            </div>
+          </div>
+          <!-- Card 3B: Histórico de Pedidos -->
+          <div class="menu-card" data-tab="pedidos">
+            <div class="menu-card-icon emerald">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>
+            </div>
+            <div class="menu-card-content">
+              <h2>Histórico de Pedidos</h2>
+              <p>Consulte os faturamentos e registros de vendas concluídas na plataforma.</p>
             </div>
             <div class="menu-card-arrow">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
@@ -530,34 +818,16 @@
         </div>
       </section>
 
-      <!-- ABA 3: FILA E HISTÓRICO DE SERVIÇOS -->
+      <!-- ABA 3: HISTÓRICO DE SERVIÇOS -->
       <section id="servicos" class="tab-panel">
         <div class="page-header">
           <div class="page-title">
-            <h1>Mural & Histórico de Serviços</h1>
-            <p>Gerencie os serviços agendados na fila de espera e consulte o histórico de realizados</p>
+            <h1>Histórico de Serviços</h1>
+            <p>Consulte e filtre os registros de faturamentos de serviços concluídos</p>
           </div>
         </div>
         
         <div style="display: flex; flex-direction: column; gap: 24px; width: 100%;">
-          <!-- Mural de Serviços em Fila (Agendados) -->
-          <div class="table-panel" id="muralFilaPanel" style="display: none;">
-            <h2 style="margin-bottom: 8px;">Fila de Espera (Serviços Agendados)</h2>
-            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 16px;">Serviços pendentes de realização. Clique em "Concluir" para finalizá-los.</p>
-            <div id="muralFilaGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;">
-              <!-- Preenchido dinamicamente via JS -->
-            </div>
-          </div>
-
-          <!-- Mural de Serviços Aguardando Pagamento -->
-          <div class="table-panel" id="muralAguardandoPagamentoPanel" style="display: none;">
-            <h2 style="margin-bottom: 8px;">Aguardando Pagamento</h2>
-            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 16px;">Serviços finalizados pendentes de pagamento. Clique em "Pagar" para confirmar a forma de pagamento.</p>
-            <div id="muralAguardandoPagamentoGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;">
-              <!-- Preenchido dinamicamente via JS -->
-            </div>
-          </div>
-
           <div class="table-panel">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
               <h2 id="tituloHistoricoServicos" style="margin: 0;">Histórico de Serviços</h2>
@@ -864,11 +1134,11 @@
         </div>
       </section>
 
-      <!-- ABA NOVO PEDIDO (VENDA) -->
+      <!-- ABA NOVA VENDA -->
       <section id="novo_pedido" class="tab-panel">
         <div class="page-header">
           <div class="page-title">
-            <h1>Novo Pedido (Venda)</h1>
+            <h1>Nova Venda</h1>
             <p>Registre saídas e vendas de produtos prontos para seus clientes</p>
           </div>
         </div>
@@ -946,33 +1216,15 @@
       <section id="pedidos" class="tab-panel">
         <div class="page-header">
           <div class="page-title">
-            <h1>Mural & Histórico de Pedidos</h1>
-            <p>Acompanhe a fila de produção, a fila de pagamento e o histórico de vendas realizadas</p>
+            <h1>Histórico de Pedidos</h1>
+            <p>Consulte os registros de vendas e pedidos realizados na plataforma</p>
           </div>
         </div>
 
         <div style="display: flex; flex-direction: column; gap: 24px; width: 100%;">
-          <!-- Mural de Pedidos em Fila de Produção (Agendados) -->
-          <div class="table-panel" id="muralPedidosPanel" style="display: none;">
-            <h2 style="margin-bottom: 8px;">Fila de Produção (Pedidos Agendados)</h2>
-            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 16px;">Pedidos pendentes de fabricação/produção. Clique em "Concluir" para avançar.</p>
-            <div id="muralPedidosGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;">
-              <!-- Preenchido dinamicamente via JS -->
-            </div>
-          </div>
-
-          <!-- Mural de Pedidos Aguardando Pagamento -->
-          <div class="table-panel" id="muralPedidosPagamentoPanel" style="display: none;">
-            <h2 style="margin-bottom: 8px;">Fila de Pagamento (Aguardando Pagamento)</h2>
-            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 16px;">Pedidos concluídos pendentes de pagamento. Clique em "Pagar" para confirmar a quitação.</p>
-            <div id="muralPedidosPagamentoGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;">
-              <!-- Preenchido dinamicamente via JS -->
-            </div>
-          </div>
-
           <!-- Pedidos Realizados (Histórico) -->
           <div class="table-panel">
-            <h2>Histórico de Pedidos Realizados</h2>
+            <h2>Histórico de Pedidos</h2>
             <div class="table-responsive">
               <table class="data-table" id="tablePedidos">
                 <thead>
@@ -1073,17 +1325,16 @@
         </div>
       </section>
 
-      <!-- ABA 6: CONFIGURAÇÕES -->
-      <section id="configuracoes" class="tab-panel">
+      <!-- ABA 5B: CONFIGURAÇÕES DE SERVIÇOS -->
+      <section id="config_servicos" class="tab-panel">
         <div class="page-header">
           <div class="page-title">
-            <h1>Configurações do Sistema</h1>
-            <p>Gerencie as configurações e dados locais</p>
+            <h1>Configurações de Serviços</h1>
+            <p>Gerencie o cadastro de peças, serviços adicionais e descontos progressivos</p>
           </div>
         </div>
 
         <div class="settings-box">
-
           <!-- Seção de Cadastro de Peças e Adicionais (Preços Padrões) -->
           <div style="border-top: 1px solid var(--border-glass); margin-top: 32px; padding-top: 24px; margin-bottom: 32px;">
             <h2 style="font-family: var(--font-heading); font-size: 1.5rem; color: var(--primary); margin-bottom: 8px;">Cadastro de Peças & Adicionais</h2>
@@ -1203,9 +1454,21 @@
               <button type="submit" class="btn btn-primary" style="display: inline-block; width: auto; padding: 10px 24px;">Salvar Configurações de Desconto</button>
             </form>
           </div>
+        </div>
+      </section>
 
+      <!-- ABA 6: CONFIGURAÇÕES -->
+      <section id="configuracoes" class="tab-panel">
+        <div class="page-header">
+          <div class="page-title">
+            <h1>Configurações do Sistema</h1>
+            <p>Gerencie as configurações e dados locais</p>
+          </div>
+        </div>
+
+        <div class="settings-box">
           <!-- Simulação de Popups para Validação / Testes -->
-          <div style="border-top: 1px solid var(--border-glass); margin-top: 32px; padding-top: 24px;">
+          <div>
             <h3 style="font-family: var(--font-heading); color: var(--primary); margin-bottom: 8px;">Desenvolvedor / Testar Popups</h3>
             <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;">Simule o comportamento dos popups do PWA (atualizações) para verificar o visual no celular ou computador.</p>
             <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 8px;">
@@ -1647,6 +1910,46 @@
 
 
 
+
+  <!-- MODAL: RESUMO DO DIA -->
+  <div class="modal" id="modalResumoDia" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 15, 25, 0.85); backdrop-filter: blur(8px); z-index: 1000; align-items: center; justify-content: center; padding: 20px;">
+    <div class="form-panel" style="width: 100%; max-width: 600px; box-shadow: var(--shadow-lg); border: 1px solid var(--border-glass); animation: fadeIn 0.3s ease-out; max-height: 90vh; overflow-y: auto; padding: 24px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-glass); padding-bottom: 12px; margin-bottom: 20px;">
+        <h2 style="margin: 0; border: none; padding: 0; font-size: 1.3rem; color: var(--primary);">Resumo de Serviços do Dia</h2>
+        <button type="button" class="btn-icon-only" id="btnFecharModalResumoDia" style="padding: 4px;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <div id="listaServicosDiaGrid" style="display: flex; flex-direction: column; gap: 12px; max-height: 55vh; overflow-y: auto; padding-right: 4px;">
+        <!-- Preenchido dinamicamente via JS -->
+      </div>
+      
+      <div style="margin-top: 24px; display: flex; justify-content: flex-end; border-top: 1px solid var(--border-glass); padding-top: 16px;">
+        <button type="button" class="btn btn-secondary" id="btnFecharModalResumoDiaOk" style="padding: 8px 16px;">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: RESUMO DO MÊS DE VENDAS -->
+  <div class="modal" id="modalResumoMesVendas" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 15, 25, 0.85); backdrop-filter: blur(8px); z-index: 1000; align-items: center; justify-content: center; padding: 20px;">
+    <div class="form-panel" style="width: 100%; max-width: 600px; box-shadow: var(--shadow-lg); border: 1px solid var(--border-glass); animation: fadeIn 0.3s ease-out; max-height: 90vh; overflow-y: auto; padding: 24px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-glass); padding-bottom: 12px; margin-bottom: 20px;">
+        <h2 style="margin: 0; border: none; padding: 0; font-size: 1.3rem; color: var(--primary);">Resumo de Vendas do Mês</h2>
+        <button type="button" class="btn-icon-only" id="btnFecharModalResumoMesVendas" style="padding: 4px;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <div id="listaPedidosMesGrid" style="display: flex; flex-direction: column; gap: 12px; max-height: 55vh; overflow-y: auto; padding-right: 4px;">
+        <!-- Preenchido dinamicamente via JS -->
+      </div>
+      
+      <div style="margin-top: 24px; display: flex; justify-content: flex-end; border-top: 1px solid var(--border-glass); padding-top: 16px;">
+        <button type="button" class="btn btn-secondary" id="btnFecharModalResumoMesVendasOk" style="padding: 8px 16px;">Fechar</button>
+      </div>
+    </div>
+  </div>
 
   <!-- JS Scripts -->
   <script src="chart.js"></script>
