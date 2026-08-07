@@ -350,8 +350,19 @@
                 <div id="indicadorPecasDia" style="font-size: 1.25rem; font-weight: bold; color: var(--text-main);">0</div>
               </div>
             </div>
+
+            <!-- Card 3: Alicates Novos Vendidos -->
+            <div class="stat-card-mini" style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-glass); border-radius: var(--radius-md); padding: 12px 16px; display: flex; align-items: center; gap: 12px;">
+              <div style="background: rgba(168, 85, 247, 0.1); color: #a855f7; padding: 8px; border-radius: var(--radius-sm); display: flex; align-items: center;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+              </div>
+              <div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); line-height: 1.2;">Alicates Novos Vendidos</div>
+                <div id="indicadorProdutosDia" style="font-size: 1.25rem; font-weight: bold; color: var(--text-main);">0</div>
+              </div>
+            </div>
             
-            <!-- Card 3: Faturamento do Dia -->
+            <!-- Card 4: Faturamento do Dia -->
             <div class="stat-card-mini" style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-glass); border-radius: var(--radius-md); padding: 12px 16px; display: flex; align-items: center; gap: 12px;">
               <div style="background: rgba(16, 185, 129, 0.1); color: var(--success); padding: 8px; border-radius: var(--radius-sm); display: flex; align-items: center;">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
@@ -727,16 +738,16 @@
             
             <div class="form-group" style="border-top: 1px solid var(--border-glass); padding-top: 20px; margin-top: 20px;">
               <label style="font-family: var(--font-heading); color: var(--primary); font-size: 1.1rem; display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--primary);"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-                Itens Afiados / Modificados
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--primary);"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                Itens Afiados / Produtos (Alicates Novos)
               </label>
-              <p style="color: var(--text-muted); font-size: 0.8rem; line-height: 1.4; margin-bottom: 16px;">Selecione as peças afiadas ou digite um item personalizado, definindo a quantidade e o preço cobrado.</p>
+              <p style="color: var(--text-muted); font-size: 0.8rem; line-height: 1.4; margin-bottom: 16px;">Selecione peças afiadas, produtos/alicates novos (receitas) ou digite um item personalizado, definindo a quantidade e o preço cobrado.</p>
               
               <div class="dynamic-items-container" id="servItensContainer">
                 <div class="dynamic-item-row" style="flex-wrap: wrap; margin-bottom: 8px;">
                   <div style="display: flex; gap: 8px; width: 100%; align-items: center;">
                     <select class="form-control item-select" style="flex: 1;" required>
-                      <option value="">Selecione a peça...</option>
+                      <option value="">Selecione o item/serviço...</option>
                       <!-- Alimentado dinamicamente -->
                       <option value="custom">Outro (Digitar)...</option>
                     </select>
@@ -746,12 +757,12 @@
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                     </button>
                   </div>
-                  <input type="text" class="form-control item-name-custom" placeholder="Nome da peça personalizada" style="display: none; margin-top: 8px; width: 100%;" />
+                  <input type="text" class="form-control item-name-custom" placeholder="Nome do item personalizado" style="display: none; margin-top: 8px; width: 100%;" />
                 </div>
               </div>
               <button type="button" class="btn-dashed-highlight" id="btnAddServItem">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                Adicionar Peça Afiada
+                + Adicionar Peça / Produto Novo
               </button>
             </div>
 
@@ -1148,14 +1159,69 @@
           <div class="form-panel" style="max-width: 800px; margin: 0 auto; width: 100%;">
             <h2>Cadastrar Nova Venda</h2>
             <form id="formPedido">
+              <h3 style="font-size: 0.95rem; color: var(--secondary); margin-bottom: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Dados do Cliente</h3>
+              
+              <div class="form-row">
+                <div class="form-group" style="flex: 2;">
+                  <label for="pedNome">Nome do Cliente</label>
+                  <input type="text" id="pedNome" class="form-control" placeholder="Ex: João da Silva">
+                </div>
+                <div class="form-group" style="flex: 1.2;">
+                  <label for="pedTelefone">Telefone de Contato</label>
+                  <input type="text" id="pedTelefone" class="form-control" placeholder="Ex: (41) 99999-9999">
+                </div>
+                <div class="form-group" style="flex: 1.2;">
+                  <label for="pedCpf">CPF</label>
+                  <input type="text" id="pedCpf" class="form-control" placeholder="Ex: 000.000.000-00">
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group" style="flex: 1;">
+                  <label for="pedCep">CEP</label>
+                  <input type="text" id="pedCep" class="form-control" placeholder="Ex: 80000-000">
+                </div>
+                <div class="form-group" style="flex: 2;">
+                  <label for="pedRua">Rua / Logradouro</label>
+                  <input type="text" id="pedRua" class="form-control" placeholder="Ex: Av. Brasil">
+                </div>
+                <div class="form-group" style="flex: 0.8;">
+                  <label for="pedNumero">Número</label>
+                  <input type="text" id="pedNumero" class="form-control" placeholder="Ex: 123">
+                </div>
+              </div>
+
               <div class="form-row">
                 <div class="form-group">
-                  <label for="pedNome">Nome do Cliente</label>
-                  <input type="text" id="pedNome" class="form-control" placeholder="Ex: Marcenaria Pinheiro (Opcional)">
+                  <label for="pedBairro">Bairro</label>
+                  <input type="text" id="pedBairro" class="form-control" placeholder="Ex: Centro">
                 </div>
                 <div class="form-group">
-                  <label for="pedTelefone">Telefone do Cliente</label>
-                  <input type="text" id="pedTelefone" class="form-control" placeholder="Ex: (41) 99999-9999 (Opcional)">
+                  <label for="pedCidade">Cidade</label>
+                  <input type="text" id="pedCidade" class="form-control" placeholder="Ex: Curitiba">
+                </div>
+                <div class="form-group">
+                  <label for="pedEstado">Estado (UF)</label>
+                  <input type="text" id="pedEstado" class="form-control" placeholder="Ex: PR">
+                </div>
+                <div class="form-group">
+                  <label for="pedPais">País</label>
+                  <input type="text" id="pedPais" class="form-control" placeholder="Ex: Brasil" value="Brasil">
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group" style="flex: 2;">
+                  <label for="pedPontoReferencia">Ponto de Referência</label>
+                  <input type="text" id="pedPontoReferencia" class="form-control" placeholder="Ex: Próximo ao posto de combustível">
+                </div>
+                <div class="form-group" style="flex: 1;">
+                  <label for="pedVoltagemMotor">Voltagem do Motor</label>
+                  <select id="pedVoltagemMotor" class="form-control">
+                    <option value="">Selecione...</option>
+                    <option value="110">110V</option>
+                    <option value="220">220V</option>
+                  </select>
                 </div>
               </div>
 
@@ -1257,8 +1323,9 @@
         <div class="layout-split">
           <!-- Formulário de Receita -->
           <div class="form-panel">
-            <h2>Nova Receita / Produto</h2>
+            <h2 id="receitaFormTitle">Nova Receita / Produto</h2>
             <form id="formReceita">
+              <input type="hidden" id="receitaId" value="">
               <div class="form-group">
                 <label for="recProdFinal">Nome do Produto Acabado</label>
                 <input type="text" id="recProdFinal" class="form-control" placeholder="Ex: Faca Afiada Premium" required>
@@ -1298,7 +1365,8 @@
                 Custo de Fabricação Estimado: <strong>R$ 0,00</strong>
               </div>
 
-              <button type="submit" class="btn btn-primary" style="width: 100%;">Cadastrar Receita</button>
+              <button type="submit" class="btn btn-primary" id="btnReceitaSubmit" style="width: 100%;">Cadastrar Receita</button>
+              <button type="button" class="btn btn-secondary" id="btnReceitaCancel" style="width: 100%; margin-top: 8px; display: none;">Cancelar Edição</button>
             </form>
           </div>
 
@@ -1857,18 +1925,37 @@
       </div>
 
       <div style="display: flex; flex-direction: column; gap: 16px;">
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px;">
           <div>
             <div style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; font-weight: bold; margin-bottom: 4px;">Cliente</div>
-            <div id="detalhePedCliente" style="font-size: 1.1rem; font-weight: 600; color: var(--text-main);"></div>
+            <div id="detalhePedCliente" style="font-size: 1rem; font-weight: 600; color: var(--text-main);"></div>
           </div>
           <div>
             <div style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; font-weight: bold; margin-bottom: 4px;">Telefone</div>
-            <div id="detalhePedTelefone" style="font-size: 1.1rem; color: var(--text-main);"></div>
+            <div id="detalhePedTelefone" style="font-size: 1rem; color: var(--text-main);"></div>
+          </div>
+          <div>
+            <div style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; font-weight: bold; margin-bottom: 4px;">CPF</div>
+            <div id="detalhePedCpf" style="font-size: 1rem; color: var(--text-main);"></div>
           </div>
         </div>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 16px;">
+          <div>
+            <div style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; font-weight: bold; margin-bottom: 4px;">Endereço</div>
+            <div id="detalhePedEndereco" style="font-size: 0.9rem; color: var(--text-main);"></div>
+          </div>
+          <div>
+            <div style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; font-weight: bold; margin-bottom: 4px;">Ponto de Referência</div>
+            <div id="detalhePedPontoRef" style="font-size: 0.9rem; color: var(--text-main);"></div>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px;">
+          <div>
+            <div style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; font-weight: bold; margin-bottom: 4px;">Voltagem Motor</div>
+            <div id="detalhePedVoltagem" style="font-size: 0.95rem; color: var(--text-main); font-weight: 600;"></div>
+          </div>
           <div>
             <div style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; font-weight: bold; margin-bottom: 4px;">Data</div>
             <div id="detalhePedData" style="font-size: 0.95rem; color: var(--text-main);"></div>

@@ -209,6 +209,9 @@ window.addEventListener('DOMContentLoaded', async () => {
 function setupServiceWorker() {
   if (!('serviceWorker' in navigator)) return;
 
+  // Guarda se a página já estava sendo controlada por um Service Worker no momento do carregamento
+  const hadControllerOnLoad = !!navigator.serviceWorker.controller;
+
   const registerSW = () => {
     navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' })
       .then((registration) => {
@@ -268,10 +271,10 @@ function setupServiceWorker() {
     window.addEventListener('load', registerSW);
   }
 
-  // Recarrega a página assim que o novo Service Worker pular a espera e se tornar o controlador ativo
+  // Recarrega a página assim que o novo Service Worker pular a espera (apenas se já havia uma versão ativa anterior)
   let refreshing = false;
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if (!refreshing) {
+    if (!refreshing && hadControllerOnLoad) {
       refreshing = true;
       localStorage.setItem('app_just_updated', 'true');
       window.location.reload();
@@ -478,6 +481,8 @@ async function renderDailyIndicators() {
 
   const selectedDate = inputDia.value;
   const servicos = await getAllRecords('servicos');
+  const todasReceitas = await getAllRecords('receitas');
+  const nomesReceitas = new Set(todasReceitas.map(r => (r.produtoFinal || '').toLowerCase().trim()));
 
   // Filtra os serviços do dia selecionado
   const servicosDoDia = servicos.filter(s => {
@@ -492,13 +497,34 @@ async function renderDailyIndicators() {
   const elClientes = document.getElementById('indicadorClientesDia');
   if (elClientes) elClientes.textContent = clientesAtendidos;
 
-  // 2. Peças Afiadas
-  let totalPecas = 0;
+  // 2. Peças Afiadas vs Alicates Novos (Produtos) Vendidos
+  let totalPecasAfiadas = 0;
+  let totalProdutosNovos = 0;
+  const regexItem = /^(.*?)\s*\(x(\d+)(?:\s*-\s*R\$\s*[\d.]+)?\)$/i;
+
   servicosFinalizadosDoDia.forEach(s => {
-    totalPecas += extrairQuantidadeDeItens(s.itens);
+    const rawItens = s.itens ? (Array.isArray(s.itens) ? s.itens : [s.itens]) : [];
+    rawItens.forEach(itStr => {
+      const match = String(itStr).match(regexItem);
+      let name = String(itStr).trim();
+      let qty = 1;
+      if (match) {
+        name = match[1].trim();
+        qty = parseInt(match[2], 10) || 1;
+      }
+      if (nomesReceitas.has(name.toLowerCase())) {
+        totalProdutosNovos += qty;
+      } else {
+        totalPecasAfiadas += qty;
+      }
+    });
   });
+
   const elPecas = document.getElementById('indicadorPecasDia');
-  if (elPecas) elPecas.textContent = totalPecas;
+  if (elPecas) elPecas.textContent = totalPecasAfiadas;
+
+  const elProdutos = document.getElementById('indicadorProdutosDia');
+  if (elProdutos) elProdutos.textContent = totalProdutosNovos;
 
   // 3. Faturamento do Dia
   const totalFaturamento = servicosFinalizadosDoDia.reduce((acc, curr) => acc + (curr.valor || 0) + (curr.frete || 0), 0);
@@ -970,7 +996,7 @@ function setupDynamicRows() {
   if (btnAddMateriaPrima && containerMateriaPrima) {
     btnAddMateriaPrima.addEventListener('click', async () => {
       const estoqueItens = await getAllRecords('estoque');
-      const estoqueAgrupado = obterEstoqueAgrupado(estoqueItens);
+      const estoqueAgrupado = obterEstoqueAgrupado(estoqueItens, true);
       let options = '<option value="">Selecione insumo...</option>';
       estoqueAgrupado.forEach(item => {
         options += `<option value="${escapeHTML(item.item)}" data-valor="${item.valor}">${escapeHTML(item.item)} (Disp: ${item.quantidade})</option>`;
@@ -1249,8 +1275,11 @@ function setupFormSubmissions() {
 
         // Coleta itens dinâmicos
         const itens = [];
+        const itemsToDeductRecipes = [];
         const rows = document.querySelectorAll('#servItensContainer .dynamic-item-row');
-        rows.forEach(row => {
+        const todasReceitas = await getAllRecords('receitas');
+
+        for (const row of rows) {
           const select = row.querySelector('.item-select');
           const qtyVal = obterQuantidadeElemento(row.querySelector('.item-qty'));
           const priceInput = row.querySelector('.item-price');
@@ -1261,12 +1290,22 @@ function setupFormSubmissions() {
               itemText = row.querySelector('.item-name-custom').value.trim();
             } else {
               itemText = select.value;
+              const selectedOption = (select.options && select.selectedIndex >= 0) ? select.options[select.selectedIndex] : null;
+              const type = selectedOption ? selectedOption.getAttribute('data-type') : '';
+              if (type === 'receita') {
+                itemsToDeductRecipes.push({ itemNome: itemText, quantidade: qtyVal });
+              } else {
+                const rMatch = todasReceitas.find(r => (r.produtoFinal || '').toLowerCase().trim() === (itemText || '').toLowerCase().trim());
+                if (rMatch) {
+                  itemsToDeductRecipes.push({ itemNome: rMatch.produtoFinal, quantidade: qtyVal });
+                }
+              }
             }
           }
           if (itemText) {
             itens.push(`${itemText} (x${qtyVal} - R$ ${priceVal.toFixed(2)})`);
           }
-        });
+        }
 
         // Coleta adicionais dinâmicos
         const adicionaisArr = [];
@@ -1311,7 +1350,7 @@ function setupFormSubmissions() {
             }
           }
           if (adicionalText) {
-            adicionaisArr.push(`${adicionalText} (x${qtyText} - R$ ${priceVal.toFixed(2)})`);
+            adicionaisArr.push(`${adicionalText} (x${qtyVal} - R$ ${priceVal.toFixed(2)})`);
           }
         }
 
@@ -1320,17 +1359,22 @@ function setupFormSubmissions() {
           return;
         }
 
-        // Executa a dedução dos insumos apenas se o serviço for finalizado agora.
-        // Se for agendado, a dedução ocorrerá quando for concluído pelo mural.
+        // Executa a dedução dos insumos e produtos de receitas apenas se o serviço for finalizado agora.
         if (status !== 'Agendado') {
           if (estoqueInsuficiente) {
             const prosseguir = confirm(`Atenção: Não há estoque suficiente do insumo "${insumoFaltante}" atrelado aos adicionais selecionados.\nDeseja registrar o serviço mesmo assim (deixando o estoque do insumo negativo)?`);
             if (!prosseguir) return;
           }
 
-          // Executa dedução dos insumos
+          // Executa dedução de insumos de adicionais
           for (const ded of deducoesEstoque) {
             await consumirInsumoFIFO(ded.insumoNome, ded.quantidade);
+          }
+
+          // Executa dedução de produtos de receitas (alicates novos) vendidos no serviço
+          for (const itemRec of itemsToDeductRecipes) {
+            const { itemNome, quantidade: qtyVal } = itemRec;
+            await deduzirEstoqueProdutoReceita(itemNome, qtyVal);
           }
         }
 
@@ -1484,12 +1528,50 @@ function setupFormSubmissions() {
   }
   window.setModoEntradaEstoque = setModoEntradaEstoque;
 
+  async function obterCustoUnitarioReceita(r) {
+    if (!r) return 0;
+    let custoMateriasPrimas = 0;
+    try {
+      const estoque = await getAllRecords('estoque');
+      const estoqueMap = {};
+      estoque.forEach(item => {
+        const nameKey = (item.nome || item.item || '').trim().toLowerCase();
+        const val = Number(item.custo_medio !== undefined ? item.custo_medio : (item.valor || 0));
+        estoqueMap[nameKey] = val;
+      });
+
+      if (Array.isArray(r.materiaPrima)) {
+        r.materiaPrima.forEach(mp => {
+          const mpName = (mp.item || mp.nome || '').trim().toLowerCase();
+          const precoUnit = estoqueMap[mpName] || 0;
+          custoMateriasPrimas += precoUnit * (mp.quantidade || 0);
+        });
+      }
+    } catch (e) {
+      console.warn('Erro ao obter custo da receita:', e);
+    }
+    return custoMateriasPrimas + (Number(r.maoDeObra) || 0);
+  }
+
   async function atualizarDatalistSugestoes() {
     const dl = document.getElementById('dlEstoqueItens');
     if (!dl) return;
     try {
       const estoque = await getAllRecords('estoque');
-      const nomesUnicos = Array.from(new Set(estoque.map(e => (e.nome || e.item || '').trim()).filter(Boolean)));
+      const receitas = await getAllRecords('receitas');
+      const estTipoSelect = document.getElementById('estTipoItem');
+      const isProdutoAcabado = estTipoSelect && estTipoSelect.value === 'PRODUTO_ACABADO';
+
+      const nomesEstoque = estoque.map(e => (e.nome || e.item || '').trim()).filter(Boolean);
+      const nomesReceitas = receitas.map(r => (r.produtoFinal || '').trim()).filter(Boolean);
+
+      let nomesUnicos;
+      if (isProdutoAcabado) {
+        nomesUnicos = Array.from(new Set([...nomesReceitas, ...nomesEstoque]));
+      } else {
+        nomesUnicos = Array.from(new Set([...nomesEstoque, ...nomesReceitas]));
+      }
+
       dl.innerHTML = nomesUnicos.map(n => `<option value="${escapeHTML(n)}"></option>`).join('');
     } catch (err) {
       console.warn('Erro ao atualizar datalist de sugestões:', err);
@@ -1612,25 +1694,59 @@ function setupFormSubmissions() {
       adicionarLinhaCompra();
     }
 
-    // Ouvinte para auto-completar tipo/unidade na Entrada Simples
+    // Ouvinte para estTipoItem: atualizar sugestões no datalist
+    const estTipoSelect = document.getElementById('estTipoItem');
+    if (estTipoSelect) {
+      estTipoSelect.addEventListener('change', async () => {
+        await atualizarDatalistSugestoes();
+        const inputEstItem = document.getElementById('estItem');
+        if (inputEstItem && inputEstItem.value.trim()) {
+          inputEstItem.dispatchEvent(new Event('change'));
+        }
+      });
+    }
+
+    // Ouvinte para auto-completar tipo/unidade/custo na Entrada Simples
     const inputEstItem = document.getElementById('estItem');
     if (inputEstItem) {
-      inputEstItem.addEventListener('change', async (e) => {
+      const handleEstItemChange = async (e) => {
         const val = e.target.value.trim();
         if (!val) return;
         try {
-          const estoque = await getAllRecords('estoque');
-          const match = estoque.find(item => (item.nome || item.item || '').trim().toLowerCase() === val.toLowerCase());
-          if (match) {
-            const estTipoSelect = document.getElementById('estTipoItem');
-            const estUnidadeSelect = document.getElementById('estUnidade');
-            if (estTipoSelect && match.tipo_item) estTipoSelect.value = match.tipo_item;
-            if (estUnidadeSelect && match.unidade_medida) estUnidadeSelect.value = match.unidade_medida;
+          const estTipoSelect = document.getElementById('estTipoItem');
+          const estUnidadeSelect = document.getElementById('estUnidade');
+          const estValorInput = document.getElementById('estValor');
+          const receitas = await getAllRecords('receitas');
+          const receitaMatch = receitas.find(r => (r.produtoFinal || '').trim().toLowerCase() === val.toLowerCase());
+
+          if (receitaMatch) {
+            if (estTipoSelect) estTipoSelect.value = 'PRODUTO_ACABADO';
+            if (estUnidadeSelect) estUnidadeSelect.value = 'UN';
+
+            const custoUnitario = await obterCustoUnitarioReceita(receitaMatch);
+            if (estValorInput && custoUnitario > 0) {
+              estValorInput.value = custoUnitario.toFixed(2);
+            }
+            await atualizarDatalistSugestoes();
+          } else {
+            const estoque = await getAllRecords('estoque');
+            const match = estoque.find(item => (item.nome || item.item || '').trim().toLowerCase() === val.toLowerCase());
+            if (match) {
+              if (estTipoSelect && match.tipo_item) estTipoSelect.value = match.tipo_item;
+              if (estUnidadeSelect && match.unidade_medida) estUnidadeSelect.value = match.unidade_medida;
+              if (estValorInput && (match.custo_medio !== undefined || match.valor !== undefined)) {
+                const costoVal = Number(match.custo_medio !== undefined ? match.custo_medio : match.valor) || 0;
+                if (costoVal > 0) estValorInput.value = costoVal.toFixed(2);
+              }
+            }
           }
         } catch (err) {
           console.warn('Erro ao auto-completar campos de entrada simples:', err);
         }
-      });
+      };
+
+      inputEstItem.addEventListener('change', handleEstItemChange);
+      inputEstItem.addEventListener('input', handleEstItemChange);
     }
   }
 
@@ -1905,6 +2021,17 @@ function setupFormSubmissions() {
       try {
         const nome = document.getElementById('pedNome') ? document.getElementById('pedNome').value.trim() : '';
         const telefone = document.getElementById('pedTelefone') ? document.getElementById('pedTelefone').value.trim() : '';
+        const cpf = document.getElementById('pedCpf') ? document.getElementById('pedCpf').value.trim() : '';
+        const rua = document.getElementById('pedRua') ? document.getElementById('pedRua').value.trim() : '';
+        const numero = document.getElementById('pedNumero') ? document.getElementById('pedNumero').value.trim() : '';
+        const bairro = document.getElementById('pedBairro') ? document.getElementById('pedBairro').value.trim() : '';
+        const cidade = document.getElementById('pedCidade') ? document.getElementById('pedCidade').value.trim() : '';
+        const estado = document.getElementById('pedEstado') ? document.getElementById('pedEstado').value.trim() : '';
+        const cep = document.getElementById('pedCep') ? document.getElementById('pedCep').value.trim() : '';
+        const pais = document.getElementById('pedPais') ? document.getElementById('pedPais').value.trim() : 'Brasil';
+        const pontoReferencia = document.getElementById('pedPontoReferencia') ? document.getElementById('pedPontoReferencia').value.trim() : '';
+        const voltagemMotor = document.getElementById('pedVoltagemMotor') ? document.getElementById('pedVoltagemMotor').value : '';
+
         const frete = obterPrecoElemento('#pedFrete');
         const meioPagamento = document.getElementById('pedPagamento').value;
         const status = document.getElementById('pedStatus') ? document.getElementById('pedStatus').value : 'Finalizado';
@@ -2027,6 +2154,16 @@ function setupFormSubmissions() {
           const novoPedido = {
             nome,
             telefone,
+            cpf,
+            rua,
+            numero,
+            bairro,
+            cidade,
+            estado,
+            cep,
+            pais,
+            pontoReferencia,
+            voltagemMotor,
             status,
             item: itemNome,
             quantidade,
@@ -2049,6 +2186,8 @@ function setupFormSubmissions() {
         }
 
         formPedido.reset();
+        const elPais = document.getElementById('pedPais');
+        if (elPais) elPais.value = 'Brasil';
 
         // Limpa as linhas extras de itens vendidos e restaura apenas a primeira em branco
         const container = document.getElementById('pedItensContainer');
@@ -2156,11 +2295,54 @@ function setupFormSubmissions() {
   }
 
   // 4. FORMULÁRIO DE RECEITAS
+  function resetFormReceita() {
+    const form = document.getElementById('formReceita');
+    if (form) form.reset();
+
+    const receitaIdEl = document.getElementById('receitaId');
+    if (receitaIdEl) receitaIdEl.value = '';
+
+    const titleEl = document.getElementById('receitaFormTitle');
+    if (titleEl) titleEl.textContent = 'Nova Receita / Produto';
+
+    const submitBtn = document.getElementById('btnReceitaSubmit');
+    if (submitBtn) submitBtn.textContent = 'Cadastrar Receita';
+
+    const cancelBtn = document.getElementById('btnReceitaCancel');
+    if (cancelBtn) cancelBtn.style.display = 'none';
+
+    document.getElementById('custoTotalCalculado').innerHTML = `Custo de Fabricação Estimado: <strong>R$ 0,00</strong>`;
+    const container = document.getElementById('recMateriaPrimaContainer');
+    if (container) {
+      container.innerHTML = `
+        <div class="dynamic-item-row mp-row">
+          <select class="form-control mp-select" required>
+            <option value="">Selecione insumo...</option>
+          </select>
+          <input type="number" class="form-control mp-qty" placeholder="Qtd" min="1" step="1" style="width: 80px;" required>
+          <button type="button" class="btn-icon-only danger btnRemoveRow" style="display:none;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          </button>
+        </div>
+      `;
+    }
+  }
+
+  const btnReceitaCancel = document.getElementById('btnReceitaCancel');
+  if (btnReceitaCancel) {
+    btnReceitaCancel.addEventListener('click', () => {
+      resetFormReceita();
+      setupEstoqueSelectOption();
+      recalculaCustoReceita();
+    });
+  }
+
   const formReceita = document.getElementById('formReceita');
   if (formReceita) {
     formReceita.addEventListener('submit', async (e) => {
       e.preventDefault();
       try {
+        const idVal = document.getElementById('receitaId')?.value || '';
         const produtoFinal = document.getElementById('recProdFinal').value.trim();
         const maoDeObra = obterPrecoElemento('#recMaoObra');
         const precoVenda = obterPrecoElemento('#recPrecoVenda');
@@ -2171,7 +2353,7 @@ function setupFormSubmissions() {
         rows.forEach(row => {
           const select = row.querySelector('.mp-select');
           const qty = obterQuantidadeElemento(row.querySelector('.mp-qty'));
-          if (select.value) {
+          if (select && select.value) {
             materiaPrima.push({
               item: select.value,
               quantidade: qty
@@ -2184,15 +2366,32 @@ function setupFormSubmissions() {
           return;
         }
 
-        const novaReceita = {
-          produtoFinal,
-          materiaPrima,
-          maoDeObra,
-          precoVenda,
-          synced: 0
-        };
+        if (idVal) {
+          // Edição de receita existente
+          const registroExistente = await getRecordById('receitas', idVal);
+          if (registroExistente) {
+            registroExistente.produtoFinal = produtoFinal;
+            registroExistente.materiaPrima = materiaPrima;
+            registroExistente.maoDeObra = maoDeObra;
+            registroExistente.precoVenda = precoVenda;
+            registroExistente.synced = 0;
 
-        await addRecord('receitas', novaReceita);
+            await updateRecord('receitas', registroExistente);
+            showToast('Receita atualizada com sucesso!');
+          }
+        } else {
+          // Nova receita
+          const novaReceita = {
+            produtoFinal,
+            materiaPrima,
+            maoDeObra,
+            precoVenda,
+            synced: 0
+          };
+
+          await addRecord('receitas', novaReceita);
+          showToast('Receita cadastrada com sucesso!');
+        }
 
         // Sincroniza o preço de venda no estoque de produtos finalizados se já existir
         const estoqueProdutos = await getAllRecords('estoque_produtos');
@@ -2202,24 +2401,8 @@ function setupFormSubmissions() {
           prodEstocado.synced = 0;
           await updateRecord('estoque_produtos', prodEstocado);
         }
-        showToast('Receita cadastrada com sucesso!');
-        formReceita.reset();
 
-        // Limpa custos calculados e as linhas
-        document.getElementById('custoTotalCalculado').innerHTML = `Custo de Fabricação Estimado: <strong>R$ 0,00</strong>`;
-        const container = document.getElementById('recMateriaPrimaContainer');
-        container.innerHTML = `
-          <div class="dynamic-item-row mp-row">
-            <select class="form-control mp-select" required>
-              <option value="">Selecione insumo...</option>
-            </select>
-            <input type="number" class="form-control mp-qty" placeholder="Qtd" min="1" step="1" style="width: 80px;" required>
-            <button type="button" class="btn-icon-only danger btnRemoveRow" style="display:none;">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-            </button>
-          </div>
-        `;
-
+        resetFormReceita();
         await reloadAllViews();
       } catch (err) {
         showToast('Erro ao salvar receita: ' + err.message, 'error');
@@ -2691,9 +2874,10 @@ async function renderServicosView() {
     if (servicosFila.length > 0) {
       if (desc) desc.style.display = 'block';
       muralPanel.style.display = 'block';
-      muralGrid.innerHTML = servicosFila.map(s => {
+      const cardsHtml = await Promise.all(servicosFila.map(async s => {
         const itensStr = Array.isArray(s.itens) ? s.itens.join(', ') : s.itens;
         const adicionaisStr = s.adicionais ? s.adicionais : '';
+        const necessitaAfiar = await verificarNecessidadeAfiarMais(s.itens);
 
         let contentHtml = '';
         if (itensStr) {
@@ -2714,7 +2898,10 @@ async function renderServicosView() {
                 ${s.telefone ? `<div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 4px;">📞 ${escapeHTML(s.telefone)}</div>` : ''}
                 <span style="font-size: 0.75rem; color: var(--text-muted);">${formatDate(new Date(s.data))}</span>
               </div>
-              <span style="background: rgba(245, 158, 11, 0.1); color: var(--warning); padding: 4px 8px; border-radius: var(--radius-sm); font-size: 0.75rem; font-weight: bold; border: 1px solid rgba(245, 158, 11, 0.2);">Fila</span>
+              <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
+                <span style="background: rgba(245, 158, 11, 0.1); color: var(--warning); padding: 4px 8px; border-radius: var(--radius-sm); font-size: 0.75rem; font-weight: bold; border: 1px solid rgba(245, 158, 11, 0.2);">Fila</span>
+                ${necessitaAfiar ? `<span style="background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); padding: 3px 6px; border-radius: var(--radius-sm); font-size: 0.7rem; font-weight: bold; display: inline-flex; align-items: center; gap: 4px;" title="Estoque de alicate novo é insuficiente.">⚠️ Estoque Insuficiente</span>` : ''}
+              </div>
             </div>
             
             <div style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.4; flex-grow: 1;">
@@ -2734,7 +2921,8 @@ async function renderServicosView() {
             </div>
           </div>
         `;
-      }).join('');
+      }));
+      muralGrid.innerHTML = cardsHtml.join('');
     } else {
       if (desc) desc.style.display = 'none';
       muralPanel.style.display = 'block';
@@ -3470,9 +3658,12 @@ async function renderPedidosView() {
     if (pedidosProducao.length > 0) {
       if (desc) desc.style.display = 'block';
       muralProducaoPanel.style.display = 'block';
-      muralProducaoGrid.innerHTML = pedidosProducao.map(p => {
+      const cardsHtml = await Promise.all(pedidosProducao.map(async p => {
         const itensStr = p.itens ? (Array.isArray(p.itens) ? p.itens.join(', ') : p.itens) : `${p.quantidade}x ${p.item}`;
         const total = (p.itens ? p.valor : (p.quantidade * p.valor)) + (p.frete || 0);
+        const rawItens = p.itens || [`${p.item} (x${p.quantidade})`];
+        const necessitaAfiar = await verificarNecessidadeAfiarMais(rawItens);
+
         return `
           <div class="mural-card" style="background: var(--bg-card); border: 1px solid var(--border-glass); border-radius: var(--radius-md); padding: 16px; display: flex; flex-direction: column; gap: 12px; transition: var(--transition-smooth); box-shadow: var(--shadow-lg);">
             <div style="display: flex; justify-content: space-between; align-items: flex-start;">
@@ -3481,7 +3672,10 @@ async function renderPedidosView() {
                 ${p.telefone ? `<div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 4px;">📞 ${escapeHTML(p.telefone)}</div>` : ''}
                 <span style="font-size: 0.75rem; color: var(--text-muted);">${formatDate(new Date(p.data))}</span>
               </div>
-              <span style="background: rgba(245, 158, 11, 0.1); color: var(--warning); padding: 4px 8px; border-radius: var(--radius-sm); font-size: 0.75rem; font-weight: bold; border: 1px solid rgba(245, 158, 11, 0.2);">Produção</span>
+              <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
+                <span style="background: rgba(245, 158, 11, 0.1); color: var(--warning); padding: 4px 8px; border-radius: var(--radius-sm); font-size: 0.75rem; font-weight: bold; border: 1px solid rgba(245, 158, 11, 0.2);">Produção</span>
+                ${necessitaAfiar ? `<span style="background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); padding: 3px 6px; border-radius: var(--radius-sm); font-size: 0.7rem; font-weight: bold; display: inline-flex; align-items: center; gap: 4px;" title="Estoque de alicate novo é insuficiente.">⚠️ Estoque Insuficiente</span>` : ''}
+              </div>
             </div>
             
             <div style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.4; flex-grow: 1;">
@@ -3499,7 +3693,8 @@ async function renderPedidosView() {
             </div>
           </div>
         `;
-      }).join('');
+      }));
+      muralProducaoGrid.innerHTML = cardsHtml.join('');
     } else {
       if (desc) desc.style.display = 'none';
       muralProducaoPanel.style.display = 'block';
@@ -3727,6 +3922,9 @@ async function renderReceitasView() {
         <td><strong>${formatMoney(custoTotal)}</strong></td>
         <!-- Removida coluna Planilha -->
         <td>
+          <button class="btn-icon-only btnEditReceita" data-id="${r.id}" title="Editar Receita" style="margin-right: 4px;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4z"/></svg>
+          </button>
           <button class="btn-icon-only danger btnDelete" data-store="receitas" data-id="${r.id}" title="Excluir Receita">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
           </button>
@@ -3736,22 +3934,25 @@ async function renderReceitasView() {
   }).join('');
 
   setupTableActions();
+  setupEditRecipeButtons();
   setupRecipeDetailsLinks(receitas, estoqueMap);
 }
 
 // Configura opções de insumos da primeira linha do formulário de receitas
 async function setupEstoqueSelectOption() {
-  const select = document.querySelector('.mp-select');
-  if (select) {
+  const selects = document.querySelectorAll('.mp-select');
+  if (selects.length > 0) {
     const estoque = await getAllRecords('estoque');
-    const estoqueAgrupado = obterEstoqueAgrupado(estoque);
-    const currentValue = select.value;
+    const estoqueAgrupado = obterEstoqueAgrupado(estoque, true);
     let options = '<option value="">Selecione insumo...</option>';
     estoqueAgrupado.forEach(item => {
       options += `<option value="${escapeHTML(item.item)}" data-valor="${item.valor}">${escapeHTML(item.item)} (Disp: ${item.quantidade})</option>`;
     });
-    select.innerHTML = options;
-    select.value = currentValue;
+    selects.forEach(select => {
+      const currentValue = select.value;
+      select.innerHTML = options;
+      select.value = currentValue;
+    });
     setupCustoCalculoEvents();
   }
 }
@@ -3900,6 +4101,84 @@ async function handleEditStockClick(e) {
   }
 }
 
+function setupEditRecipeButtons() {
+  document.querySelectorAll('.btnEditReceita').forEach(btn => {
+    btn.removeEventListener('click', handleEditRecipeClickEvent);
+    btn.addEventListener('click', handleEditRecipeClickEvent);
+  });
+}
+
+async function handleEditRecipeClickEvent(e) {
+  const btn = e.currentTarget;
+  const id = btn.getAttribute('data-id');
+  if (id) {
+    await handleEditRecipeClick(id);
+  }
+}
+
+async function handleEditRecipeClick(id) {
+  try {
+    const recipe = await getRecordById('receitas', id);
+    if (!recipe) {
+      showToast('Receita não encontrada.', 'error');
+      return;
+    }
+
+    document.getElementById('receitaId').value = recipe.id;
+    document.getElementById('recProdFinal').value = recipe.produtoFinal || '';
+    document.getElementById('recMaoObra').value = recipe.maoDeObra || 0;
+    document.getElementById('recPrecoVenda').value = recipe.precoVenda || 0;
+
+    const container = document.getElementById('recMateriaPrimaContainer');
+    container.innerHTML = '';
+
+    const estoqueItens = await getAllRecords('estoque');
+    const estoqueAgrupado = obterEstoqueAgrupado(estoqueItens, true);
+    let options = '<option value="">Selecione insumo...</option>';
+    estoqueAgrupado.forEach(item => {
+      options += `<option value="${escapeHTML(item.item)}" data-valor="${item.valor}">${escapeHTML(item.item)} (Disp: ${item.quantidade})</option>`;
+    });
+
+    const mps = Array.isArray(recipe.materiaPrima) && recipe.materiaPrima.length > 0
+      ? recipe.materiaPrima
+      : [{ item: '', quantidade: 1 }];
+
+    mps.forEach(mp => {
+      const row = document.createElement('div');
+      row.className = 'dynamic-item-row mp-row';
+      row.innerHTML = `
+        <select class="form-control mp-select" required>
+          ${options}
+        </select>
+        <input type="number" class="form-control mp-qty" value="${mp.quantidade || 1}" placeholder="Qtd" min="1" step="1" style="width: 80px;" required>
+        <button type="button" class="btn-icon-only danger btnRemoveRow">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+        </button>
+      `;
+      const sel = row.querySelector('.mp-select');
+      if (sel) sel.value = mp.item || '';
+      container.appendChild(row);
+    });
+
+    updateRemoveButtons(container);
+    setupCustoCalculoEvents();
+    recalculaCustoReceita();
+
+    const titleEl = document.getElementById('receitaFormTitle');
+    if (titleEl) titleEl.textContent = 'Editar Receita / Produto';
+
+    const submitBtn = document.getElementById('btnReceitaSubmit');
+    if (submitBtn) submitBtn.textContent = 'Salvar Alterações';
+
+    const cancelBtn = document.getElementById('btnReceitaCancel');
+    if (cancelBtn) cancelBtn.style.display = 'block';
+
+    document.getElementById('formReceita').scrollIntoView({ behavior: 'smooth' });
+  } catch (err) {
+    showToast('Erro ao carregar receita para edição: ' + err.message, 'error');
+  }
+}
+
 // Visualizador de Detalhes da Composição da Receita
 function setupRecipeDetailsLinks(receitas, estoqueMap) {
   document.querySelectorAll('.view-recipe-details').forEach(link => {
@@ -3950,7 +4229,22 @@ function setupRecipeDetailsLinks(receitas, estoqueMap) {
             <span>CUSTO DE FABRICAÇÃO TOTAL</span>
             <span style="color:var(--primary);">${formatMoney(totalInsumos + receita.maoDeObra)}</span>
           </div>
+
+          <div style="margin-top:20px; text-align:right;">
+            <button type="button" class="btn btn-secondary btn-edit-from-modal" data-id="${receita.id}">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px; vertical-align: middle;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4z"/></svg>
+              Editar Receita
+            </button>
+          </div>
         `;
+
+        const btnEditModal = modalBody.querySelector('.btn-edit-from-modal');
+        if (btnEditModal) {
+          btnEditModal.addEventListener('click', async () => {
+            modal.classList.remove('active');
+            await handleEditRecipeClick(receita.id);
+          });
+        }
 
         modal.classList.add('active');
       }
@@ -4492,6 +4786,9 @@ async function updateSalesSelectors() {
 }
 
 async function updateAllSelectors() {
+  // Atualiza seletores de Matéria-Prima em Receitas
+  await setupEstoqueSelectOption();
+
   // Atualiza selects de Pedidos/Vendas
   const pedSelects = document.querySelectorAll('.ped-item-select');
   if (pedSelects.length > 0) {
@@ -4518,22 +4815,38 @@ async function updateAllSelectors() {
     adicionalInsumoSelect.value = currentValue;
   }
 
-  // Atualiza selects de Peças
+  // Atualiza selects de Peças e Produtos (Receitas)
   const itemSelects = document.querySelectorAll('.item-select');
-  itemSelects.forEach(select => {
-    const currentValue = select.value;
-    let options = '<option value="">Selecione a peça...</option>';
-    pecas.forEach(p => {
-      options += `<option value="${escapeHTML(p.nome)}" data-preco="${p.precoPadrao}">${escapeHTML(p.nome)} (${formatMoney(p.precoPadrao)})</option>`;
-    });
-    options += '<option value="custom">Outro (Digitar)...</option>';
-    select.innerHTML = options;
+  if (itemSelects.length > 0) {
+    let options = '<option value="">Selecione o item/serviço...</option>';
 
-    // Restaura valor se ainda existir
-    if (currentValue) {
-      select.value = currentValue;
+    if (pecas.length > 0) {
+      options += '<optgroup label="Serviços de Afiação (Peças)">';
+      pecas.forEach(p => {
+        options += `<option value="${escapeHTML(p.nome)}" data-preco="${p.precoPadrao}" data-type="peca">${escapeHTML(p.nome)} (${formatMoney(p.precoPadrao)})</option>`;
+      });
+      options += '</optgroup>';
     }
-  });
+
+    const receitas = await getAllRecords('receitas');
+    if (receitas.length > 0) {
+      options += '<optgroup label="Produtos / Alicates Novos (Receitas)">';
+      receitas.forEach(r => {
+        options += `<option value="${escapeHTML(r.produtoFinal)}" data-preco="${r.precoVenda || 0}" data-type="receita">${escapeHTML(r.produtoFinal)} (${formatMoney(r.precoVenda || 0)})</option>`;
+      });
+      options += '</optgroup>';
+    }
+
+    options += '<option value="custom">Outro (Digitar)...</option>';
+
+    itemSelects.forEach(select => {
+      const currentValue = select.value;
+      select.innerHTML = options;
+      if (currentValue) {
+        select.value = currentValue;
+      }
+    });
+  }
 
   // Atualiza selects de Adicionais
   const adicionalSelects = document.querySelectorAll('.adicional-select');
@@ -4723,15 +5036,15 @@ async function renderEstoqueProdutosView() {
 // --- FUNÇÕES AUXILIARES DE ESTOQUE POR LOTE (FIFO) ---
 
 // Consolida os itens do estoque agrupando por nome, calculando a quantidade total e o preço médio ponderado
-function obterEstoqueAgrupado(estoqueItens) {
+function obterEstoqueAgrupado(estoqueItens, includeZero = true) {
   const grouped = {};
   (estoqueItens || []).forEach(e => {
     const itemNome = e.item || e.nome || e.produto || '';
     if (!itemNome) return;
-    const qtd = e.quantidade !== undefined ? e.quantidade : (e.quantidade_atual !== undefined ? e.quantidade_atual : 0);
-    const val = e.valor !== undefined ? e.valor : (e.custo_medio !== undefined ? e.custo_medio : 0);
+    const qtd = Number(e.quantidade_atual !== undefined ? e.quantidade_atual : e.quantidade) || 0;
+    const val = Number(e.valor !== undefined ? e.valor : (e.custo_medio !== undefined ? e.custo_medio : 0)) || 0;
 
-    if (qtd === 0) return;
+    if (!includeZero && qtd <= 0) return;
 
     const key = itemNome.toLowerCase().trim();
     if (!grouped[key]) {
@@ -4745,8 +5058,8 @@ function obterEstoqueAgrupado(estoqueItens) {
     }
     grouped[key].quantidade += qtd;
     grouped[key].valorTotal += qtd * val;
-    if (e.id > grouped[key].latestId) {
-      grouped[key].latestId = e.id;
+    if ((e.id || 0) > grouped[key].latestId) {
+      grouped[key].latestId = e.id || 0;
       grouped[key].latestValor = val;
     }
   });
@@ -4813,6 +5126,100 @@ async function consumirInsumoFIFO(itemName, qtdAConsumir) {
       await addRecord('estoque', novoInsumo);
     }
   }
+}
+
+async function deduzirEstoqueProdutoReceita(itemNome, quantidade) {
+  if (!itemNome || quantidade <= 0) return;
+  const todasReceitas = await getAllRecords('receitas');
+  const receita = todasReceitas.find(r => (r.produtoFinal || '').toLowerCase().trim() === itemNome.toLowerCase().trim());
+
+  // 1. Atualiza no estoque_produtos
+  const estoqueProdutos = await getAllRecords('estoque_produtos');
+  const prodEstocado = estoqueProdutos.find(p => (p.produto || p.nome || p.item || '').toLowerCase().trim() === itemNome.toLowerCase().trim());
+  const qtdDisponivelProd = prodEstocado ? prodEstocado.quantidade : 0;
+
+  if (prodEstocado) {
+    prodEstocado.quantidade = Math.max(0, prodEstocado.quantidade - quantidade);
+    prodEstocado.synced = 0;
+    await updateRecord('estoque_produtos', prodEstocado);
+  }
+
+  // 2. Atualiza no estoque geral (itens de estoque com o mesmo nome / produto acabado)
+  const estoqueGeral = await getAllRecords('estoque');
+  const itemEstoqueGeral = estoqueGeral.find(e => (e.nome || e.item || '').toLowerCase().trim() === itemNome.toLowerCase().trim());
+
+  if (itemEstoqueGeral) {
+    const qtdAtual = Number(itemEstoqueGeral.quantidade_atual !== undefined ? itemEstoqueGeral.quantidade_atual : itemEstoqueGeral.quantidade) || 0;
+    const novaQtd = Math.max(0, qtdAtual - quantidade);
+    itemEstoqueGeral.quantidade = novaQtd;
+    itemEstoqueGeral.quantidade_atual = novaQtd;
+    itemEstoqueGeral.synced = 0;
+    await updateRecord('estoque', itemEstoqueGeral);
+
+    await registrarMovimentacaoEstoque({
+      id_item: itemEstoqueGeral.id_item || itemEstoqueGeral.id,
+      nome_item: itemNome,
+      tipo_movimentacao: 'SAIDA',
+      quantidade: quantidade,
+      custo_unitario: itemEstoqueGeral.custo_medio || itemEstoqueGeral.valor || 0,
+      origem_tipo: 'VENDA_SERVICO',
+      justificativa: 'Venda de produto/alicate novo em serviços'
+    });
+  }
+
+  // 3. Se a quantidade em estoque de produtos acabados for menor que a vendida, consome as matérias-primas da receita via FIFO
+  if (qtdDisponivelProd < quantidade) {
+    const diferenca = quantidade - qtdDisponivelProd;
+    if (receita && Array.isArray(receita.materiaPrima)) {
+      for (const mp of receita.materiaPrima) {
+        const qtdNecessaria = mp.quantidade * diferenca;
+        await consumirInsumoFIFO(mp.item, qtdNecessaria);
+      }
+    }
+  }
+
+  await updateAllSelectors();
+}
+
+async function verificarNecessidadeAfiarMais(rawItens) {
+  if (!rawItens) return false;
+  const list = Array.isArray(rawItens) ? rawItens : [rawItens];
+  if (list.length === 0) return false;
+
+  const todasReceitas = await getAllRecords('receitas');
+  if (todasReceitas.length === 0) return false;
+
+  const estoqueProdutos = await getAllRecords('estoque_produtos');
+  const estoqueGeral = await getAllRecords('estoque');
+
+  const regexItem = /^(.*?)\s*\(x(\d+)(?:\s*-\s*R\$\s*[\d.]+)?\)$/i;
+
+  for (const itemStr of list) {
+    const match = String(itemStr).match(regexItem);
+    let name = String(itemStr).trim();
+    let qty = 1;
+    if (match) {
+      name = match[1].trim();
+      qty = parseInt(match[2], 10) || 1;
+    }
+
+    const rMatch = todasReceitas.find(r => (r.produtoFinal || '').toLowerCase().trim() === name.toLowerCase().trim());
+    if (rMatch) {
+      const prodEstocado = estoqueProdutos.find(p => (p.produto || p.nome || p.item || '').toLowerCase().trim() === name.toLowerCase().trim());
+      const prodQty = prodEstocado ? (prodEstocado.quantidade || 0) : 0;
+
+      const itemEstoqueGeral = estoqueGeral.find(e => (e.nome || e.item || '').toLowerCase().trim() === name.toLowerCase().trim());
+      const geralQty = itemEstoqueGeral ? (Number(itemEstoqueGeral.quantidade_atual !== undefined ? itemEstoqueGeral.quantidade_atual : itemEstoqueGeral.quantidade) || 0) : 0;
+
+      const totalDisponivel = Math.max(prodQty, geralQty);
+
+      if (totalDisponivel < qty) {
+        return true;
+      }
+    }
+  }
+
+  return false;
 }
 
 // --- FUNÇÕES DO MODAL DE CONCLUSÃO DE SERVIÇOS AGENDADOS ---
@@ -4968,6 +5375,25 @@ function setupModalConcluir() {
             // Executa a dedução de insumos de fato
             for (const ded of deducoesEstoque) {
               await consumirInsumoFIFO(ded.insumoNome, ded.quantidade);
+            }
+
+            // Executa dedução de estoque para produtos/alicates novos de receitas presentes nos itens do serviço
+            const todasReceitas = await getAllRecords('receitas');
+            const itemRowsModal = document.querySelectorAll('.modal-item-row');
+            for (const row of itemRowsModal) {
+              const select = row.querySelector('.modal-item-select');
+              const qtyInput = row.querySelector('.modal-item-qty');
+              const qtyVal = qtyInput ? parseFloat(qtyInput.value) || 1 : 1;
+              let name = '';
+              if (select) {
+                name = (select.value === 'custom') ? (row.querySelector('.modal-item-name-custom')?.value || '').trim() : select.value;
+              }
+              if (name) {
+                const rMatch = todasReceitas.find(r => (r.produtoFinal || '').toLowerCase().trim() === name.toLowerCase().trim());
+                if (rMatch) {
+                  await deduzirEstoqueProdutoReceita(rMatch.produtoFinal, qtyVal);
+                }
+              }
             }
           }
 
@@ -5837,6 +6263,26 @@ async function exibirDetalhesPedido(id) {
 
     document.getElementById('detalhePedCliente').textContent = p.nome || 'Cliente Avulso';
     document.getElementById('detalhePedTelefone').textContent = p.telefone || 'Não informado';
+    const elCpf = document.getElementById('detalhePedCpf');
+    if (elCpf) elCpf.textContent = p.cpf || 'Não informado';
+
+    const enderecoPartes = [
+      p.rua ? `${p.rua}${p.numero ? ', ' + p.numero : ''}` : '',
+      p.bairro || '',
+      p.cidade ? `${p.cidade}${p.estado ? '/' + p.estado : ''}` : '',
+      p.cep ? `CEP: ${p.cep}` : '',
+      p.pais || ''
+    ].filter(Boolean).join(' - ');
+
+    const elEndereco = document.getElementById('detalhePedEndereco');
+    if (elEndereco) elEndereco.textContent = enderecoPartes || 'Não informado';
+
+    const elPontoRef = document.getElementById('detalhePedPontoRef');
+    if (elPontoRef) elPontoRef.textContent = p.pontoReferencia || 'Nenhum';
+
+    const elVoltagem = document.getElementById('detalhePedVoltagem');
+    if (elVoltagem) elVoltagem.textContent = p.voltagemMotor ? `${p.voltagemMotor}V` : 'N/A';
+
     document.getElementById('detalhePedData').textContent = formatDate(new Date(p.data));
     document.getElementById('detalhePedPagamento').textContent = p.meioPagamento || 'Pix';
 

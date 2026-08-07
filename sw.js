@@ -5,7 +5,7 @@
  * É essa alteração no sw.js que faz os navegadores e celulares detectarem a nova versão
  * e dispararem a notificação Toast de atualização para os usuários!
  */
-const CACHE_NAME = 'pinheiro-afiacoes-cache-v53';
+const CACHE_NAME = 'pinheiro-afiacoes-cache-v54';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',

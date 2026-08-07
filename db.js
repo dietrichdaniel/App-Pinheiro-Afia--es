@@ -525,6 +525,7 @@ export async function registrarMovimentacaoEstoque({
     }
 
     item.quantidade_atual = saldoPosterior;
+    item.quantidade = saldoPosterior;
     item.custo_medio = Number(novoCustoMedio.toFixed(2));
     await updateRecord('estoque', item);
 
